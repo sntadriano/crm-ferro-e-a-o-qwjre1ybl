@@ -20,6 +20,7 @@ export function ImportDialog() {
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [stats, setStats] = useState({ created: 0, updated: 0 })
+  const [statusMessage, setStatusMessage] = useState('')
   const [isComplete, setIsComplete] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
@@ -39,6 +40,7 @@ export function ImportDialog() {
     if (!file) return
     setIsUploading(true)
     setProgress(0)
+    setStatusMessage('Lendo arquivo Excel (.xlsx)...')
 
     const targetCreated = Math.floor(Math.random() * 8) + 2
     const targetUpdated = Math.floor(Math.random() * 4)
@@ -46,21 +48,37 @@ export function ImportDialog() {
     const interval = setInterval(() => {
       setProgress((prev) => {
         const next = prev + 8
+        const currentCreated = Math.floor((next / 100) * targetCreated)
+        const currentUpdated = Math.floor((next / 100) * targetUpdated)
+
         setStats({
-          created: Math.floor((next / 100) * targetCreated),
-          updated: Math.floor((next / 100) * targetUpdated),
+          created: currentCreated,
+          updated: currentUpdated,
         })
+
+        if (next < 30) {
+          setStatusMessage('Mapeando colunas: codigo_, descricao_, fantasia_...')
+        } else if (next < 60) {
+          if (next % 2 === 0) setStatusMessage('Cliente já existe, atualizando...')
+          else setStatusMessage('Processando novo cliente...')
+        } else if (next < 90) {
+          setStatusMessage(
+            `Importando ${targetCreated + targetUpdated} clientes... ${currentCreated} criados, ${currentUpdated} atualizados.`,
+          )
+        }
+
         if (next >= 100) {
           clearInterval(interval)
           return 100
         }
         return next
       })
-    }, 150)
+    }, 200)
 
     setTimeout(() => {
       clearInterval(interval)
       setProgress(100)
+      setStatusMessage('Processamento concluído!')
       setIsComplete(true)
       setIsUploading(false)
       importCustomers(targetCreated, targetUpdated)
@@ -71,7 +89,7 @@ export function ImportDialog() {
       })
 
       setTimeout(() => setOpen(false), 2000)
-    }, 2200)
+    }, 3000)
   }
 
   return (
@@ -121,11 +139,11 @@ export function ImportDialog() {
 
           {(isUploading || isComplete) && (
             <div className="space-y-4 py-4 animate-fade-in">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-foreground">
-                  {isComplete ? 'Processamento concluído!' : `Importando clientes...`}
-                </span>
-                <span>{progress}%</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-foreground">{statusMessage}</span>
+                  <span>{progress}%</span>
+                </div>
               </div>
               <Progress value={progress} className="h-2" />
               <div className="text-sm text-muted-foreground flex justify-between animate-fade-in">

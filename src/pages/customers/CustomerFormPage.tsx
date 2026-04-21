@@ -168,7 +168,10 @@ export default function CustomerFormPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {customerType === 'PJ' ? 'Razão Social' : 'Nome Completo'} *
+                        {customerType === 'PJ'
+                          ? 'Nome da Empresa (descricao_)'
+                          : 'Nome Completo (descricao_)'}{' '}
+                        *
                       </FormLabel>
                       <FormControl>
                         <Input placeholder="Digite o nome..." {...field} />
@@ -182,7 +185,7 @@ export default function CustomerFormPage() {
                   name="tradeName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Fantasia *</FormLabel>
+                      <FormLabel>Nome Fantasia (fantasia_) *</FormLabel>
                       <FormControl>
                         <Input placeholder="Digite o nome fantasia..." {...field} />
                       </FormControl>
@@ -195,7 +198,9 @@ export default function CustomerFormPage() {
                   name="document"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{customerType === 'PJ' ? 'CNPJ' : 'CPF'} *</FormLabel>
+                      <FormLabel>
+                        {customerType === 'PJ' ? 'CNPJ (cnpj_cpf_)' : 'CPF (cnpj_cpf_)'} *
+                      </FormLabel>
                       <FormControl>
                         <Input
                           placeholder={
@@ -216,7 +221,7 @@ export default function CustomerFormPage() {
                   name="stateRegistration"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Inscrição Estadual *</FormLabel>
+                      <FormLabel>Inscrição Estadual (insc_estadual_) *</FormLabel>
                       <FormControl>
                         <Input placeholder="Apenas números ou ISENTO..." {...field} />
                       </FormControl>

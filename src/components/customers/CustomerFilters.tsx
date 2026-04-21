@@ -20,6 +20,7 @@ interface CustomerFiltersProps {
   sort: string
   setSort: (v: string) => void
   onClear: () => void
+  sellers: string[]
 }
 
 export function CustomerFilters({
@@ -32,6 +33,7 @@ export function CustomerFilters({
   sort,
   setSort,
   onClear,
+  sellers,
 }: CustomerFiltersProps) {
   return (
     <div className="bg-card p-4 rounded-lg border shadow-sm grid gap-4 md:grid-cols-12 items-end">
@@ -71,9 +73,11 @@ export function CustomerFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os vendedores</SelectItem>
-            <SelectItem value="Vendedor A">Vendedor A</SelectItem>
-            <SelectItem value="Vendedor B">Vendedor B</SelectItem>
-            <SelectItem value="Vendedor C">Vendedor C</SelectItem>
+            {sellers.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

@@ -98,6 +98,10 @@ export default function CustomerDetailsPage() {
                     {isPJ ? 'Razão Social' : 'Nome Completo'}:
                   </div>
                   <div className="font-medium text-right sm:text-left">{customer.name}</div>
+                  <div className="text-muted-foreground">Tipo de Cliente:</div>
+                  <div className="font-medium text-right sm:text-left">
+                    {isPJ ? 'Pessoa Jurídica (PJ)' : 'Pessoa Física (PF)'}
+                  </div>
                   <div className="text-muted-foreground">Nome Fantasia:</div>
                   <div className="font-medium text-right sm:text-left">
                     {customer.tradeName || '-'}

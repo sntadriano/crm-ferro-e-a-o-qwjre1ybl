@@ -27,7 +27,8 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
             <div className="h-4 w-20 bg-muted rounded" />
             <div className="h-4 w-48 bg-muted rounded" />
             <div className="h-4 w-32 bg-muted rounded" />
-            <div className="h-4 w-24 bg-muted rounded" />
+            <div className="h-4 w-32 bg-muted rounded" />
+            <div className="h-4 w-32 bg-muted rounded" />
             <div className="h-4 w-24 bg-muted rounded ml-auto" />
           </div>
         ))}
@@ -45,7 +46,8 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
             <TableHead className="w-[100px]">Código</TableHead>
             <TableHead>Nome Fantasia</TableHead>
             <TableHead>CNPJ/CPF</TableHead>
-            <TableHead>Contato</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -62,18 +64,25 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
               </TableCell>
               <TableCell>{customer.document}</TableCell>
               <TableCell>
-                <div className="flex flex-col gap-1 text-sm">
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   {customer.mobile || customer.phone ? (
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <>
                       <Phone className="h-3 w-3" /> {customer.mobile || customer.phone}
-                    </span>
-                  ) : null}
-                  {customer.email && (
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Mail className="h-3 w-3" /> {customer.email}
-                    </span>
+                    </>
+                  ) : (
+                    '-'
                   )}
-                  {!customer.mobile && !customer.phone && !customer.email && '-'}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  {customer.email ? (
+                    <>
+                      <Mail className="h-3 w-3" /> {customer.email}
+                    </>
+                  ) : (
+                    '-'
+                  )}
                 </div>
               </TableCell>
               <TableCell>

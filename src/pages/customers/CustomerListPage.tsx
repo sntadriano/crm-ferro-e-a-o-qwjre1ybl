@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Users } from 'lucide-react'
+import { Plus, Users, AlertCircle, RefreshCcw } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useCustomers } from '@/hooks/use-customers'
 import { Button } from '@/components/ui/button'
@@ -24,6 +24,7 @@ export default function CustomerListPage() {
   const { customers } = useCustomers()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
 
   const search = searchParams.get('q') || ''
   const status = searchParams.get('status') || 'all'
@@ -31,9 +32,22 @@ export default function CustomerListPage() {
   const sort = searchParams.get('sort') || 'date_desc'
   const page = parseInt(searchParams.get('page') || '1', 10)
 
+  const fetchCustomers = () => {
+    setIsLoading(true)
+    setHasError(false)
+    // Simulate API call and possible error
+    setTimeout(() => {
+      // 5% chance to fail for mock purposes
+      const shouldFail = Math.random() < 0.05
+      if (shouldFail) {
+        setHasError(true)
+      }
+      setIsLoading(false)
+    }, 800)
+  }
+
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 600)
-    return () => clearTimeout(timer)
+    fetchCustomers()
   }, [])
 
   const updateParam = (key: string, value: string | number) => {
@@ -45,6 +59,12 @@ export default function CustomerListPage() {
   }
 
   const clearFilters = () => setSearchParams(new URLSearchParams())
+
+  const uniqueSellers = useMemo(() => {
+    return Array.from(new Set(customers.map((c) => c.seller)))
+      .filter(Boolean)
+      .sort()
+  }, [customers])
 
   const processedCustomers = useMemo(() => {
     let filtered = customers.filter((c) => {
@@ -101,7 +121,19 @@ export default function CustomerListPage() {
         </div>
       </div>
 
-      {customers.length > 0 ? (
+      {hasError ? (
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-lg border border-destructive/20 mt-8">
+          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+          <h3 className="text-lg font-medium text-destructive">Erro ao carregar clientes</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-6 max-w-md">
+            Ocorreu um problema de conexão ao tentar buscar os clientes. Verifique sua internet e
+            tente novamente.
+          </p>
+          <Button onClick={fetchCustomers} variant="outline" className="gap-2">
+            <RefreshCcw className="h-4 w-4" /> Tentar novamente
+          </Button>
+        </div>
+      ) : customers.length > 0 ? (
         <>
           <CustomerFilters
             search={search}
@@ -113,6 +145,7 @@ export default function CustomerListPage() {
             sort={sort}
             setSort={(v) => updateParam('sort', v)}
             onClear={clearFilters}
+            sellers={uniqueSellers}
           />
 
           {!isLoading && processedCustomers.length === 0 && (
