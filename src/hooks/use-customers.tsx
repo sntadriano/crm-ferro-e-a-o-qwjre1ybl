@@ -15,7 +15,7 @@ const MOCK_CUSTOMERS: Customer[] = [
     seller: 'Vendedor 4',
     registeredAt: '2024-07-25',
     email: 'ana@email.com',
-    mobile: '(62) 99219-1668',
+    mobile: '992191668',
     address: {
       street: 'AV.JUCELINO K. DE OLIV. Q4 L1 SALA5',
       neighborhood: 'CENTRO',
@@ -36,7 +36,7 @@ const MOCK_CUSTOMERS: Customer[] = [
     seller: 'Vendedor 2',
     registeredAt: '2012-03-05',
     email: 'carlos@email.com',
-    mobile: '(62) 99272-1489',
+    mobile: '992721489',
     address: {
       street: 'AV. ALMIRO DE AMORIM QD.10 LT.04',
       neighborhood: 'CONJ. FILOSTRO MACHADO',
@@ -53,59 +53,17 @@ const MOCK_CUSTOMERS: Customer[] = [
     tradeName: 'FERRAGISTA BORJAO',
     document: '25.318.988/0001-62',
     stateRegistration: '106689622',
-    status: 'Inativo',
+    status: 'Ativo',
     seller: 'Vendedor 2',
     registeredAt: '2017-01-23',
     email: 'mariana@email.com',
-    mobile: '(62) 99176-4177',
+    mobile: '991764177',
     address: {
       street: 'RUA 25 QD.28 LT.39 SL.02',
       neighborhood: 'PARQUE RESIDENCIAL DAS FL',
       city: 'ANAPOLIS',
       state: 'GO',
       zip: '75085-560',
-    },
-  },
-  {
-    id: '4',
-    code: '99001',
-    type: 'PF',
-    name: 'Roberto Alves da Costa',
-    tradeName: 'Roberto Costa',
-    document: '123.456.789-00',
-    stateRegistration: 'ISENTO',
-    status: 'Ativo',
-    seller: 'Vendedor 1',
-    registeredAt: '2023-11-10',
-    email: 'roberto@email.com',
-    mobile: '(11) 98888-7777',
-    address: {
-      street: 'Rua das Flores, 123',
-      neighborhood: 'Jardins',
-      city: 'São Paulo',
-      state: 'SP',
-      zip: '01400-000',
-    },
-  },
-  {
-    id: '5',
-    code: '99002',
-    type: 'PJ',
-    name: 'Tech Solutions Comércio LTDA',
-    tradeName: 'Tech Store',
-    document: '44.555.666/0001-77',
-    stateRegistration: '30111222',
-    status: 'Inativo',
-    seller: 'Vendedor 3',
-    registeredAt: '2022-05-20',
-    email: 'contato@techsol.com',
-    mobile: '(11) 94444-3333',
-    address: {
-      street: 'Av Paulista, 1000',
-      neighborhood: 'Bela Vista',
-      city: 'São Paulo',
-      state: 'SP',
-      zip: '01310-100',
     },
   },
 ]
@@ -123,7 +81,7 @@ interface CustomerContextType {
   customers: Customer[]
   addCustomer: (customer: Omit<Customer, 'id' | 'code' | 'registeredAt'>) => void
   processImport: (
-    rows: Omit<Customer, 'id' | 'registeredAt'>[],
+    rows: Omit<Customer, 'id'>[],
     onProgress: (stats: ProcessImportStats, warning?: string) => void,
   ) => Promise<ProcessImportStats>
   getCustomer: (id: string) => Customer | undefined
@@ -147,7 +105,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
 
   const processImport = useCallback(
     async (
-      rows: Omit<Customer, 'id' | 'registeredAt'>[],
+      rows: Omit<Customer, 'id'>[],
       onProgress: (stats: ProcessImportStats, warning?: string) => void,
     ) => {
       const CHUNK_SIZE = 50
@@ -200,14 +158,12 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
                   ...nextCustomers[existingIndex],
                   ...row,
                   id: nextCustomers[existingIndex].id,
-                  registeredAt: nextCustomers[existingIndex].registeredAt,
                 }
                 stats.updated++
               } else {
                 nextCustomers.unshift({
                   ...row,
                   id: Math.random().toString(36).substr(2, 9),
-                  registeredAt: new Date().toISOString().split('T')[0],
                 })
                 stats.created++
               }

@@ -8,7 +8,6 @@ import {
   Mail,
   Activity,
   Edit,
-  Clock,
   MessageSquare,
   Briefcase,
 } from 'lucide-react'
@@ -94,9 +93,7 @@ export default function CustomerDetailsPage() {
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-muted-foreground">
-                    {isPJ ? 'Razão Social' : 'Nome Completo'}:
-                  </div>
+                  <div className="text-muted-foreground">Razão Social / Nome:</div>
                   <div className="font-medium text-right sm:text-left">{customer.name}</div>
                   <div className="text-muted-foreground">Tipo de Cliente:</div>
                   <div className="font-medium text-right sm:text-left">
@@ -112,6 +109,16 @@ export default function CustomerDetailsPage() {
                   <div className="font-medium text-right sm:text-left">
                     {customer.stateRegistration || 'Isento'}
                   </div>
+                  <div className="text-muted-foreground">Loja:</div>
+                  <div className="font-medium text-right sm:text-left">{customer.store || '-'}</div>
+                  <div className="text-muted-foreground">Nome da Mãe:</div>
+                  <div className="font-medium text-right sm:text-left">
+                    {customer.motherName || '-'}
+                  </div>
+                  <div className="text-muted-foreground">Data Nasc/Fundação:</div>
+                  <div className="font-medium text-right sm:text-left">
+                    {customer.birthDate || '-'}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -124,8 +131,20 @@ export default function CustomerDetailsPage() {
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-muted-foreground">Vendedor responsável:</div>
+                  <div className="text-muted-foreground">Vendedor:</div>
                   <div className="font-medium text-right sm:text-left">{customer.seller}</div>
+                  <div className="text-muted-foreground">Região:</div>
+                  <div className="font-medium text-right sm:text-left">
+                    {customer.region || '-'}
+                  </div>
+                  <div className="text-muted-foreground">Atividade:</div>
+                  <div className="font-medium text-right sm:text-left">
+                    {customer.activity || '-'}
+                  </div>
+                  <div className="text-muted-foreground">Categoria Econômica:</div>
+                  <div className="font-medium text-right sm:text-left">
+                    {customer.economicCategory || '-'}
+                  </div>
                   <div className="text-muted-foreground">Data de Cadastro:</div>
                   <div className="font-medium text-right sm:text-left">
                     {new Date(customer.registeredAt).toLocaleDateString('pt-BR')}
@@ -143,45 +162,89 @@ export default function CustomerDetailsPage() {
             <Card className="md:col-span-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-muted-foreground" /> Contato e Endereço Completo
+                  <MapPin className="h-5 w-5 text-muted-foreground" /> Endereços e Contato
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-6 text-sm">
                   <div className="space-y-4">
+                    <div className="font-medium pb-2 border-b">Informações de Contato</div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-muted-foreground" />{' '}
+                      <span>Telefone: {customer.phone || 'Não informado'}</span>
+                    </div>
                     <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-muted-foreground" />{' '}
                       <span>Celular: {customer.mobile || 'Não informado'}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Phone className="h-4 w-4 text-muted-foreground" />{' '}
-                      <span>Telefone: {customer.phone || 'Não informado'}</span>
+                      <span>Fone Cobrança: {customer.billingPhone || 'Não informado'}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Mail className="h-4 w-4 text-muted-foreground" />{' '}
                       <span>Email: {customer.email || 'Não informado'}</span>
                     </div>
+                    <div className="flex items-center gap-3">
+                      <UserIcon className="h-4 w-4 text-muted-foreground" />{' '}
+                      <span>Pessoa de Contato: {customer.contact || 'Não informado'}</span>
+                    </div>
                   </div>
-                  <div className="space-y-3 bg-muted/30 p-4 rounded-lg border">
-                    {customer.address.street ? (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="h-4 w-4 text-primary mt-0.5" />
-                        <div>
-                          <p className="font-medium">{customer.address.street}</p>
-                          <p className="text-muted-foreground mt-1">
-                            Bairro: {customer.address.neighborhood}
-                          </p>
-                          <p className="text-muted-foreground">
-                            Cidade: {customer.address.city} / {customer.address.state}
-                          </p>
-                          <p className="text-muted-foreground">CEP: {customer.address.zip}</p>
+
+                  <div className="space-y-4">
+                    <div className="font-medium pb-2 border-b">Endereços Registrados</div>
+                    <div className="space-y-3 bg-muted/30 p-3 rounded-lg border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Principal
+                      </p>
+                      {customer.address.street ? (
+                        <div className="flex items-start gap-3">
+                          <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          <div>
+                            <p className="font-medium">{customer.address.street}</p>
+                            <p className="text-muted-foreground mt-1">
+                              Bairro: {customer.address.neighborhood}
+                            </p>
+                            <p className="text-muted-foreground">
+                              Cidade: {customer.address.city} / {customer.address.state}
+                            </p>
+                            <p className="text-muted-foreground">CEP: {customer.address.zip}</p>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-muted-foreground flex items-center gap-2">
-                        <MapPin className="h-4 w-4" /> Endereço não cadastrado
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-muted-foreground flex items-center gap-2">
+                          <MapPin className="h-4 w-4" /> Endereço principal não cadastrado
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-3 bg-muted/30 p-3 rounded-lg border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Cobrança
+                      </p>
+                      {customer.billingAddress && customer.billingAddress.street ? (
+                        <div className="flex items-start gap-3">
+                          <MapPin className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          <div>
+                            <p className="font-medium">{customer.billingAddress.street}</p>
+                            <p className="text-muted-foreground mt-1">
+                              Bairro: {customer.billingAddress.neighborhood}
+                            </p>
+                            <p className="text-muted-foreground">
+                              Cidade: {customer.billingAddress.city} /{' '}
+                              {customer.billingAddress.state}
+                            </p>
+                            <p className="text-muted-foreground">
+                              CEP: {customer.billingAddress.zip}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                          <MapPin className="h-4 w-4" /> Mesmo endereço principal ou não cadastrado
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

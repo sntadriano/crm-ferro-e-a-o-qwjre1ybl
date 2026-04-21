@@ -24,23 +24,19 @@ import { Customer } from '@/types/customer'
 import { generateCode } from '@/lib/formatters'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-const mapRowToCustomer = (row: string[]): Omit<Customer, 'id' | 'registeredAt'> | null => {
+const mapRowToCustomer = (row: string[]): Omit<Customer, 'id'> | null => {
   if (row.length < 24) return null
 
-  const type = (row[22]?.trim().toUpperCase() === 'PF' ? 'PF' : 'PJ') as 'PF' | 'PJ'
+  const rawType = row[22]?.trim().toUpperCase()
+  const type = (rawType === 'PF' || rawType === 'F' ? 'PF' : 'PJ') as 'PF' | 'PJ'
   const document = row[23]?.trim()
   if (!document) return null
 
   return {
     code: row[0]?.trim() || generateCode(),
-    type,
     name: row[1]?.trim() || 'Sem Nome',
-    tradeName: row[2]?.trim(),
-    document,
-    stateRegistration: row[24]?.trim(),
-    phone: row[9]?.trim(),
-    mobile: row[10]?.trim(),
-    email: row[28]?.trim(),
+    tradeName: row[2]?.trim() || row[1]?.trim() || 'Sem Fantasia',
+    store: row[3]?.trim(),
     address: {
       street: row[4]?.trim() || '',
       neighborhood: row[5]?.trim() || '',
@@ -48,7 +44,28 @@ const mapRowToCustomer = (row: string[]): Omit<Customer, 'id' | 'registeredAt'> 
       state: row[7]?.trim() || '',
       zip: row[8]?.trim() || '',
     },
+    phone: row[9]?.trim(),
+    mobile: row[10]?.trim(),
+    billingAddress: {
+      street: row[11]?.trim() || '',
+      neighborhood: row[12]?.trim() || '',
+      city: row[13]?.trim() || '',
+      state: row[14]?.trim() || '',
+      zip: row[15]?.trim() || '',
+    },
+    billingPhone: row[16]?.trim(),
     seller: row[17]?.trim() || 'Sem Vendedor',
+    region: row[18]?.trim(),
+    activity: row[19]?.trim(),
+    economicCategory: row[20]?.trim(),
+    registeredAt: row[21]?.trim() || new Date().toISOString().split('T')[0],
+    type,
+    document,
+    stateRegistration: row[24]?.trim() || 'ISENTO',
+    contact: row[25]?.trim(),
+    motherName: row[26]?.trim(),
+    birthDate: row[27]?.trim(),
+    email: row[28]?.trim(),
     status: 'Ativo',
   }
 }
@@ -118,16 +135,31 @@ export function ImportDialog() {
           row[0] = `CLI-${Math.floor(10000 + Math.random() * 90000)}`
           row[1] = `Empresa Importada ${i + 1}`
           row[2] = `Fantasia ${i + 1}`
+          row[3] = `Loja Matriz`
           row[4] = `Rua ${i}, 100`
           row[5] = `Bairro ${i}`
           row[6] = `São Paulo`
           row[7] = `SP`
           row[8] = `01000-000`
           row[9] = `(11) 3333-4444`
+          row[10] = `(11) 99999-4444`
+          row[11] = `Rua de Cobrança ${i}, 200`
+          row[12] = `Bairro Cobrança`
+          row[13] = `São Paulo`
+          row[14] = `SP`
+          row[15] = `02000-000`
+          row[16] = `(11) 3333-5555`
           row[17] = `Vendedor Automático`
+          row[18] = `Sudeste`
+          row[19] = `Comércio Varejista`
+          row[20] = `Varejo`
+          row[21] = new Date().toISOString().split('T')[0]
           row[22] = `PJ`
           row[23] = document
           row[24] = `ISENTO`
+          row[25] = `João Silva`
+          row[26] = ``
+          row[27] = ``
           row[28] = `contato${i}@empresa.com`
           return row
         })
@@ -179,10 +211,8 @@ export function ImportDialog() {
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha Excel (.xlsx) ou CSV contendo as colunas:{' '}
-            <code className="text-xs bg-muted px-1 rounded">codigo_</code>,{' '}
-            <code className="text-xs bg-muted px-1 rounded">descricao_</code>,{' '}
-            <code className="text-xs bg-muted px-1 rounded">cnpj_cpf_</code>, etc.
+            Faça upload de uma planilha Excel (.xlsx) ou CSV contendo as exatas 29 colunas do
+            esquema de dados.
           </DialogDescription>
         </DialogHeader>
 
