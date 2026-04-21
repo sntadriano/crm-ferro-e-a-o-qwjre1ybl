@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Users, AlertCircle, RefreshCcw } from 'lucide-react'
+import { Plus, Users, AlertCircle, RefreshCcw, Info } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useCustomers } from '@/hooks/use-customers'
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { CustomerTable } from '@/components/customers/CustomerTable'
 import { CustomerCardList } from '@/components/customers/CustomerCardList'
 import { ImportDialog } from '@/components/customers/ImportDialog'
 import { CustomerFilters } from '@/components/customers/CustomerFilters'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Pagination,
   PaginationContent,
@@ -35,9 +36,7 @@ export default function CustomerListPage() {
   const fetchCustomers = () => {
     setIsLoading(true)
     setHasError(false)
-    // Simulate API call and possible error
     setTimeout(() => {
-      // 5% chance to fail for mock purposes
       const shouldFail = Math.random() < 0.05
       if (shouldFail) {
         setHasError(true)
@@ -54,7 +53,7 @@ export default function CustomerListPage() {
     const newParams = new URLSearchParams(searchParams)
     if (value && value !== 'all') newParams.set(key, value.toString())
     else newParams.delete(key)
-    if (key !== 'page') newParams.set('page', '1') // reset page on filter
+    if (key !== 'page') newParams.set('page', '1')
     setSearchParams(newParams)
   }
 
@@ -106,14 +105,27 @@ export default function CustomerListPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
+      <Alert className="bg-primary/5 text-primary border-primary/20">
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-sm font-medium">
+          Aviso: Os dados exibidos são temporários e armazenados localmente na memória. Conecte um
+          backend (Skip Cloud/Supabase) para persistência definitiva.
+        </AlertDescription>
+      </Alert>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestão de Clientes</h1>
-          <p className="text-muted-foreground mt-1">Gerencie e acompanhe a carteira de clientes.</p>
+          <p className="text-muted-foreground mt-1">
+            Gerencie e acompanhe a carteira de clientes da Ferro e Aço Eldorado.
+          </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-3">
           <ImportDialog />
-          <Button asChild className="flex-1 sm:flex-auto gap-2">
+          <Button
+            asChild
+            className="flex-1 sm:flex-auto gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 min-h-[44px]"
+          >
             <Link to="/clientes/novo">
               <Plus className="h-4 w-4" /> Novo Cliente
             </Link>
@@ -122,14 +134,14 @@ export default function CustomerListPage() {
       </div>
 
       {hasError ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-lg border border-destructive/20 mt-8">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-          <h3 className="text-lg font-medium text-destructive">Erro ao carregar clientes</h3>
-          <p className="text-sm text-muted-foreground mt-1 mb-6 max-w-md">
+        <div className="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-lg border border-red-200 mt-8">
+          <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
+          <h3 className="text-lg font-bold text-red-900">Erro ao carregar clientes</h3>
+          <p className="text-sm text-red-800 mt-1 mb-6 max-w-md">
             Ocorreu um problema de conexão ao tentar buscar os clientes. Verifique sua internet e
             tente novamente.
           </p>
-          <Button onClick={fetchCustomers} variant="outline" className="gap-2">
+          <Button onClick={fetchCustomers} variant="secondary" className="gap-2 min-h-[44px]">
             <RefreshCcw className="h-4 w-4" /> Tentar novamente
           </Button>
         </div>
@@ -201,14 +213,14 @@ export default function CustomerListPage() {
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-lg border border-dashed mt-8">
           <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-medium">Nenhum cliente cadastrado</h3>
+          <h3 className="text-lg font-bold">Nenhum cliente cadastrado</h3>
           <p className="text-sm text-muted-foreground mt-1 mb-6 max-w-md">
             Sua base de clientes está vazia. Comece adicionando seu primeiro cliente manualmente ou
             via importação de Excel.
           </p>
           <div className="flex gap-4">
             <ImportDialog />
-            <Button asChild>
+            <Button asChild variant="secondary" className="min-h-[44px]">
               <Link to="/clientes/novo">
                 <Plus className="h-4 w-4 mr-2" /> Criar cliente
               </Link>

@@ -36,11 +36,12 @@ export default function CustomerFormPage() {
     phone: z.string().optional(),
     mobile: z.string().optional(),
     email: z.string().email('Email inválido').optional().or(z.literal('')),
-    street: z.string().min(1, 'Rua é obrigatória'),
-    neighborhood: z.string().min(1, 'Bairro é obrigatório'),
-    city: z.string().min(1, 'Cidade é obrigatória'),
-    state: z.string().min(2, 'UF é obrigatória').max(2, 'Apenas a sigla (ex: SP)'),
-    zip: z.string().min(8, 'CEP inválido'),
+    street: z.string().optional(),
+    neighborhood: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().max(2, 'Apenas a sigla (ex: SP)').optional().or(z.literal('')),
+    zip: z.string().optional(),
+    seller: z.string().optional(),
   })
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -59,6 +60,7 @@ export default function CustomerFormPage() {
       city: '',
       state: '',
       zip: '',
+      seller: '',
     },
   })
 
@@ -85,18 +87,19 @@ export default function CustomerFormPage() {
         mobile: values.mobile,
         email: values.email,
         status: 'Ativo',
-        seller: 'Não atribuído',
+        seller: values.seller || 'Não atribuído',
         address: {
-          street: values.street,
-          neighborhood: values.neighborhood,
-          city: values.city,
-          state: values.state,
-          zip: values.zip,
+          street: values.street || '',
+          neighborhood: values.neighborhood || '',
+          city: values.city || '',
+          state: values.state || '',
+          zip: values.zip || '',
         },
       })
       toast({
         title: 'Cliente criado com sucesso!',
         description: `${values.name} foi adicionado à base.`,
+        className: 'bg-emerald-500 text-white border-none',
       })
       setIsSubmitting(false)
       navigate('/clientes')
@@ -106,7 +109,12 @@ export default function CustomerFormPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate(-1)}
+          className="min-h-[44px] min-w-[44px]"
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -121,7 +129,7 @@ export default function CustomerFormPage() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <Card>
             <CardContent className="pt-6 space-y-6">
-              <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+              <div className="flex items-center gap-2 text-lg font-bold text-primary">
                 <Building className="h-5 w-5" /> Dados Principais
               </div>
               <FormField
@@ -129,7 +137,7 @@ export default function CustomerFormPage() {
                 name="type"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Tipo de Cliente</FormLabel>
+                    <FormLabel className="font-semibold">Tipo de Cliente (tipo) *</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={(v) => {
@@ -139,7 +147,7 @@ export default function CustomerFormPage() {
                         defaultValue={field.value}
                         className="flex flex-col sm:flex-row gap-4"
                       >
-                        <FormItem className="flex items-center space-x-3 space-y-0 border p-3 rounded-md cursor-pointer hover:bg-slate-50 transition-colors w-full sm:w-auto">
+                        <FormItem className="flex items-center space-x-3 space-y-0 border p-3 rounded-md cursor-pointer hover:bg-slate-50 transition-colors w-full sm:w-auto min-h-[44px]">
                           <FormControl>
                             <RadioGroupItem value="PJ" />
                           </FormControl>
@@ -147,7 +155,7 @@ export default function CustomerFormPage() {
                             Pessoa Jurídica
                           </FormLabel>
                         </FormItem>
-                        <FormItem className="flex items-center space-x-3 space-y-0 border p-3 rounded-md cursor-pointer hover:bg-slate-50 transition-colors w-full sm:w-auto">
+                        <FormItem className="flex items-center space-x-3 space-y-0 border p-3 rounded-md cursor-pointer hover:bg-slate-50 transition-colors w-full sm:w-auto min-h-[44px]">
                           <FormControl>
                             <RadioGroupItem value="PF" />
                           </FormControl>
@@ -167,14 +175,14 @@ export default function CustomerFormPage() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
+                      <FormLabel className="font-semibold">
                         {customerType === 'PJ'
                           ? 'Nome da Empresa (descricao_)'
                           : 'Nome Completo (descricao_)'}{' '}
                         *
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="Digite o nome..." {...field} />
+                        <Input placeholder="Digite o nome..." className="min-h-[44px]" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -185,9 +193,13 @@ export default function CustomerFormPage() {
                   name="tradeName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nome Fantasia (fantasia_) *</FormLabel>
+                      <FormLabel className="font-semibold">Nome Fantasia (fantasia_) *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Digite o nome fantasia..." {...field} />
+                        <Input
+                          placeholder="Digite o nome fantasia..."
+                          className="min-h-[44px]"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -198,7 +210,7 @@ export default function CustomerFormPage() {
                   name="document"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
+                      <FormLabel className="font-semibold">
                         {customerType === 'PJ' ? 'CNPJ (cnpj_cpf_)' : 'CPF (cnpj_cpf_)'} *
                       </FormLabel>
                       <FormControl>
@@ -206,6 +218,7 @@ export default function CustomerFormPage() {
                           placeholder={
                             customerType === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'
                           }
+                          className="min-h-[44px]"
                           value={field.value}
                           onChange={(e) =>
                             field.onChange(formatDocument(e.target.value, customerType))
@@ -221,9 +234,32 @@ export default function CustomerFormPage() {
                   name="stateRegistration"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Inscrição Estadual (insc_estadual_) *</FormLabel>
+                      <FormLabel className="font-semibold">
+                        Inscrição Estadual (insc_estadual_) *
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="Apenas números ou ISENTO..." {...field} />
+                        <Input
+                          placeholder="Apenas números ou ISENTO..."
+                          className="min-h-[44px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="seller"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Vendedor (vendedor)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Nome do vendedor..."
+                          className="min-h-[44px]"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -232,7 +268,7 @@ export default function CustomerFormPage() {
               </div>
 
               <Separator className="my-6" />
-              <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+              <div className="flex items-center gap-2 text-lg font-bold text-primary">
                 <Phone className="h-5 w-5" /> Contato
               </div>
               <div className="grid gap-6 md:grid-cols-3">
@@ -241,9 +277,9 @@ export default function CustomerFormPage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Telefone Comercial</FormLabel>
+                      <FormLabel className="font-semibold">Telefone Comercial (fone_)</FormLabel>
                       <FormControl>
-                        <Input placeholder="(00) 0000-0000" {...field} />
+                        <Input placeholder="(00) 0000-0000" className="min-h-[44px]" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -254,9 +290,9 @@ export default function CustomerFormPage() {
                   name="mobile"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Celular</FormLabel>
+                      <FormLabel className="font-semibold">Celular (celular_)</FormLabel>
                       <FormControl>
-                        <Input placeholder="(00) 90000-0000" {...field} />
+                        <Input placeholder="(00) 90000-0000" className="min-h-[44px]" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -267,9 +303,13 @@ export default function CustomerFormPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel className="font-semibold">Email (email)</FormLabel>
                       <FormControl>
-                        <Input placeholder="email@exemplo.com" {...field} />
+                        <Input
+                          placeholder="email@exemplo.com"
+                          className="min-h-[44px]"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -278,7 +318,7 @@ export default function CustomerFormPage() {
               </div>
 
               <Separator className="my-6" />
-              <div className="flex items-center gap-2 text-lg font-semibold text-primary">
+              <div className="flex items-center gap-2 text-lg font-bold text-primary">
                 <MapPin className="h-5 w-5" /> Endereço Completo
               </div>
               <div className="grid gap-6 md:grid-cols-12">
@@ -288,9 +328,9 @@ export default function CustomerFormPage() {
                     name="zip"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CEP *</FormLabel>
+                        <FormLabel className="font-semibold">CEP (cep_)</FormLabel>
                         <FormControl>
-                          <Input placeholder="00000-000" {...field} />
+                          <Input placeholder="00000-000" className="min-h-[44px]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -303,9 +343,15 @@ export default function CustomerFormPage() {
                     name="street"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Rua / Logradouro *</FormLabel>
+                        <FormLabel className="font-semibold">
+                          Rua / Logradouro (endereco_)
+                        </FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome da rua, avenida..." {...field} />
+                          <Input
+                            placeholder="Nome da rua, avenida..."
+                            className="min-h-[44px]"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -318,9 +364,9 @@ export default function CustomerFormPage() {
                     name="neighborhood"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bairro *</FormLabel>
+                        <FormLabel className="font-semibold">Bairro (bairro_)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome do bairro" {...field} />
+                          <Input placeholder="Nome do bairro" className="min-h-[44px]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -333,9 +379,9 @@ export default function CustomerFormPage() {
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cidade *</FormLabel>
+                        <FormLabel className="font-semibold">Cidade (cidade_)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Nome da cidade" {...field} />
+                          <Input placeholder="Nome da cidade" className="min-h-[44px]" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -348,9 +394,14 @@ export default function CustomerFormPage() {
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>UF *</FormLabel>
+                        <FormLabel className="font-semibold">UF (uf)</FormLabel>
                         <FormControl>
-                          <Input placeholder="SP" maxLength={2} className="uppercase" {...field} />
+                          <Input
+                            placeholder="SP"
+                            maxLength={2}
+                            className="uppercase min-h-[44px]"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -359,16 +410,21 @@ export default function CustomerFormPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6 border-t mt-6">
+              <div className="flex justify-end gap-4 pt-6 border-t mt-6">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => navigate('/clientes')}
                   disabled={isSubmitting}
+                  className="min-h-[44px]"
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSubmitting} className="gap-2">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="gap-2 min-h-[44px] bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                >
                   <Save className="h-4 w-4" /> {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
                 </Button>
               </div>

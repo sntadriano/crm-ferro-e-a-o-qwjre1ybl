@@ -1,7 +1,4 @@
-/* Global styles - Theme, font, utilities, animations and global components */
-
-/* CHANGE THE FONT BELOW TO WHATEVER YOU WANT */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,52 +6,45 @@
 
 @layer base {
   :root {
-    /* Change the colors to match the design system */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Ferro e Aço Eldorado Design System */
+    --background: 0 0% 96%; /* #F5F5F5 */
+    --foreground: 206 52% 10%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 206 52% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 206 52% 10%;
 
-    --primary: 222.2 84% 4.9%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 206 52% 21%; /* #1A3A52 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 98%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary: 45 100% 51%; /* #FFC107 */
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 210 40% 98%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 210 40% 98%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 212 72% 59%; /* #4A90E2 */
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 85%;
+    --input: 0 0% 85%;
+    --ring: 45 100% 51%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 222.2 84% 4.9%;
-
-    --sidebar-primary: 222.2 84% 4.9%;
-
-    --sidebar-primary-foreground: 0 0% 100%;
-
-    --sidebar-accent: 210 40% 98%;
-
-    --sidebar-accent-foreground: 222.2 84% 4.9%;
-
-    --sidebar-border: 214.3 31.8% 91.4%;
-
-    --sidebar-ring: 222.2 84% 4.9%;
+    --sidebar-background: 206 52% 21%; /* #1A3A52 */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 51%; /* #FFC107 */
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 206 52% 28%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 206 52% 15%;
+    --sidebar-ring: 45 100% 51%;
 
     --chart-1: 34 100% 44%;
     --chart-2: 189 100% 38%;
@@ -64,7 +54,7 @@
   }
 
   .dark {
-    /* Change the colors to match the design system consistent with the dark mode */
+    /* Dark mode consistent values */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
@@ -77,13 +67,13 @@
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 84% 4.9%;
 
-    --secondary: 222.2 84% 4.9%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 45 100% 51%;
+    --secondary-foreground: 0 0% 10%;
 
     --muted: 222.2 84% 4.9%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 222.2 84% 4.9%;
+    --accent: 212 72% 59%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 84.2% 60.2%;
@@ -91,15 +81,16 @@
 
     --border: 222.2 84% 4.9%;
     --input: 222.2 84% 4.9%;
-    --ring: 214.3 31.8% 91.4%;
+    --ring: 45 100% 51%;
+
     --sidebar-background: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 222.2 84% 4.9%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222.2 84% 4.9%;
+    --sidebar-primary: 45 100% 51%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 222.2 84% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222.2 84% 4.9%;
-    --sidebar-ring: 222.2 84% 4.9%;
+    --sidebar-ring: 45 100% 51%;
 
     --chart-1: 270 100% 44%;
     --chart-2: 164 100% 38%;
@@ -108,7 +99,6 @@
     --chart-5: 10 100% 50%;
   }
 
-  /* NEVER REMOVE THIS */
   section[aria-label='Notifications alt+T'] {
     padding: 0 !important;
     margin: 0 !important;
@@ -116,7 +106,6 @@
 }
 
 @layer utilities {
-  /* KEEP ALL THE ANIMATIONS CLASSES THAT ARE USED BELOW */
   @keyframes accordion-down {
     from {
       height: 0;

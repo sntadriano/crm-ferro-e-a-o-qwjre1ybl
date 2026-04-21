@@ -27,6 +27,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 const mapRowToCustomer = (row: string[]): Omit<Customer, 'id'> | null => {
   if (row.length < 24) return null
 
+  // Columns expected:
+  // 0: codigo_, 1: descricao_, 2: fantasia_, 3: loja, 4: endereco_, 5: bairro_,
+  // 6: cidade_, 7: uf, 8: cep_, 9: fone_, 10: celular_, 11: endereco_cobranca_,
+  // 12: bairro__1, 13: cidade__1, 14: uf_1, 15: cep__1, 16: fone__1, 17: vendedor,
+  // 18: regiao, 19: atividade, 20: categoria_econ_, 21: cadastro_, 22: tipo,
+  // 23: cnpj_cpf_, 24: insc_estadual_, 25: contato_, 26: mae_, 27: dt_nasc_, 28: email
+
   const rawType = row[22]?.trim().toUpperCase()
   const type = (rawType === 'PF' || rawType === 'F' ? 'PF' : 'PJ') as 'PF' | 'PJ'
   const document = row[23]?.trim()
@@ -191,11 +198,12 @@ export function ImportDialog() {
       toast({
         title: `${finalStats.processed} clientes processados com sucesso`,
         description: `${finalStats.created} criados, ${finalStats.updated} atualizados.`,
+        className: 'bg-emerald-500 text-white border-none',
       })
 
       setTimeout(() => setOpen(false), 3000)
     } catch (err) {
-      setError('Erro ao ler o arquivo. Verifique o formato e tente novamente.')
+      setError('Erro ao ler o arquivo. Verifique se contém as exatas 29 colunas requeridas.')
       setIsUploading(false)
     }
   }
@@ -203,7 +211,7 @@ export function ImportDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 w-full sm:w-auto">
+        <Button variant="outline" className="gap-2 w-full sm:w-auto min-h-[44px]">
           <Upload className="h-4 w-4" /> Importar Excel
         </Button>
       </DialogTrigger>
@@ -211,15 +219,15 @@ export function ImportDialog() {
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha Excel (.xlsx) ou CSV contendo as exatas 29 colunas do
-            esquema de dados.
+            Faça upload de uma planilha Excel (.xlsx) contendo as exatas 29 colunas do esquema de
+            dados.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           {!isUploading && !isComplete && (
             <div
-              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors min-h-[120px] flex flex-col items-center justify-center"
               onClick={() => fileInputRef.current?.click()}
             >
               <input
@@ -240,7 +248,9 @@ export function ImportDialog() {
               ) : (
                 <>
                   <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-                  <p className="text-sm font-medium">Clique para selecionar ou arraste aqui</p>
+                  <p className="text-sm font-medium text-primary">
+                    Clique para selecionar ou arraste aqui
+                  </p>
                 </>
               )}
             </div>
@@ -249,7 +259,7 @@ export function ImportDialog() {
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription className="font-medium">{error}</AlertDescription>
             </Alert>
           )}
 
@@ -257,35 +267,35 @@ export function ImportDialog() {
             <div className="space-y-4 py-4 animate-fade-in">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-foreground text-xs sm:text-sm">
+                  <span className="font-semibold text-foreground text-xs sm:text-sm">
                     {statusMessage}
                   </span>
-                  <span className="font-bold">{progress}%</span>
+                  <span className="font-bold text-primary">{progress}%</span>
                 </div>
               </div>
-              <Progress value={progress} className="h-2" />
+              <Progress value={progress} className="h-2 bg-muted" />
 
-              <div className="text-xs sm:text-sm text-muted-foreground flex justify-between animate-fade-in">
+              <div className="text-xs sm:text-sm font-medium text-muted-foreground flex justify-between animate-fade-in">
                 <span>{stats.created} criados</span>
                 <span>{stats.updated} atualizados</span>
                 {stats.duplicates > 0 && (
-                  <span className="text-amber-500">{stats.duplicates} duplicatas</span>
+                  <span className="text-secondary">{stats.duplicates} duplicatas</span>
                 )}
               </div>
 
               {warningMessage && !isComplete && (
-                <Alert className="bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-                  <AlertDescription className="text-amber-800 dark:text-amber-400 text-xs font-medium">
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 text-xs font-semibold">
                     {warningMessage}
                   </AlertDescription>
                 </Alert>
               )}
 
               {isComplete && (
-                <div className="flex items-center justify-center gap-2 text-emerald-600 mt-2 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-md animate-slide-up">
+                <div className="flex items-center justify-center gap-2 text-emerald-700 mt-2 bg-emerald-50 p-3 rounded-md animate-slide-up border border-emerald-200">
                   <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium text-sm">
+                  <span className="font-bold text-sm">
                     {stats.total} clientes processados com sucesso!
                   </span>
                 </div>
@@ -296,7 +306,11 @@ export function ImportDialog() {
 
         <DialogFooter>
           {!isUploading && !isComplete && (
-            <Button onClick={handleUpload} disabled={!file} className="w-full sm:w-auto">
+            <Button
+              onClick={handleUpload}
+              disabled={!file}
+              className="w-full sm:w-auto bg-secondary text-secondary-foreground hover:bg-secondary/90 min-h-[44px]"
+            >
               Iniciar Importação
             </Button>
           )}

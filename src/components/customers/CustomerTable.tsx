@@ -39,22 +39,25 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
   if (customers.length === 0) return null
 
   return (
-    <div className="border rounded-md bg-card shadow-sm overflow-hidden">
-      <Table>
+    <div className="border rounded-md bg-card shadow-sm overflow-x-auto">
+      <Table className="min-w-[800px]">
         <TableHeader>
-          <TableRow className="bg-muted/50 hover:bg-muted/50">
-            <TableHead className="w-[100px]">Código</TableHead>
-            <TableHead>Nome Fantasia</TableHead>
-            <TableHead>CNPJ/CPF</TableHead>
-            <TableHead>Telefone</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+          <TableRow className="bg-primary/5 hover:bg-primary/5 border-b-2">
+            <TableHead className="w-[100px] font-semibold text-primary">Código</TableHead>
+            <TableHead className="font-semibold text-primary">Nome Fantasia</TableHead>
+            <TableHead className="font-semibold text-primary">CNPJ/CPF</TableHead>
+            <TableHead className="font-semibold text-primary">Telefone</TableHead>
+            <TableHead className="font-semibold text-primary">Email</TableHead>
+            <TableHead className="font-semibold text-primary">Status</TableHead>
+            <TableHead className="text-right font-semibold text-primary">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {customers.map((customer) => (
-            <TableRow key={customer.id} className="group transition-colors">
+            <TableRow
+              key={customer.id}
+              className="group transition-colors even:bg-muted/30 hover:bg-accent/10 cursor-default"
+            >
               <TableCell className="font-medium text-muted-foreground">{customer.code}</TableCell>
               <TableCell>
                 <div className="font-medium">{customer.tradeName || customer.name}</div>
@@ -93,7 +96,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                   variant="ghost"
                   size="icon"
                   asChild
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity min-h-[44px] min-w-[44px]"
                 >
                   <Link to={`/clientes/${customer.id}`}>
                     <Eye className="h-4 w-4" />
