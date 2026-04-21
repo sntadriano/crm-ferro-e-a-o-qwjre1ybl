@@ -17,6 +17,8 @@ interface CustomerFiltersProps {
   setStatus: (v: string) => void
   seller: string
   setSeller: (v: string) => void
+  sort: string
+  setSort: (v: string) => void
   onClear: () => void
 }
 
@@ -27,11 +29,13 @@ export function CustomerFilters({
   setStatus,
   seller,
   setSeller,
+  sort,
+  setSort,
   onClear,
 }: CustomerFiltersProps) {
   return (
     <div className="bg-card p-4 rounded-lg border shadow-sm grid gap-4 md:grid-cols-12 items-end">
-      <div className="md:col-span-4 space-y-1.5">
+      <div className="md:col-span-3 space-y-1.5">
         <Label htmlFor="search" className="text-xs text-muted-foreground">
           Busca
         </Label>
@@ -39,18 +43,18 @@ export function CustomerFilters({
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             id="search"
-            placeholder="Nome, Fantasia, CNPJ ou CPF"
+            placeholder="Nome, Fantasia ou Documento..."
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
       </div>
-      <div className="md:col-span-3 space-y-1.5">
+      <div className="md:col-span-2 space-y-1.5">
         <Label className="text-xs text-muted-foreground">Status</Label>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger>
-            <SelectValue placeholder="Todos os status" />
+            <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
@@ -60,10 +64,10 @@ export function CustomerFilters({
         </Select>
       </div>
       <div className="md:col-span-3 space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Vendedor Responsável</Label>
+        <Label className="text-xs text-muted-foreground">Vendedor</Label>
         <Select value={seller} onValueChange={setSeller}>
           <SelectTrigger>
-            <SelectValue placeholder="Todos os vendedores" />
+            <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os vendedores</SelectItem>
@@ -73,9 +77,24 @@ export function CustomerFilters({
           </SelectContent>
         </Select>
       </div>
+      <div className="md:col-span-2 space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Ordenar por</Label>
+        <Select value={sort} onValueChange={setSort}>
+          <SelectTrigger>
+            <SelectValue placeholder="Ordenação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+            <SelectItem value="date_desc">Mais Recentes</SelectItem>
+            <SelectItem value="date_asc">Mais Antigos</SelectItem>
+            <SelectItem value="status_asc">Status</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <div className="md:col-span-2">
-        <Button variant="ghost" className="w-full" onClick={onClear}>
-          Limpar Filtros
+        <Button variant="outline" className="w-full" onClick={onClear}>
+          Limpar
         </Button>
       </div>
     </div>

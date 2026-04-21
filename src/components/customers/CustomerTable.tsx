@@ -20,9 +20,9 @@ interface CustomerTableProps {
 export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
   if (isLoading) {
     return (
-      <div className="border rounded-md animate-pulse">
+      <div className="border rounded-md animate-pulse bg-card">
         <div className="h-12 bg-muted/50 border-b" />
-        {[1, 2, 3, 4, 5].map((i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="h-16 border-b flex items-center px-4 gap-4">
             <div className="h-4 w-20 bg-muted rounded" />
             <div className="h-4 w-48 bg-muted rounded" />
@@ -35,13 +35,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
     )
   }
 
-  if (customers.length === 0) {
-    return (
-      <div className="border rounded-md p-12 text-center bg-card">
-        <p className="text-muted-foreground">Nenhum cliente encontrado com os filtros atuais.</p>
-      </div>
-    )
-  }
+  if (customers.length === 0) return null
 
   return (
     <div className="border rounded-md bg-card shadow-sm overflow-hidden">
@@ -49,7 +43,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="w-[100px]">Código</TableHead>
-            <TableHead>Nome / Fantasia</TableHead>
+            <TableHead>Nome Fantasia</TableHead>
             <TableHead>CNPJ/CPF</TableHead>
             <TableHead>Contato</TableHead>
             <TableHead>Status</TableHead>
@@ -69,17 +63,17 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
               <TableCell>{customer.document}</TableCell>
               <TableCell>
                 <div className="flex flex-col gap-1 text-sm">
-                  {customer.mobile && (
+                  {customer.mobile || customer.phone ? (
                     <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Phone className="h-3 w-3" /> {customer.mobile}
+                      <Phone className="h-3 w-3" /> {customer.mobile || customer.phone}
                     </span>
-                  )}
+                  ) : null}
                   {customer.email && (
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       <Mail className="h-3 w-3" /> {customer.email}
                     </span>
                   )}
-                  {!customer.mobile && !customer.email && '-'}
+                  {!customer.mobile && !customer.phone && !customer.email && '-'}
                 </div>
               </TableCell>
               <TableCell>

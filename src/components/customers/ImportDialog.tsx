@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Upload, FileText, CheckCircle2 } from 'lucide-react'
+import { Upload, FileText, CheckCircle2, FileSpreadsheet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -19,73 +19,76 @@ export function ImportDialog() {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [stats, setStats] = useState({ created: 0, updated: 0 })
   const [isComplete, setIsComplete] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const { importCustomers } = useCustomers()
 
-  // Reset state when opening
   useEffect(() => {
     if (open) {
       setFile(null)
       setIsUploading(false)
       setProgress(0)
       setIsComplete(false)
+      setStats({ created: 0, updated: 0 })
     }
   }, [open])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0])
-    }
-  }
-
   const handleUpload = () => {
     if (!file) return
-
     setIsUploading(true)
     setProgress(0)
 
-    // Simulate upload and processing
+    const targetCreated = Math.floor(Math.random() * 8) + 2
+    const targetUpdated = Math.floor(Math.random() * 4)
+
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
+        const next = prev + 8
+        setStats({
+          created: Math.floor((next / 100) * targetCreated),
+          updated: Math.floor((next / 100) * targetUpdated),
+        })
+        if (next >= 100) {
           clearInterval(interval)
           return 100
         }
-        return prev + 10
+        return next
       })
-    }, 200)
+    }, 150)
 
     setTimeout(() => {
       clearInterval(interval)
       setProgress(100)
       setIsComplete(true)
       setIsUploading(false)
-      importCustomers(3) // Mock importing 3 customers
+      importCustomers(targetCreated, targetUpdated)
 
       toast({
-        title: 'Importação concluída',
-        description: '3 clientes foram importados com sucesso.',
+        title: `${targetCreated + targetUpdated} clientes importados com sucesso`,
+        description: `${targetCreated} criados e ${targetUpdated} atualizados.`,
       })
 
-      setTimeout(() => setOpen(false), 1500)
-    }, 2500)
+      setTimeout(() => setOpen(false), 2000)
+    }, 2200)
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
-          <Upload className="h-4 w-4" />
-          Importar Excel
+          <Upload className="h-4 w-4" /> Importar Excel
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Selecione uma planilha Excel (.xlsx) contendo os dados dos clientes.
+            Faça upload de uma planilha Excel (.xlsx) contendo as colunas:{' '}
+            <code className="text-xs bg-muted px-1 rounded">codigo_</code>,{' '}
+            <code className="text-xs bg-muted px-1 rounded">cnpj_cpf_</code>,{' '}
+            <code className="text-xs bg-muted px-1 rounded">fantasia_</code>, etc.
           </DialogDescription>
         </DialogHeader>
 
@@ -100,16 +103,18 @@ export function ImportDialog() {
                 accept=".xlsx,.csv"
                 className="hidden"
                 ref={fileInputRef}
-                onChange={handleFileChange}
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
-              <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
               {file ? (
-                <p className="text-sm font-medium">{file.name}</p>
+                <>
+                  <FileSpreadsheet className="mx-auto h-8 w-8 text-primary mb-3" />
+                  <p className="text-sm font-medium">{file.name}</p>
+                </>
               ) : (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Clique para selecionar</p>
-                  <p className="text-xs text-muted-foreground">ou arraste e solte o arquivo aqui</p>
-                </div>
+                <>
+                  <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+                  <p className="text-sm font-medium">Clique para selecionar ou arraste aqui</p>
+                </>
               )}
             </div>
           )}
@@ -117,16 +122,20 @@ export function ImportDialog() {
           {(isUploading || isComplete) && (
             <div className="space-y-4 py-4 animate-fade-in">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-muted-foreground">
-                  {isComplete ? 'Processamento concluído!' : 'Processando arquivo...'}
+                <span className="font-medium text-foreground">
+                  {isComplete ? 'Processamento concluído!' : `Importando clientes...`}
                 </span>
                 <span>{progress}%</span>
               </div>
               <Progress value={progress} className="h-2" />
+              <div className="text-sm text-muted-foreground flex justify-between animate-fade-in">
+                <span>{stats.created} criados</span>
+                <span>{stats.updated} atualizados</span>
+              </div>
               {isComplete && (
-                <div className="flex items-center justify-center gap-2 text-emerald-600 mt-4 animate-slide-up">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium">3 registros atualizados/criados</span>
+                <div className="flex items-center justify-center gap-2 text-emerald-600 mt-2 bg-emerald-50 dark:bg-emerald-900/20 p-2 rounded-md animate-slide-up">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span className="font-medium text-sm">Importação finalizada com sucesso!</span>
                 </div>
               )}
             </div>

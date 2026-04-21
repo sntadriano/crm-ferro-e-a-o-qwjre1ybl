@@ -9,22 +9,16 @@ interface CustomerCardListProps {
 }
 
 export function CustomerCardList({ customers }: CustomerCardListProps) {
-  if (customers.length === 0) {
-    return (
-      <div className="p-8 text-center bg-card rounded-lg border shadow-sm">
-        <p className="text-muted-foreground">Nenhum cliente encontrado.</p>
-      </div>
-    )
-  }
+  if (customers.length === 0) return null
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
       {customers.map((customer) => (
         <Card key={customer.id} className="p-4 hover:border-primary/50 transition-colors">
           <Link to={`/clientes/${customer.id}`} className="flex flex-col gap-3">
             <div className="flex justify-between items-start">
               <div className="flex gap-3 items-start">
-                <div className="bg-primary/10 p-2 rounded-md mt-1">
+                <div className="bg-primary/10 p-2 rounded-md mt-1 shrink-0">
                   {customer.type === 'PJ' ? (
                     <Building2 className="h-4 w-4 text-primary" />
                   ) : (
@@ -38,11 +32,10 @@ export function CustomerCardList({ customers }: CustomerCardListProps) {
                   <p className="text-sm text-muted-foreground mt-0.5">{customer.document}</p>
                 </div>
               </div>
-              <StatusBadge status={customer.status} className="shrink-0" />
             </div>
 
             <div className="flex items-center justify-between text-sm mt-1 border-t pt-3">
-              <span className="text-muted-foreground">{customer.code}</span>
+              <StatusBadge status={customer.status} className="shrink-0" />
               <span className="text-primary font-medium flex items-center gap-1">
                 Detalhes <ChevronRight className="h-4 w-4" />
               </span>

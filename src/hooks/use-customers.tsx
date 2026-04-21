@@ -74,6 +74,7 @@ const MOCK_CUSTOMERS: Customer[] = [
     name: 'Roberto Costa',
     tradeName: 'Roberto Costa',
     document: '456.789.123-11',
+    stateRegistration: '108889999',
     status: 'Ativo',
     seller: 'Vendedor C',
     registeredAt: '2023-04-05',
@@ -94,6 +95,7 @@ const MOCK_CUSTOMERS: Customer[] = [
     name: 'Juliana Lima ME',
     tradeName: 'Juliana Lima',
     document: '11.222.333/0001-44',
+    stateRegistration: '20555666',
     status: 'Inativo',
     seller: 'Vendedor B',
     registeredAt: '2023-05-12',
@@ -107,13 +109,77 @@ const MOCK_CUSTOMERS: Customer[] = [
       zip: '90000-000',
     },
   },
+  {
+    id: '6',
+    code: 'CLI-10006',
+    type: 'PJ',
+    name: 'Tech Solutions LTDA',
+    tradeName: 'Tech Solutions',
+    document: '44.555.666/0001-77',
+    stateRegistration: '30111222',
+    status: 'Ativo',
+    seller: 'Vendedor A',
+    registeredAt: '2023-06-01',
+    email: 'contato@techsol.com',
+    mobile: '(11) 94444-3333',
+    address: {
+      street: 'Rua F, 987',
+      neighborhood: 'Vila Olímpia',
+      city: 'São Paulo',
+      state: 'SP',
+      zip: '04500-000',
+    },
+  },
+  {
+    id: '7',
+    code: 'CLI-10007',
+    type: 'PF',
+    name: 'João Batista',
+    tradeName: 'João Batista',
+    document: '321.654.987-22',
+    stateRegistration: '10999888',
+    status: 'Ativo',
+    seller: 'Vendedor C',
+    registeredAt: '2023-07-15',
+    email: 'joao@batista.com',
+    mobile: '(31) 93333-2222',
+    address: {
+      street: 'Rua G, 147',
+      neighborhood: 'Lourdes',
+      city: 'Belo Horizonte',
+      state: 'MG',
+      zip: '30100-000',
+    },
+  },
+  {
+    id: '8',
+    code: 'CLI-10008',
+    type: 'PJ',
+    name: 'Supermercado Silva',
+    tradeName: 'Mercado Silva',
+    document: '88.999.000/0001-11',
+    stateRegistration: '40222333',
+    status: 'Inativo',
+    seller: 'Vendedor B',
+    registeredAt: '2023-08-22',
+    email: 'compras@mercadosilva.com',
+    mobile: '(41) 92222-1111',
+    address: {
+      street: 'Av H, 258',
+      neighborhood: 'Centro',
+      city: 'Curitiba',
+      state: 'PR',
+      zip: '80200-000',
+    },
+  },
 ]
 
 interface CustomerContextType {
   customers: Customer[]
   addCustomer: (customer: Omit<Customer, 'id' | 'code' | 'registeredAt'>) => void
-  importCustomers: (count: number) => void
+  importCustomers: (created: number, updated: number) => void
   getCustomer: (id: string) => Customer | undefined
+  checkDuplicateDocument: (document: string) => boolean
 }
 
 const CustomerContext = createContext<CustomerContextType | undefined>(undefined)
@@ -131,26 +197,43 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     setCustomers((prev) => [newCustomer, ...prev])
   }, [])
 
-  const importCustomers = useCallback((count: number) => {
-    const newCustomers = Array.from({ length: count }).map((_, i) => ({
+  const importCustomers = useCallback((created: number, updated: number) => {
+    const newCustomers = Array.from({ length: created }).map((_, i) => ({
       id: Math.random().toString(36).substr(2, 9),
       code: generateCode(),
       type: 'PJ' as const,
-      name: `Empresa Importada ${i + 1}`,
+      name: `Empresa Importada ${Date.now() + i}`,
       tradeName: `Importada ${i + 1}`,
       document: `${Math.floor(10 + Math.random() * 89)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}/0001-${Math.floor(10 + Math.random() * 89)}`,
+      stateRegistration: 'ISENTO',
       status: 'Ativo' as const,
       seller: 'Vendedor Automático',
       registeredAt: new Date().toISOString().split('T')[0],
-      address: { street: '', neighborhood: '', city: '', state: '', zip: '' },
+      address: {
+        street: 'Rua Desconhecida',
+        neighborhood: 'Centro',
+        city: 'São Paulo',
+        state: 'SP',
+        zip: '00000-000',
+      },
     }))
     setCustomers((prev) => [...newCustomers, ...prev])
   }, [])
 
   const getCustomer = useCallback((id: string) => customers.find((c) => c.id === id), [customers])
 
+  const checkDuplicateDocument = useCallback(
+    (document: string) => {
+      const digits = document.replace(/\D/g, '')
+      return customers.some((c) => c.document.replace(/\D/g, '') === digits)
+    },
+    [customers],
+  )
+
   return (
-    <CustomerContext.Provider value={{ customers, addCustomer, importCustomers, getCustomer }}>
+    <CustomerContext.Provider
+      value={{ customers, addCustomer, importCustomers, getCustomer, checkDuplicateDocument }}
+    >
       {children}
     </CustomerContext.Provider>
   )
