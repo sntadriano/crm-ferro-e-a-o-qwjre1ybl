@@ -110,10 +110,22 @@ const MOCK_CUSTOMERS: Customer[] = [
   },
 ]
 
+export interface ProcessImportStats {
+  total: number
+  processed: number
+  created: number
+  updated: number
+  duplicates: number
+  errors: number
+}
+
 interface CustomerContextType {
   customers: Customer[]
   addCustomer: (customer: Omit<Customer, 'id' | 'code' | 'registeredAt'>) => void
-  importCustomers: (created: number, updated: number) => void
+  processImport: (
+    rows: Omit<Customer, 'id' | 'registeredAt'>[],
+    onProgress: (stats: ProcessImportStats, warning?: string) => void,
+  ) => Promise<ProcessImportStats>
   getCustomer: (id: string) => Customer | undefined
   checkDuplicateDocument: (document: string) => boolean
 }
@@ -133,28 +145,93 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
     setCustomers((prev) => [newCustomer, ...prev])
   }, [])
 
-  const importCustomers = useCallback((created: number, updated: number) => {
-    const newCustomers = Array.from({ length: created }).map((_, i) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      code: generateCode(),
-      type: 'PJ' as const,
-      name: `Empresa Importada ${Date.now() + i}`,
-      tradeName: `Importada ${i + 1}`,
-      document: `${Math.floor(10 + Math.random() * 89)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}/0001-${Math.floor(10 + Math.random() * 89)}`,
-      stateRegistration: 'ISENTO',
-      status: 'Ativo' as const,
-      seller: 'Vendedor Automático',
-      registeredAt: new Date().toISOString().split('T')[0],
-      address: {
-        street: 'Rua Desconhecida',
-        neighborhood: 'Centro',
-        city: 'São Paulo',
-        state: 'SP',
-        zip: '00000-000',
-      },
-    }))
-    setCustomers((prev) => [...newCustomers, ...prev])
-  }, [])
+  const processImport = useCallback(
+    async (
+      rows: Omit<Customer, 'id' | 'registeredAt'>[],
+      onProgress: (stats: ProcessImportStats, warning?: string) => void,
+    ) => {
+      const CHUNK_SIZE = 50
+      let currentIndex = 0
+
+      const stats: ProcessImportStats = {
+        total: rows.length,
+        processed: 0,
+        created: 0,
+        updated: 0,
+        duplicates: 0,
+        errors: 0,
+      }
+
+      const processedDocuments = new Set<string>()
+
+      return new Promise<ProcessImportStats>((resolve) => {
+        const processNextChunk = () => {
+          let warningMessage = ''
+
+          setCustomers((prev) => {
+            const nextCustomers = [...prev]
+            const end = Math.min(currentIndex + CHUNK_SIZE, rows.length)
+
+            for (let i = currentIndex; i < end; i++) {
+              const row = rows[i]
+              stats.processed++
+
+              if (!row.document) {
+                stats.errors++
+                continue
+              }
+
+              const docDigits = row.document.replace(/\D/g, '')
+
+              if (processedDocuments.has(docDigits)) {
+                stats.duplicates++
+                warningMessage = `Cliente ${row.document} duplicado no arquivo, pulando linha...`
+                continue
+              }
+
+              processedDocuments.add(docDigits)
+
+              const existingIndex = nextCustomers.findIndex(
+                (c) => c.document.replace(/\D/g, '') === docDigits,
+              )
+
+              if (existingIndex >= 0) {
+                nextCustomers[existingIndex] = {
+                  ...nextCustomers[existingIndex],
+                  ...row,
+                  id: nextCustomers[existingIndex].id,
+                  registeredAt: nextCustomers[existingIndex].registeredAt,
+                }
+                stats.updated++
+              } else {
+                nextCustomers.unshift({
+                  ...row,
+                  id: Math.random().toString(36).substr(2, 9),
+                  registeredAt: new Date().toISOString().split('T')[0],
+                })
+                stats.created++
+              }
+            }
+
+            return nextCustomers
+          })
+
+          currentIndex += CHUNK_SIZE
+
+          onProgress({ ...stats }, warningMessage || undefined)
+
+          if (currentIndex < rows.length) {
+            requestAnimationFrame(processNextChunk)
+          } else {
+            resolve(stats)
+          }
+        }
+
+        requestAnimationFrame(processNextChunk)
+      })
+    },
+    [],
+  )
 
   const getCustomer = useCallback((id: string) => customers.find((c) => c.id === id), [customers])
 
@@ -168,7 +245,7 @@ export function CustomerProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CustomerContext.Provider
-      value={{ customers, addCustomer, importCustomers, getCustomer, checkDuplicateDocument }}
+      value={{ customers, addCustomer, processImport, getCustomer, checkDuplicateDocument }}
     >
       {children}
     </CustomerContext.Provider>
