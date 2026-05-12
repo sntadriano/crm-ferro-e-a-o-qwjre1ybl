@@ -22,10 +22,6 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
 
-  if (user?.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />
-  }
-
   const loadData = async () => {
     try {
       const usersData = await pb.collection('users').getFullList({ sort: '-created' })
@@ -38,8 +34,10 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    loadData()
-  }, [])
+    if (user?.role === 'admin') {
+      loadData()
+    }
+  }, [user?.role])
 
   const toggleStatus = async (targetUser: any) => {
     try {
@@ -49,6 +47,10 @@ export default function AdminPage() {
     } catch {
       toast({ title: 'Erro ao atualizar', variant: 'destructive' })
     }
+  }
+
+  if (user?.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />
   }
 
   return (
