@@ -22,32 +22,14 @@ const ITEMS_PER_PAGE = 20
 
 export default function CustomerListPage() {
   const isMobile = useIsMobile()
-  const { customers } = useCustomers()
+  const { customers, isLoading, hasError, fetchCustomers } = useCustomers()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isLoading, setIsLoading] = useState(true)
-  const [hasError, setHasError] = useState(false)
 
   const search = searchParams.get('q') || ''
   const status = searchParams.get('status') || 'all'
   const seller = searchParams.get('seller') || 'all'
   const sort = searchParams.get('sort') || 'date_desc'
   const page = parseInt(searchParams.get('page') || '1', 10)
-
-  const fetchCustomers = () => {
-    setIsLoading(true)
-    setHasError(false)
-    setTimeout(() => {
-      const shouldFail = Math.random() < 0.05
-      if (shouldFail) {
-        setHasError(true)
-      }
-      setIsLoading(false)
-    }, 800)
-  }
-
-  useEffect(() => {
-    fetchCustomers()
-  }, [])
 
   const updateParam = (key: string, value: string | number) => {
     const newParams = new URLSearchParams(searchParams)

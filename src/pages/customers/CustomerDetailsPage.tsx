@@ -11,7 +11,8 @@ import {
   MessageSquare,
   Briefcase,
 } from 'lucide-react'
-import { useCustomers } from '@/hooks/use-customers'
+import { useEffect, useState } from 'react'
+import pb from '@/lib/pocketbase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -21,8 +22,42 @@ import { Separator } from '@/components/ui/separator'
 export default function CustomerDetailsPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getCustomer } = useCustomers()
-  const customer = getCustomer(id || '')
+  const [customer, setCustomer] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!id) return
+    pb.collection('clientes')
+      .getOne(id)
+      .then((r) => {
+        setCustomer({
+          id: r.id,
+          name: r.descricao,
+          tradeName: r.fantasia,
+          document: r.cnpj_cpf,
+          code: r.codigo,
+          status: r.status || 'Ativo',
+          seller: r.vendedor?.toString(),
+          registeredAt: r.cadastro || r.created,
+          type: r.tipo === 'J' ? 'PJ' : 'PF',
+          email: r.email,
+          phone: r.fone,
+          mobile: r.celular,
+          stateRegistration: r.insc_estadual,
+          address: {
+            street: r.endereco,
+            neighborhood: r.bairro,
+            city: r.cidade,
+            state: r.uf,
+            zip: r.cep,
+          },
+        })
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [id])
+
+  if (loading) return <div>Carregando...</div>
 
   if (!customer) {
     return (

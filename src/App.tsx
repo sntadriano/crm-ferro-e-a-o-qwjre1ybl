@@ -3,31 +3,51 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { CustomerProvider } from '@/hooks/use-customers'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import Layout from './components/Layout'
 import NotFound from './pages/NotFound'
 import DashboardPage from './pages/DashboardPage'
 import CustomerListPage from './pages/customers/CustomerListPage'
 import CustomerFormPage from './pages/customers/CustomerFormPage'
 import CustomerDetailsPage from './pages/customers/CustomerDetailsPage'
+import LoginPage from './pages/LoginPage'
+import AdminPage from './pages/admin/AdminPage'
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth()
+  if (loading) return <div>Carregando...</div>
+  if (!user) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
 
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
-    <TooltipProvider>
-      <CustomerProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/clientes" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/clientes" element={<CustomerListPage />} />
-            <Route path="/clientes/novo" element={<CustomerFormPage />} />
-            <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </CustomerProvider>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <CustomerProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/clientes" element={<CustomerListPage />} />
+              <Route path="/clientes/novo" element={<CustomerFormPage />} />
+              <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </CustomerProvider>
+      </TooltipProvider>
+    </AuthProvider>
   </BrowserRouter>
 )
 

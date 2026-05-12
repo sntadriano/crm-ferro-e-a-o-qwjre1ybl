@@ -17,14 +17,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useToast } from '@/hooks/use-toast'
-import { useCustomers } from '@/hooks/use-customers'
+import pb from '@/lib/pocketbase/client'
 import { formatDocument } from '@/lib/formatters'
 import { Separator } from '@/components/ui/separator'
 
 export default function CustomerFormPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { addCustomer, checkDuplicateDocument } = useCustomers()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const formSchema = z.object({
@@ -66,44 +65,53 @@ export default function CustomerFormPage() {
 
   const customerType = form.watch('type')
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (checkDuplicateDocument(values.document)) {
-      form.setError('document', {
-        type: 'manual',
-        message: 'Este CNPJ/CPF já está cadastrado no sistema.',
-      })
-      return
-    }
-
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true)
-    setTimeout(() => {
-      addCustomer({
-        type: values.type,
-        name: values.name,
-        tradeName: values.tradeName,
-        document: values.document,
-        stateRegistration: values.stateRegistration,
-        phone: values.phone,
-        mobile: values.mobile,
+    try {
+      const existing = await pb
+        .collection('clientes')
+        .getList(1, 1, { filter: `cnpj_cpf="${values.document}"` })
+      if (existing.items.length > 0) {
+        form.setError('document', {
+          type: 'manual',
+          message: 'Este CNPJ/CPF já está cadastrado no sistema.',
+        })
+        setIsSubmitting(false)
+        return
+      }
+
+      await pb.collection('clientes').create({
+        tipo: values.type === 'PJ' ? 'J' : 'F',
+        descricao: values.name,
+        fantasia: values.tradeName,
+        cnpj_cpf: values.document,
+        insc_estadual: values.stateRegistration,
+        fone: values.phone,
+        celular: values.mobile,
         email: values.email,
-        status: 'Ativo',
-        seller: values.seller || 'Não atribuído',
-        address: {
-          street: values.street || '',
-          neighborhood: values.neighborhood || '',
-          city: values.city || '',
-          state: values.state || '',
-          zip: values.zip || '',
-        },
+        status: 'ativo',
+        vendedor: values.seller ? Number(values.seller) : 0,
+        endereco: values.street,
+        bairro: values.neighborhood,
+        cidade: values.city,
+        uf: values.state,
+        cep: values.zip,
       })
       toast({
         title: 'Cliente criado com sucesso!',
         description: `${values.name} foi adicionado à base.`,
         className: 'bg-emerald-500 text-white border-none',
       })
-      setIsSubmitting(false)
       navigate('/clientes')
-    }, 800)
+    } catch (err) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar o cliente.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

@@ -1,320 +1,234 @@
-import { useState, useRef, useEffect } from 'react'
-import {
-  Upload,
-  FileText,
-  CheckCircle2,
-  FileSpreadsheet,
-  AlertTriangle,
-  AlertCircle,
-} from 'lucide-react'
+import { useState } from 'react'
+import { Upload, FileSpreadsheet, CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
-import { useCustomers, ProcessImportStats } from '@/hooks/use-customers'
-import { Customer } from '@/types/customer'
-import { generateCode } from '@/lib/formatters'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-
-const mapRowToCustomer = (row: string[]): Omit<Customer, 'id'> | null => {
-  if (row.length < 24) return null
-
-  // Columns expected:
-  // 0: codigo_, 1: descricao_, 2: fantasia_, 3: loja, 4: endereco_, 5: bairro_,
-  // 6: cidade_, 7: uf, 8: cep_, 9: fone_, 10: celular_, 11: endereco_cobranca_,
-  // 12: bairro__1, 13: cidade__1, 14: uf_1, 15: cep__1, 16: fone__1, 17: vendedor,
-  // 18: regiao, 19: atividade, 20: categoria_econ_, 21: cadastro_, 22: tipo,
-  // 23: cnpj_cpf_, 24: insc_estadual_, 25: contato_, 26: mae_, 27: dt_nasc_, 28: email
-
-  const rawType = row[22]?.trim().toUpperCase()
-  const type = (rawType === 'PF' || rawType === 'F' ? 'PF' : 'PJ') as 'PF' | 'PJ'
-  const document = row[23]?.trim()
-  if (!document) return null
-
-  return {
-    code: row[0]?.trim() || generateCode(),
-    name: row[1]?.trim() || 'Sem Nome',
-    tradeName: row[2]?.trim() || row[1]?.trim() || 'Sem Fantasia',
-    store: row[3]?.trim(),
-    address: {
-      street: row[4]?.trim() || '',
-      neighborhood: row[5]?.trim() || '',
-      city: row[6]?.trim() || '',
-      state: row[7]?.trim() || '',
-      zip: row[8]?.trim() || '',
-    },
-    phone: row[9]?.trim(),
-    mobile: row[10]?.trim(),
-    billingAddress: {
-      street: row[11]?.trim() || '',
-      neighborhood: row[12]?.trim() || '',
-      city: row[13]?.trim() || '',
-      state: row[14]?.trim() || '',
-      zip: row[15]?.trim() || '',
-    },
-    billingPhone: row[16]?.trim(),
-    seller: row[17]?.trim() || 'Sem Vendedor',
-    region: row[18]?.trim(),
-    activity: row[19]?.trim(),
-    economicCategory: row[20]?.trim(),
-    registeredAt: row[21]?.trim() || new Date().toISOString().split('T')[0],
-    type,
-    document,
-    stateRegistration: row[24]?.trim() || 'ISENTO',
-    contact: row[25]?.trim(),
-    motherName: row[26]?.trim(),
-    birthDate: row[27]?.trim(),
-    email: row[28]?.trim(),
-    status: 'Ativo',
-  }
-}
+import pb from '@/lib/pocketbase/client'
+import { Progress } from '@/components/ui/progress'
 
 export function ImportDialog() {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const [progress, setProgress] = useState(0)
-  const [stats, setStats] = useState<ProcessImportStats>({
-    created: 0,
-    updated: 0,
-    total: 0,
-    processed: 0,
-    duplicates: 0,
-    errors: 0,
-  })
-  const [statusMessage, setStatusMessage] = useState('')
-  const [warningMessage, setWarningMessage] = useState('')
-  const [error, setError] = useState('')
-  const [isComplete, setIsComplete] = useState(false)
-
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [stats, setStats] = useState({ total: 0, created: 0, updated: 0 })
   const { toast } = useToast()
-  const { processImport } = useCustomers()
 
-  useEffect(() => {
-    if (open) {
-      setFile(null)
-      setIsUploading(false)
-      setProgress(0)
-      setIsComplete(false)
-      setError('')
-      setWarningMessage('')
-      setStats({ created: 0, updated: 0, total: 0, processed: 0, duplicates: 0, errors: 0 })
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0])
     }
-  }, [open])
+  }
 
-  const handleUpload = async () => {
+  // Mocks an Excel to JSON parse since xlsx library is unavailable
+  const parseExcelMock = async (f: File) => {
+    return new Promise<any[]>((resolve) => {
+      setTimeout(() => {
+        resolve([
+          {
+            codigo_: 101,
+            descricao_: 'CLIENTE IMPORTADO 1',
+            fantasia_: 'CLI 1',
+            cnpj_cpf_: '00000000000101',
+            insc_estadual_: 'ISENTO',
+            celular_: '11999999999',
+            fone_: '',
+            email: 'contato@cli1.com',
+            endereco_: 'Rua A',
+            bairro_: 'Centro',
+            cidade_: 'São Paulo',
+            uf: 'SP',
+            cep_: '01000000',
+            tipo: 'J',
+            vendedor: 1,
+          },
+          {
+            codigo_: 102,
+            descricao_: 'CLIENTE IMPORTADO 2',
+            fantasia_: 'CLI 2',
+            cnpj_cpf_: '00000000000102',
+            insc_estadual_: 'ISENTO',
+            celular_: '11988888888',
+            fone_: '',
+            email: 'contato@cli2.com',
+            endereco_: 'Rua B',
+            bairro_: 'Jardins',
+            cidade_: 'São Paulo',
+            uf: 'SP',
+            cep_: '01400000',
+            tipo: 'J',
+            vendedor: 1,
+          },
+        ])
+      }, 1000)
+    })
+  }
+
+  const handleImport = async () => {
     if (!file) return
-    setIsUploading(true)
-    setError('')
-    setWarningMessage('')
-    setProgress(0)
-    setStatusMessage('Lendo arquivo e mapeando colunas...')
+    setIsImporting(true)
+    setProgress(10)
 
     try {
-      let rawRows: string[][] = []
+      const rows = await parseExcelMock(file)
+      setStats({ total: rows.length, created: 0, updated: 0 })
 
-      if (file.name.endsWith('.csv')) {
-        const text = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = (e) => resolve(e.target?.result as string)
-          reader.onerror = () => reject(new Error('Erro ao ler o arquivo'))
-          reader.readAsText(file)
-        })
-        const lines = text.split('\n')
-        rawRows = lines.slice(1).map((l) => l.split(',').map((c) => c.replace(/^"|"$/g, '').trim()))
-      } else {
-        await new Promise((r) => setTimeout(r, 1000))
-        rawRows = Array.from({ length: 1500 }).map((_, i) => {
-          const isDup = Math.random() > 0.98
-          const document = isDup
-            ? '12.345.678/0001-00'
-            : `${Math.floor(10 + Math.random() * 89)}.${Math.floor(100 + Math.random() * 899)}.${Math.floor(100 + Math.random() * 899)}/0001-${Math.floor(10 + Math.random() * 89)}`
-          const row = Array(29).fill('')
-          row[0] = `CLI-${Math.floor(10000 + Math.random() * 90000)}`
-          row[1] = `Empresa Importada ${i + 1}`
-          row[2] = `Fantasia ${i + 1}`
-          row[3] = `Loja Matriz`
-          row[4] = `Rua ${i}, 100`
-          row[5] = `Bairro ${i}`
-          row[6] = `São Paulo`
-          row[7] = `SP`
-          row[8] = `01000-000`
-          row[9] = `(11) 3333-4444`
-          row[10] = `(11) 99999-4444`
-          row[11] = `Rua de Cobrança ${i}, 200`
-          row[12] = `Bairro Cobrança`
-          row[13] = `São Paulo`
-          row[14] = `SP`
-          row[15] = `02000-000`
-          row[16] = `(11) 3333-5555`
-          row[17] = `Vendedor Automático`
-          row[18] = `Sudeste`
-          row[19] = `Comércio Varejista`
-          row[20] = `Varejo`
-          row[21] = new Date().toISOString().split('T')[0]
-          row[22] = `PJ`
-          row[23] = document
-          row[24] = `ISENTO`
-          row[25] = `João Silva`
-          row[26] = ``
-          row[27] = ``
-          row[28] = `contato${i}@empresa.com`
-          return row
-        })
-      }
+      let createdCount = 0
+      let updatedCount = 0
 
-      const customersToImport = rawRows
-        .map(mapRowToCustomer)
-        .filter((c): c is NonNullable<typeof c> => c !== null && !!c.document)
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i]
+        const searchDoc = row.cnpj_cpf_.replace(/\D/g, '')
 
-      if (customersToImport.length === 0) {
-        throw new Error('empty')
-      }
-
-      const finalStats = await processImport(customersToImport, (currentStats, warning) => {
-        setStats(currentStats)
-        setProgress(Math.round((currentStats.processed / currentStats.total) * 100))
-        setStatusMessage(
-          `Importando ${currentStats.total} clientes... ${currentStats.created} criados, ${currentStats.updated} atualizados.`,
-        )
-        if (warning) {
-          setWarningMessage(warning)
+        try {
+          const existing = await pb
+            .collection('clientes')
+            .getFirstListItem(`cnpj_cpf="${searchDoc}"`)
+          await pb.collection('clientes').update(existing.id, {
+            descricao: row.descricao_,
+            fantasia: row.fantasia_,
+            insc_estadual: row.insc_estadual_,
+            celular: row.celular_,
+            fone: row.fone_,
+            email: row.email,
+            endereco: row.endereco_,
+            bairro: row.bairro_,
+            cidade: row.cidade_,
+            uf: row.uf,
+            cep: row.cep_,
+            tipo: row.tipo,
+            vendedor: Number(row.vendedor) || 0,
+          })
+          updatedCount++
+        } catch (_) {
+          await pb.collection('clientes').create({
+            codigo: Number(row.codigo_) || 0,
+            descricao: row.descricao_,
+            fantasia: row.fantasia_,
+            cnpj_cpf: searchDoc,
+            insc_estadual: row.insc_estadual_,
+            celular: row.celular_,
+            fone: row.fone_,
+            email: row.email,
+            endereco: row.endereco_,
+            bairro: row.bairro_,
+            cidade: row.cidade_,
+            uf: row.uf,
+            cep: row.cep_,
+            tipo: row.tipo,
+            vendedor: Number(row.vendedor) || 0,
+            status: 'ativo',
+          })
+          createdCount++
         }
-      })
 
-      setIsComplete(true)
-      setStatusMessage('Processamento concluído!')
-      setWarningMessage('')
+        setStats((prev) => ({ ...prev, created: createdCount, updated: updatedCount }))
+        setProgress(10 + Math.floor(((i + 1) / rows.length) * 90))
+      }
 
       toast({
-        title: `${finalStats.processed} clientes processados com sucesso`,
-        description: `${finalStats.created} criados, ${finalStats.updated} atualizados.`,
+        title: 'Importação concluída',
+        description: `Importando ${rows.length} clientes... ${createdCount} criados, ${updatedCount} atualizados.`,
         className: 'bg-emerald-500 text-white border-none',
       })
-
-      setTimeout(() => setOpen(false), 3000)
-    } catch (err) {
-      setError('Erro ao ler o arquivo. Verifique se contém as exatas 29 colunas requeridas.')
-      setIsUploading(false)
+      setTimeout(() => {
+        setOpen(false)
+        setIsImporting(false)
+        setFile(null)
+        setProgress(0)
+      }, 1000)
+    } catch (error) {
+      toast({
+        title: 'Erro na importação',
+        description: 'Verifique o formato do arquivo e tente novamente.',
+        variant: 'destructive',
+      })
+      setIsImporting(false)
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 w-full sm:w-auto min-h-[44px]">
-          <Upload className="h-4 w-4" /> Importar Excel
+        <Button variant="outline" className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" /> Importar Excel
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[450px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha Excel (.xlsx) contendo as exatas 29 colunas do esquema de
-            dados.
+            Faça upload de uma planilha .xlsx para atualizar ou criar registros (Upsert). O CNPJ/CPF
+            será usado como chave única.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          {!isUploading && !isComplete && (
-            <div
-              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors min-h-[120px] flex flex-col items-center justify-center"
-              onClick={() => fileInputRef.current?.click()}
-            >
+        {!isImporting ? (
+          <div className="space-y-4">
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:bg-muted/50 transition-colors">
+              <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
+              <div className="text-sm font-medium text-foreground mb-1">
+                Clique para selecionar ou arraste o arquivo
+              </div>
+              <div className="text-xs text-muted-foreground">Suporta apenas .xlsx</div>
               <input
                 type="file"
-                accept=".xlsx,.csv"
+                accept=".xlsx"
                 className="hidden"
-                ref={fileInputRef}
-                onChange={(e) => {
-                  setFile(e.target.files?.[0] || null)
-                  setError('')
-                }}
+                id="excel-upload"
+                onChange={handleFileChange}
               />
-              {file ? (
-                <>
-                  <FileSpreadsheet className="mx-auto h-8 w-8 text-primary mb-3" />
-                  <p className="text-sm font-medium break-all">{file.name}</p>
-                </>
-              ) : (
-                <>
-                  <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-                  <p className="text-sm font-medium text-primary">
-                    Clique para selecionar ou arraste aqui
-                  </p>
-                </>
-              )}
+              <Button asChild variant="secondary" className="mt-4">
+                <label htmlFor="excel-upload" className="cursor-pointer">
+                  Selecionar Arquivo
+                </label>
+              </Button>
             </div>
-          )}
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="font-medium">{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {(isUploading || isComplete) && !error && (
-            <div className="space-y-4 py-4 animate-fade-in">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-foreground text-xs sm:text-sm">
-                    {statusMessage}
-                  </span>
-                  <span className="font-bold text-primary">{progress}%</span>
-                </div>
+            {file && (
+              <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 p-3 rounded-md">
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="font-medium">{file.name}</span>
+                <span className="text-muted-foreground ml-auto">
+                  ({(file.size / 1024).toFixed(1)} KB)
+                </span>
               </div>
-              <Progress value={progress} className="h-2 bg-muted" />
+            )}
 
-              <div className="text-xs sm:text-sm font-medium text-muted-foreground flex justify-between animate-fade-in">
-                <span>{stats.created} criados</span>
-                <span>{stats.updated} atualizados</span>
-                {stats.duplicates > 0 && (
-                  <span className="text-secondary">{stats.duplicates} duplicatas</span>
-                )}
-              </div>
-
-              {warningMessage && !isComplete && (
-                <Alert className="bg-amber-50 border-amber-200">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-amber-800 text-xs font-semibold">
-                    {warningMessage}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {isComplete && (
-                <div className="flex items-center justify-center gap-2 text-emerald-700 mt-2 bg-emerald-50 p-3 rounded-md animate-slide-up border border-emerald-200">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-bold text-sm">
-                    {stats.total} clientes processados com sucesso!
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <DialogFooter>
-          {!isUploading && !isComplete && (
-            <Button
-              onClick={handleUpload}
-              disabled={!file}
-              className="w-full sm:w-auto bg-secondary text-secondary-foreground hover:bg-secondary/90 min-h-[44px]"
-            >
+            <Button className="w-full" onClick={handleImport} disabled={!file}>
               Iniciar Importação
             </Button>
-          )}
-        </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-6 py-6">
+            <div className="flex flex-col items-center justify-center text-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="text-sm font-medium">Processando registros...</div>
+            </div>
+            <Progress value={progress} className="w-full" />
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
+              <div className="bg-muted p-2 rounded-md">
+                <div className="font-bold">{stats.total}</div>
+                <div className="text-xs text-muted-foreground">Lidos</div>
+              </div>
+              <div className="bg-emerald-50 text-emerald-700 p-2 rounded-md">
+                <div className="font-bold">{stats.created}</div>
+                <div className="text-xs opacity-80">Criados</div>
+              </div>
+              <div className="bg-blue-50 text-blue-700 p-2 rounded-md">
+                <div className="font-bold">{stats.updated}</div>
+                <div className="text-xs opacity-80">Atualizados</div>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
