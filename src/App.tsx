@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage'
 import CustomerListPage from './pages/customers/CustomerListPage'
 import CustomerFormPage from './pages/customers/CustomerFormPage'
 import CustomerDetailsPage from './pages/customers/CustomerDetailsPage'
+import LeadListPage from './pages/leads/LeadListPage'
 import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/admin/AdminPage'
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/clientes" element={<CustomerListPage />} />
               <Route path="/clientes/novo" element={<CustomerFormPage />} />
               <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+              <Route path="/leads" element={<LeadListPage />} />
               <Route path="/admin" element={<AdminPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
