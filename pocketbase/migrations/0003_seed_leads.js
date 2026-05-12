@@ -11,21 +11,23 @@ migrate(
       // skip if no admin found to assign
     }
 
-    const ensureCliente = (nome) => {
+    const ensureCliente = (nome, uniqueId) => {
       try {
         return app.findFirstRecordByData('clientes', 'descricao', nome)
       } catch (_) {
         const record = new Record(clientes)
         record.set('descricao', nome)
-        record.set('cnpj_cpf', '00000000000' + Math.floor(Math.random() * 1000))
+        record.set('codigo', uniqueId)
+        record.set('cnpj_cpf', uniqueId.toString())
         app.save(record)
         return record
       }
     }
 
-    const c1 = ensureCliente('3B LTDA')
-    const c2 = ensureCliente('COM. RIBEIRO')
-    const c3 = ensureCliente('FERRAGISTA BORJAO')
+    const ts = Math.floor(Date.now() / 1000)
+    const c1 = ensureCliente('3B LTDA', ts + 1)
+    const c2 = ensureCliente('COM. RIBEIRO', ts + 2)
+    const c3 = ensureCliente('FERRAGISTA BORJAO', ts + 3)
 
     const seedLead = (cliente, status, valor, data, followup) => {
       try {
