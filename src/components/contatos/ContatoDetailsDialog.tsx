@@ -37,8 +37,8 @@ export function ContatoDetailsDialog({
   const [leadFormOpen, setLeadFormOpen] = useState(false)
 
   const getTipoIcon = (tipo: string) => {
-    if (tipo === 'whatsapp') return <MessageSquare className="h-5 w-5 text-green-500" />
-    if (tipo === 'visita') return <MapPin className="h-5 w-5 text-orange-500" />
+    if (tipo === 'whatsapp') return <MessageSquare className="h-5 w-5 text-blue-500" />
+    if (tipo === 'visita') return <MapPin className="h-5 w-5 text-green-500" />
     if (tipo === 'email') return <Mail className="h-5 w-5 text-purple-500" />
     return <Phone className="h-5 w-5 text-blue-500" />
   }
@@ -136,10 +136,10 @@ export function ContatoDetailsDialog({
           <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t">
             <Button
               variant="outline"
-              className="text-destructive hover:bg-destructive/10 min-h-[44px]"
+              className="text-destructive border-destructive hover:bg-destructive hover:text-white min-h-[44px]"
               onClick={handleDelete}
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Excluir Contato
+              <Trash2 className="mr-2 h-4 w-4" /> Deletar Contato
             </Button>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Button
@@ -156,7 +156,7 @@ export function ContatoDetailsDialog({
                   setLeadFormOpen(true)
                 }}
               >
-                <LinkIcon className="mr-2 h-4 w-4" /> Criar Novo Lead
+                <LinkIcon className="mr-2 h-4 w-4" /> Criar Lead
               </Button>
             </div>
           </div>

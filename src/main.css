@@ -41,8 +41,8 @@
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 45 100% 51%; /* #FFC107 */
     --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 206 52% 28%;
-    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-accent: 45 100% 51%; /* #FFC107 */
+    --sidebar-accent-foreground: 206 52% 10%;
     --sidebar-border: 206 52% 15%;
     --sidebar-ring: 45 100% 51%;
 

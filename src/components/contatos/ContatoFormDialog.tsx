@@ -123,11 +123,13 @@ export function ContatoFormDialog({
         await updateContato(contato.id, payload)
         toast.success('Contato atualizado com sucesso', {
           className: 'bg-green-100 text-green-800 border-green-200',
+          icon: <Check className="h-4 w-4 text-green-600" />,
         })
       } else {
         await createContato(payload)
         toast.success('Contato registrado com sucesso', {
           className: 'bg-green-100 text-green-800 border-green-200',
+          icon: <Check className="h-4 w-4 text-green-600" />,
         })
       }
       onOpenChange(false)

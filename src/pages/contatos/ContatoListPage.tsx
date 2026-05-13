@@ -51,6 +51,7 @@ import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 
 export default function ContatoListPage() {
   const [contatos, setContatos] = useState<RecordModel[]>([])
@@ -135,17 +136,19 @@ export default function ContatoListPage() {
   }
 
   const getTipoIcon = (tipo: string) => {
-    if (tipo === 'whatsapp') return <MessageSquare className="h-4 w-4 text-green-500" />
-    if (tipo === 'visita') return <MapPin className="h-4 w-4 text-orange-500" />
-    if (tipo === 'email') return <Mail className="h-4 w-4 text-purple-500" />
-    return <PhoneCall className="h-4 w-4 text-blue-500" />
+    if (tipo === 'whatsapp') return <MessageSquare className="h-4 w-4" />
+    if (tipo === 'visita') return <MapPin className="h-4 w-4" />
+    if (tipo === 'email') return <Mail className="h-4 w-4" />
+    return <PhoneCall className="h-4 w-4" />
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1A3A52]">Contatos</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-[#1A3A52]">
+            Histórico de Contatos
+          </h1>
           <p className="text-muted-foreground">Histórico de interações com clientes</p>
         </div>
         <Button
@@ -155,7 +158,7 @@ export default function ContatoListPage() {
           }}
           className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] min-h-[44px] font-bold w-full sm:w-auto"
         >
-          <Plus className="mr-2 h-4 w-4" /> Novo Contato
+          <Plus className="mr-2 h-4 w-4" /> Registrar Contato
         </Button>
       </div>
 
@@ -203,17 +206,18 @@ export default function ContatoListPage() {
       </div>
 
       {error ? (
-        <div className="text-center py-16 bg-white rounded-lg border shadow-subtle flex flex-col items-center justify-center space-y-4 animate-fade-in">
-          <div className="bg-red-50 p-4 rounded-full">
-            <RefreshCcw className="h-8 w-8 text-red-500" />
+        <div className="text-center py-16 bg-red-50 rounded-lg border border-red-200 shadow-subtle flex flex-col items-center justify-center space-y-4 animate-fade-in">
+          <div className="bg-white p-4 rounded-full shadow-sm">
+            <RefreshCcw className="h-8 w-8 text-red-600" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-[#1A3A52]">Erro ao carregar contatos</h3>
-            <p className="text-sm text-muted-foreground">
-              Ocorreu um problema de conexão com o servidor.
-            </p>
+            <h3 className="text-lg font-bold text-red-800">Erro ao carregar contatos</h3>
+            <p className="text-sm text-red-600">Ocorreu um problema de conexão com o servidor.</p>
           </div>
-          <Button onClick={loadData} variant="outline" className="min-h-[44px]">
+          <Button
+            onClick={loadData}
+            className="min-h-[44px] bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold"
+          >
             Tentar novamente
           </Button>
         </div>
@@ -265,7 +269,7 @@ export default function ContatoListPage() {
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-16">
                       <div className="flex flex-col items-center justify-center space-y-3">
-                        <PhoneCall className="h-12 w-12 text-muted-foreground/50" />
+                        <PhoneCall className="h-12 w-12 text-muted-foreground" />
                         <h3 className="text-lg font-bold text-[#1A3A52]">
                           Nenhum contato registrado
                         </h3>
@@ -277,7 +281,7 @@ export default function ContatoListPage() {
                             setSelectedContato(null)
                             setFormOpen(true)
                           }}
-                          className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] mt-2 font-bold"
+                          className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] mt-2 font-bold min-h-[44px]"
                         >
                           <Plus className="mr-2 h-4 w-4" /> Registrar Contato
                         </Button>
@@ -288,31 +292,43 @@ export default function ContatoListPage() {
                   contatos.map((contato, i) => (
                     <TableRow
                       key={contato.id}
-                      className={
-                        i % 2 === 0
-                          ? 'bg-white hover:bg-[#4A90E2]/10 transition-colors'
-                          : 'bg-[#F5F5F5] hover:bg-[#4A90E2]/10 transition-colors'
-                      }
+                      className={cn(
+                        i % 2 === 0 ? 'bg-white' : 'bg-[#F5F5F5]',
+                        'hover:bg-[#4A90E2] hover:text-white transition-colors group',
+                      )}
                     >
                       <TableCell className="font-medium">
                         {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2 capitalize">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'capitalize flex items-center gap-1.5 w-fit bg-white',
+                            contato.tipo === 'whatsapp'
+                              ? 'border-blue-500 text-blue-700'
+                              : contato.tipo === 'visita'
+                                ? 'border-green-500 text-green-700'
+                                : 'border-purple-500 text-purple-700',
+                          )}
+                        >
                           {getTipoIcon(contato.tipo)} {contato.tipo}
-                        </div>
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
                       </TableCell>
                       <TableCell className="max-w-[300px]">
-                        <p className="truncate text-muted-foreground" title={contato.descricao}>
+                        <p
+                          className="truncate text-muted-foreground group-hover:text-white/90"
+                          title={contato.descricao}
+                        >
                           {contato.descricao}
                         </p>
                       </TableCell>
                       <TableCell>
                         {contato.resultado && (
-                          <Badge variant="outline" className="capitalize">
+                          <Badge variant="outline" className="capitalize bg-white text-foreground">
                             {contato.resultado}
                           </Badge>
                         )}
@@ -320,7 +336,11 @@ export default function ContatoListPage() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0" aria-label="Ações">
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 group-hover:text-white group-hover:hover:bg-white/20"
+                              aria-label="Ações"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -335,7 +355,7 @@ export default function ContatoListPage() {
                               onClick={() => handleDelete(contato.id)}
                               className="text-destructive"
                             >
-                              Excluir
+                              Deletar Contato
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -350,16 +370,16 @@ export default function ContatoListPage() {
           {/* Mobile Cards */}
           <div className="grid grid-cols-1 gap-4 md:hidden animate-fade-in">
             {contatos.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg shadow-subtle flex flex-col items-center">
-                <PhoneCall className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                <h3 className="font-bold text-[#1A3A52]">Nenhum contato</h3>
+              <div className="text-center py-12 bg-white rounded-lg shadow-subtle border flex flex-col items-center">
+                <PhoneCall className="h-10 w-10 text-muted-foreground mb-3" />
+                <h3 className="font-bold text-[#1A3A52]">Nenhum contato registrado</h3>
                 <p className="text-sm text-muted-foreground mb-4">Mude os filtros para buscar</p>
                 <Button
                   onClick={() => {
                     setSelectedContato(null)
                     setFormOpen(true)
                   }}
-                  className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold"
+                  className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold min-h-[44px]"
                 >
                   Registrar Contato
                 </Button>
@@ -368,7 +388,7 @@ export default function ContatoListPage() {
               contatos.map((contato) => (
                 <Card
                   key={contato.id}
-                  className="shadow-subtle hover:border-[#4A90E2] transition-colors overflow-hidden"
+                  className="shadow-subtle hover:border-[#4A90E2] border-border/60 transition-colors overflow-hidden"
                 >
                   <CardContent className="p-0">
                     <div className="p-4 flex flex-col gap-3">
@@ -378,7 +398,10 @@ export default function ContatoListPage() {
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 shrink-0 min-h-[44px] min-w-[44px]"
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -393,15 +416,25 @@ export default function ContatoListPage() {
                               onClick={() => handleDelete(contato.id)}
                               className="text-destructive"
                             >
-                              Excluir
+                              Deletar Contato
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                       <div className="flex flex-wrap gap-3 text-sm">
-                        <div className="flex items-center gap-1.5 text-muted-foreground capitalize bg-muted/50 px-2 py-1 rounded-md">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'capitalize flex items-center gap-1.5 w-fit',
+                            contato.tipo === 'whatsapp'
+                              ? 'border-blue-500 text-blue-700 bg-blue-50'
+                              : contato.tipo === 'visita'
+                                ? 'border-green-500 text-green-700 bg-green-50'
+                                : 'border-purple-500 text-purple-700 bg-purple-50',
+                          )}
+                        >
                           {getTipoIcon(contato.tipo)} {contato.tipo}
-                        </div>
+                        </Badge>
                         <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
                           <CalendarIcon className="h-3.5 w-3.5" />{' '}
                           {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
@@ -430,7 +463,11 @@ export default function ContatoListPage() {
                 <PaginationItem>
                   <PaginationPrevious
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className={page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                    className={
+                      page === 1
+                        ? 'pointer-events-none opacity-50 min-h-[44px]'
+                        : 'cursor-pointer min-h-[44px]'
+                    }
                   />
                 </PaginationItem>
                 <PaginationItem>
@@ -442,7 +479,9 @@ export default function ContatoListPage() {
                   <PaginationNext
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     className={
-                      page === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+                      page === totalPages
+                        ? 'pointer-events-none opacity-50 min-h-[44px]'
+                        : 'cursor-pointer min-h-[44px]'
                     }
                   />
                 </PaginationItem>

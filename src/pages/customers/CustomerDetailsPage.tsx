@@ -310,7 +310,7 @@ export default function CustomerDetailsPage() {
                   </div>
                 ) : contatos.length === 0 ? (
                   <div className="text-center py-12 flex flex-col items-center justify-center">
-                    <PhoneCall className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                    <PhoneCall className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-bold text-[#1A3A52]">Nenhum contato registrado</h3>
                     <p className="text-sm text-muted-foreground mt-1 max-w-md">
                       Não há histórico de interações para este cliente.
@@ -320,7 +320,7 @@ export default function CustomerDetailsPage() {
                       className="mt-6 bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold min-h-[44px]"
                     >
                       <MessageSquare className="mr-2 h-4 w-4" />
-                      Registrar primeiro contato
+                      Registrar Contato
                     </Button>
                   </div>
                 ) : (
@@ -333,12 +333,12 @@ export default function CustomerDetailsPage() {
                       bg = 'bg-purple-100'
                     }
                     if (contato.tipo === 'visita') {
-                      icon = <MapPin className="h-4 w-4 text-orange-600" />
-                      bg = 'bg-orange-100'
+                      icon = <MapPin className="h-4 w-4 text-green-600" />
+                      bg = 'bg-green-100'
                     }
                     if (contato.tipo === 'whatsapp') {
-                      icon = <MessageSquare className="h-4 w-4 text-green-600" />
-                      bg = 'bg-green-100'
+                      icon = <MessageSquare className="h-4 w-4 text-blue-600" />
+                      bg = 'bg-blue-100'
                     }
 
                     return (
