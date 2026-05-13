@@ -24,11 +24,15 @@ migrate(
       try {
         rec = app.findFirstRecordByData('clientes', 'cnpj_cpf', c.cnpj_cpf)
       } catch (_) {
-        rec = new Record(clientes)
-        rec.set('descricao', c.descricao)
-        rec.set('cnpj_cpf', c.cnpj_cpf)
-        rec.set('codigo', c.codigo)
-        app.save(rec)
+        try {
+          rec = app.findFirstRecordByData('clientes', 'codigo', c.codigo)
+        } catch (_) {
+          rec = new Record(clientes)
+          rec.set('descricao', c.descricao)
+          rec.set('cnpj_cpf', c.cnpj_cpf)
+          rec.set('codigo', c.codigo)
+          app.save(rec)
+        }
       }
       createdClientes[c.descricao] = rec
     }
