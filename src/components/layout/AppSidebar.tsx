@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Users, LayoutDashboard, Settings, UserPlus } from 'lucide-react'
+import { Users, LayoutDashboard, Settings, Target } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -11,16 +11,18 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { useAuth } from '@/hooks/use-auth'
 
 const items = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Clientes', url: '/clientes', icon: Users },
-  { title: 'Leads', url: '/leads', icon: UserPlus },
-  { title: 'Configurações', url: '/configuracoes', icon: Settings },
+  { title: 'Leads', url: '/leads', icon: Target, roles: ['admin', 'julia', 'vendedor'] },
+  { title: 'Configurações', url: '/admin', icon: Settings, roles: ['admin'] },
 ]
 
 export function AppSidebar() {
   const location = useLocation()
+  const { user } = useAuth()
 
   return (
     <Sidebar variant="inset">
@@ -38,6 +40,10 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
+                if (item.roles && !item.roles.includes(user?.role)) {
+                  return null
+                }
+
                 const isActive = location.pathname.startsWith(item.url)
                 return (
                   <SidebarMenuItem key={item.title}>
