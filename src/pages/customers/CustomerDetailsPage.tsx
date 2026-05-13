@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft,
   Building2,
   User as UserIcon,
   MapPin,
@@ -10,20 +9,42 @@ import {
   Edit,
   MessageSquare,
   Briefcase,
+  ArrowLeft,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { RecordModel } from 'pocketbase'
 import pb from '@/lib/pocketbase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/customers/StatusBadge'
 import { Separator } from '@/components/ui/separator'
+import { getContatosByCliente } from '@/services/contatos'
+import { useRealtime } from '@/hooks/use-realtime'
+import { ContatoDetailsDialog } from '@/components/contatos/ContatoDetailsDialog'
+import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
+import { format } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
 
 export default function CustomerDetailsPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [customer, setCustomer] = useState<any>(null)
+  const [contatos, setContatos] = useState<RecordModel[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedContato, setSelectedContato] = useState<RecordModel | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+
+  const loadContatos = () => {
+    if (id) {
+      getContatosByCliente(id).then((data) => setContatos(data || []))
+    }
+  }
+
+  useRealtime('contatos', () => {
+    loadContatos()
+  })
 
   useEffect(() => {
     if (!id) return
@@ -52,6 +73,7 @@ export default function CustomerDetailsPage() {
             zip: r.cep,
           },
         })
+        loadContatos()
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -62,7 +84,7 @@ export default function CustomerDetailsPage() {
   if (!customer) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-        <h2 className="text-2xl font-bold text-primary">Cliente não encontrado</h2>
+        <h2 className="text-2xl font-bold text-[#1A3A52]">Cliente não encontrado</h2>
         <Button onClick={() => navigate('/clientes')} variant="outline" className="min-h-[44px]">
           Voltar para lista
         </Button>
@@ -85,15 +107,15 @@ export default function CustomerDetailsPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-3 rounded-lg hidden sm:block">
+            <div className="bg-[#1A3A52]/10 p-3 rounded-lg hidden sm:block">
               {isPJ ? (
-                <Building2 className="h-6 w-6 text-primary" />
+                <Building2 className="h-6 w-6 text-[#1A3A52]" />
               ) : (
-                <UserIcon className="h-6 w-6 text-primary" />
+                <UserIcon className="h-6 w-6 text-[#1A3A52]" />
               )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-primary">
+              <h1 className="text-2xl font-bold tracking-tight text-[#1A3A52]">
                 {customer.tradeName || customer.name}
               </h1>
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mt-1">
@@ -107,24 +129,39 @@ export default function CustomerDetailsPage() {
           </div>
         </div>
         <div className="flex gap-4 w-full sm:w-auto">
-          <Button variant="outline" className="gap-2 flex-1 sm:flex-auto min-h-[44px]">
-            <MessageSquare className="h-4 w-4" /> Criar novo lead
+          <Button
+            onClick={() => {
+              setSelectedContato(null)
+              setFormOpen(true)
+            }}
+            className="gap-2 flex-1 sm:flex-auto bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] min-h-[44px] font-bold"
+          >
+            <MessageSquare className="h-4 w-4" /> Registrar Contato
           </Button>
-          <Button className="gap-2 flex-1 sm:flex-auto bg-secondary text-secondary-foreground hover:bg-secondary/90 min-h-[44px]">
+          <Button className="gap-2 flex-1 sm:flex-auto bg-[#4A90E2] text-white hover:bg-[#3A7BC8] min-h-[44px]">
             <Edit className="h-4 w-4" /> Editar Cliente
           </Button>
         </div>
       </div>
 
       <Tabs defaultValue="visao-geral" className="w-full">
-        <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:inline-flex mb-4">
-          <TabsTrigger value="visao-geral" className="font-semibold">
+        <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:inline-flex mb-4 bg-muted">
+          <TabsTrigger
+            value="visao-geral"
+            className="font-semibold data-[state=active]:bg-[#1A3A52] data-[state=active]:text-white"
+          >
             Visão Geral
           </TabsTrigger>
-          <TabsTrigger value="leads" className="font-semibold">
+          <TabsTrigger
+            value="leads"
+            className="font-semibold data-[state=active]:bg-[#1A3A52] data-[state=active]:text-white"
+          >
             Leads Vinculados
           </TabsTrigger>
-          <TabsTrigger value="historico" className="font-semibold">
+          <TabsTrigger
+            value="historico"
+            className="font-semibold data-[state=active]:bg-[#1A3A52] data-[state=active]:text-white"
+          >
             Histórico de Contatos
           </TabsTrigger>
         </TabsList>
@@ -133,8 +170,8 @@ export default function CustomerDetailsPage() {
           <div className="grid gap-6 md:grid-cols-2">
             <Card className="shadow-subtle border-muted">
               <CardHeader className="pb-3 border-b border-muted/50 mb-3">
-                <CardTitle className="text-lg font-bold text-primary flex items-center gap-2">
-                  <UserIcon className="h-5 w-5 text-accent" /> Identificação
+                <CardTitle className="text-lg font-bold text-[#1A3A52] flex items-center gap-2">
+                  <UserIcon className="h-5 w-5 text-[#FFC107]" /> Identificação
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -155,53 +192,25 @@ export default function CustomerDetailsPage() {
                   <div className="font-semibold text-right sm:text-left">
                     {customer.stateRegistration || 'Isento'}
                   </div>
-                  <div className="text-muted-foreground font-medium">Loja:</div>
-                  <div className="font-semibold text-right sm:text-left">
-                    {customer.store || '-'}
-                  </div>
-                  <div className="text-muted-foreground font-medium">Nome da Mãe:</div>
-                  <div className="font-semibold text-right sm:text-left">
-                    {customer.motherName || '-'}
-                  </div>
-                  <div className="text-muted-foreground font-medium">Data Nasc/Fundação:</div>
-                  <div className="font-semibold text-right sm:text-left">
-                    {customer.birthDate || '-'}
-                  </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-subtle border-muted">
               <CardHeader className="pb-3 border-b border-muted/50 mb-3">
-                <CardTitle className="text-lg font-bold text-primary flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-accent" /> Gestão Comercial
+                <CardTitle className="text-lg font-bold text-[#1A3A52] flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-[#FFC107]" /> Gestão Comercial
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-sm">
                   <div className="text-muted-foreground font-medium">Vendedor:</div>
-                  <div className="font-semibold text-right sm:text-left">{customer.seller}</div>
-                  <div className="text-muted-foreground font-medium">Região:</div>
                   <div className="font-semibold text-right sm:text-left">
-                    {customer.region || '-'}
-                  </div>
-                  <div className="text-muted-foreground font-medium">Atividade:</div>
-                  <div className="font-semibold text-right sm:text-left">
-                    {customer.activity || '-'}
-                  </div>
-                  <div className="text-muted-foreground font-medium">Categoria Econômica:</div>
-                  <div className="font-semibold text-right sm:text-left">
-                    {customer.economicCategory || '-'}
+                    {customer.seller || '-'}
                   </div>
                   <div className="text-muted-foreground font-medium">Data de Cadastro:</div>
                   <div className="font-semibold text-right sm:text-left">
                     {new Date(customer.registeredAt).toLocaleDateString('pt-BR')}
-                  </div>
-                  <div className="text-muted-foreground font-medium">Último Pedido:</div>
-                  <div className="font-semibold text-right sm:text-left">
-                    {customer.lastOrderAt
-                      ? new Date(customer.lastOrderAt).toLocaleDateString('pt-BR')
-                      : 'Nenhum pedido'}
                   </div>
                 </div>
               </CardContent>
@@ -209,14 +218,14 @@ export default function CustomerDetailsPage() {
 
             <Card className="md:col-span-2 shadow-subtle border-muted">
               <CardHeader className="pb-3 border-b border-muted/50 mb-3">
-                <CardTitle className="text-lg font-bold text-primary flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-accent" /> Endereços e Contato
+                <CardTitle className="text-lg font-bold text-[#1A3A52] flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-[#FFC107]" /> Endereços e Contato
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-8 text-sm">
                   <div className="space-y-4">
-                    <div className="font-bold text-primary pb-2 border-b">
+                    <div className="font-bold text-[#1A3A52] pb-2 border-b">
                       Informações de Contato
                     </div>
                     <div className="flex items-center gap-3 font-medium">
@@ -228,30 +237,17 @@ export default function CustomerDetailsPage() {
                       <span>Celular: {customer.mobile || 'Não informado'}</span>
                     </div>
                     <div className="flex items-center gap-3 font-medium">
-                      <Phone className="h-4 w-4 text-muted-foreground" />{' '}
-                      <span>Fone Cobrança: {customer.billingPhone || 'Não informado'}</span>
-                    </div>
-                    <div className="flex items-center gap-3 font-medium">
                       <Mail className="h-4 w-4 text-muted-foreground" />{' '}
                       <span>Email: {customer.email || 'Não informado'}</span>
-                    </div>
-                    <div className="flex items-center gap-3 font-medium">
-                      <UserIcon className="h-4 w-4 text-muted-foreground" />{' '}
-                      <span>Pessoa de Contato: {customer.contact || 'Não informado'}</span>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="font-bold text-primary pb-2 border-b">
-                      Endereços Registrados
-                    </div>
+                    <div className="font-bold text-[#1A3A52] pb-2 border-b">Endereço Principal</div>
                     <div className="space-y-3 bg-muted/20 p-4 rounded-lg border">
-                      <p className="text-xs font-bold text-primary uppercase tracking-wider">
-                        Principal
-                      </p>
                       {customer.address.street ? (
                         <div className="flex items-start gap-3">
-                          <MapPin className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+                          <MapPin className="h-4 w-4 text-[#FFC107] mt-0.5 shrink-0" />
                           <div>
                             <p className="font-bold">{customer.address.street}</p>
                             <p className="text-muted-foreground mt-1 font-medium">
@@ -271,34 +267,6 @@ export default function CustomerDetailsPage() {
                         </div>
                       )}
                     </div>
-
-                    <div className="space-y-3 bg-muted/20 p-4 rounded-lg border">
-                      <p className="text-xs font-bold text-primary uppercase tracking-wider">
-                        Cobrança
-                      </p>
-                      {customer.billingAddress && customer.billingAddress.street ? (
-                        <div className="flex items-start gap-3">
-                          <MapPin className="h-4 w-4 text-accent mt-0.5 shrink-0" />
-                          <div>
-                            <p className="font-bold">{customer.billingAddress.street}</p>
-                            <p className="text-muted-foreground mt-1 font-medium">
-                              Bairro: {customer.billingAddress.neighborhood}
-                            </p>
-                            <p className="text-muted-foreground font-medium">
-                              Cidade: {customer.billingAddress.city} /{' '}
-                              {customer.billingAddress.state}
-                            </p>
-                            <p className="text-muted-foreground font-medium">
-                              CEP: {customer.billingAddress.zip}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground font-medium flex items-center gap-2 text-sm">
-                          <MapPin className="h-4 w-4" /> Mesmo endereço principal ou não cadastrado
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -310,11 +278,11 @@ export default function CustomerDetailsPage() {
           <Card>
             <CardContent className="flex flex-col items-center justify-center p-12 text-center">
               <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-bold text-primary">Nenhum lead vinculado</h3>
+              <h3 className="text-lg font-bold text-[#1A3A52]">Nenhum lead vinculado</h3>
               <p className="text-sm font-medium text-muted-foreground mt-1 max-w-md">
                 Este cliente ainda não possui leads comerciais ativos na plataforma.
               </p>
-              <Button className="mt-6 min-h-[44px] bg-secondary text-secondary-foreground hover:bg-secondary/90">
+              <Button className="mt-6 min-h-[44px] bg-[#4A90E2] text-white hover:bg-[#3A7BC8]">
                 Criar novo lead
               </Button>
             </CardContent>
@@ -325,59 +293,113 @@ export default function CustomerDetailsPage() {
           <Card>
             <CardContent className="p-6">
               <div className="space-y-8">
-                <div className="flex gap-4 relative">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center z-10">
-                      <MessageSquare className="h-4 w-4 text-accent" />
-                    </div>
-                    <div className="w-px h-full bg-border absolute top-8 bottom-[-2rem] left-4"></div>
+                {contatos.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground font-medium">
+                    Nenhum contato registrado.
                   </div>
-                  <div className="pb-2">
-                    <div className="text-sm font-medium text-muted-foreground mb-1">Há 2 dias</div>
-                    <div className="font-bold text-primary">Mensagem via WhatsApp</div>
-                    <div className="text-sm font-medium text-muted-foreground mt-1">
-                      Contato inicial para apresentação do novo portfólio.
+                ) : (
+                  contatos.map((contato, index) => {
+                    const isLast = index === contatos.length - 1 && !customer.registeredAt
+                    let icon = <Phone className="h-4 w-4 text-blue-600" />
+                    let bg = 'bg-blue-100'
+                    if (contato.tipo === 'email') {
+                      icon = <Mail className="h-4 w-4 text-purple-600" />
+                      bg = 'bg-purple-100'
+                    }
+                    if (contato.tipo === 'visita') {
+                      icon = <MapPin className="h-4 w-4 text-orange-600" />
+                      bg = 'bg-orange-100'
+                    }
+                    if (contato.tipo === 'whatsapp') {
+                      icon = <MessageSquare className="h-4 w-4 text-green-600" />
+                      bg = 'bg-green-100'
+                    }
+
+                    return (
+                      <div
+                        key={contato.id}
+                        className="flex gap-4 relative cursor-pointer hover:bg-muted/30 p-2 rounded-lg transition-colors"
+                        onClick={() => {
+                          setSelectedContato(contato)
+                          setDetailsOpen(true)
+                        }}
+                      >
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center z-10 shadow-sm`}
+                          >
+                            {icon}
+                          </div>
+                          {!isLast && (
+                            <div className="w-px h-full bg-border absolute top-8 bottom-[-2rem] left-4"></div>
+                          )}
+                        </div>
+                        <div className="pb-2 flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-bold text-[#1A3A52] capitalize">
+                                {contato.tipo}
+                              </div>
+                              <div className="text-sm font-medium text-muted-foreground mb-1">
+                                {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
+                              </div>
+                            </div>
+                            {contato.resultado && (
+                              <Badge variant="outline" className="capitalize">
+                                {contato.resultado}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm font-medium text-muted-foreground mt-1 line-clamp-2">
+                            {contato.descricao}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+                {customer.registeredAt && (
+                  <div className="flex gap-4 relative">
+                    <div className="flex flex-col items-center">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center z-10 shadow-sm">
+                        <Activity className="h-4 w-4 text-emerald-600" />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-[#1A3A52]">Cliente Cadastrado</div>
+                      <div className="text-sm font-medium text-muted-foreground mb-1">
+                        {format(new Date(customer.registeredAt), 'dd/MM/yyyy HH:mm')}
+                      </div>
+                      <div className="text-sm font-medium text-muted-foreground mt-1">
+                        Registro inicial do cliente no sistema.
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex gap-4 relative">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center z-10">
-                      <Mail className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div className="w-px h-full bg-border absolute top-8 bottom-[-2rem] left-4"></div>
-                  </div>
-                  <div className="pb-2">
-                    <div className="text-sm font-medium text-muted-foreground mb-1">
-                      Há 1 semana
-                    </div>
-                    <div className="font-bold text-primary">E-mail enviado</div>
-                    <div className="text-sm font-medium text-muted-foreground mt-1">
-                      Envio de proposta comercial solicitada.
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-4 relative">
-                  <div className="flex flex-col items-center">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center z-10">
-                      <Activity className="h-4 w-4 text-emerald-600" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground mb-1">
-                      {new Date(customer.registeredAt).toLocaleDateString('pt-BR')}
-                    </div>
-                    <div className="font-bold text-primary">Cliente Cadastrado</div>
-                    <div className="text-sm font-medium text-muted-foreground mt-1">
-                      Registro criado no sistema.
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {selectedContato && (
+        <ContatoDetailsDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          contato={selectedContato}
+          onEdit={() => {
+            setDetailsOpen(false)
+            setFormOpen(true)
+          }}
+        />
+      )}
+
+      <ContatoFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        contato={selectedContato}
+        initialClienteId={id}
+      />
     </div>
   )
 }

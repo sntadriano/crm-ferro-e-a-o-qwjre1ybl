@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Users, LayoutDashboard, Settings, Target } from 'lucide-react'
+import { Users, LayoutDashboard, Settings, Target, PhoneCall } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/use-auth'
 const items = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Clientes', url: '/clientes', icon: Users },
+  { title: 'Contatos', url: '/contatos', icon: PhoneCall, roles: ['admin', 'julia', 'vendedor'] },
   { title: 'Leads', url: '/leads', icon: Target, roles: ['admin', 'julia', 'vendedor'] },
   { title: 'Configurações', url: '/admin', icon: Settings, roles: ['admin'] },
 ]
