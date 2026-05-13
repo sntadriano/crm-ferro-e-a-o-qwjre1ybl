@@ -27,7 +27,7 @@ const App = () => (
       <TooltipProvider>
         <CustomerProvider>
           <Toaster />
-          <Sonner />
+          <Sonner richColors closeButton />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route

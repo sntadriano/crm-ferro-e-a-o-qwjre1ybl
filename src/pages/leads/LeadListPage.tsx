@@ -23,7 +23,17 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Search, Plus, MoreHorizontal, Edit, Trash, FileText } from 'lucide-react'
+import {
+  Search,
+  Plus,
+  MoreHorizontal,
+  Edit,
+  Trash,
+  FileText,
+  Filter,
+  XCircle,
+  AlertCircle,
+} from 'lucide-react'
 import { format } from 'date-fns'
 import { LeadFormDialog } from '@/components/leads/LeadFormDialog'
 import { LeadDetailsSheet, statusColors, statusLabels } from '@/components/leads/LeadDetailsSheet'
@@ -34,6 +44,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Card, CardContent } from '@/components/ui/card'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Label } from '@/components/ui/label'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 export default function LeadListPage() {
@@ -48,7 +60,13 @@ export default function LeadListPage() {
     search: '',
     status: 'todos',
     sort: '-created',
+    date_start: '',
+    date_end: '',
+    value_min: '',
+    value_max: '',
   })
+
+  const [tempFilters, setTempFilters] = useState<LeadFilters>(filters)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const [formOpen, setFormOpen] = useState(false)
@@ -95,6 +113,33 @@ export default function LeadListPage() {
     }
   }
 
+  const applyAdvancedFilters = () => {
+    setFilters((prev) => ({
+      ...prev,
+      date_start: tempFilters.date_start,
+      date_end: tempFilters.date_end,
+      value_min: tempFilters.value_min,
+      value_max: tempFilters.value_max,
+    }))
+  }
+
+  const clearAdvancedFilters = () => {
+    setTempFilters((prev) => ({
+      ...prev,
+      date_start: '',
+      date_end: '',
+      value_min: '',
+      value_max: '',
+    }))
+    setFilters((prev) => ({
+      ...prev,
+      date_start: '',
+      date_end: '',
+      value_min: '',
+      value_max: '',
+    }))
+  }
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
@@ -102,9 +147,10 @@ export default function LeadListPage() {
   if (user?.role === 'paulo' || user?.role === 'gerente') {
     return (
       <div className="flex h-[80vh] items-center justify-center">
-        <div className="text-center p-8 bg-destructive/10 rounded-lg max-w-md">
-          <h2 className="text-xl font-bold text-destructive mb-2">Acesso Negado</h2>
-          <p className="text-muted-foreground">
+        <div className="text-center p-8 bg-destructive/10 rounded-lg max-w-md border border-destructive/20 shadow-md">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive mb-4" />
+          <h2 className="text-2xl font-bold text-destructive mb-2">Acesso Negado</h2>
+          <p className="text-muted-foreground text-sm">
             Você não tem permissão para acessar o gerenciamento de leads.
           </p>
         </div>
@@ -115,77 +161,86 @@ export default function LeadListPage() {
   const renderSkeletons = () => {
     if (isMobile) {
       return Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="mb-4">
+        <Card key={i} className="mb-4 shadow-sm border-[#E5E5E5] p-2">
           <CardContent className="p-4 space-y-3">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-6 w-3/4 bg-muted/60" />
+            <Skeleton className="h-4 w-1/2 bg-muted/60" />
             <div className="flex justify-between">
-              <Skeleton className="h-5 w-24" />
-              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-5 w-24 bg-muted/60" />
+              <Skeleton className="h-5 w-24 bg-muted/60" />
             </div>
           </CardContent>
         </Card>
       ))
     }
     return Array.from({ length: 5 }).map((_, i) => (
-      <TableRow key={i}>
+      <TableRow key={i} className="even:bg-[#F5F5F5]">
         <TableCell>
-          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-5 w-32 bg-muted/60" />
         </TableCell>
         <TableCell>
-          <Skeleton className="h-5 w-20" />
+          <Skeleton className="h-5 w-20 bg-muted/60" />
         </TableCell>
         <TableCell>
-          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-24 bg-muted/60" />
         </TableCell>
         <TableCell>
-          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-24 bg-muted/60" />
         </TableCell>
         <TableCell>
-          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-24 bg-muted/60" />
         </TableCell>
         <TableCell>
-          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-8 w-8 rounded-full bg-muted/60" />
         </TableCell>
       </TableRow>
     ))
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[#1e3a8a]">Gestão de Leads</h1>
-          <p className="text-muted-foreground">Acompanhe e gerencie as oportunidades de vendas.</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-primary tracking-tight">
+            Gestão de Leads
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Acompanhe e gerencie as oportunidades de vendas.
+          </p>
         </div>
         <Button
           onClick={() => {
             setSelectedLead(null)
             setFormOpen(true)
           }}
-          className="bg-[#eab308] hover:bg-[#ca8a04] text-white w-full md:w-auto"
+          className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold min-h-[44px] w-full md:w-auto shadow-sm"
+          aria-label="Criar novo lead"
         >
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-5 w-5" />
           Criar Lead
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-lg shadow-sm border">
+      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-[#E5E5E5]">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
           <Input
             placeholder="Buscar por cliente..."
-            className="pl-8"
+            className="pl-10 min-h-[44px] border-[#E5E5E5] bg-[#F5F5F5] focus-visible:ring-accent"
             value={debouncedSearch}
             onChange={(e) => setDebouncedSearch(e.target.value)}
+            aria-label="Buscar leads por cliente"
           />
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Select
             value={filters.status}
             onValueChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger
+              className="w-full sm:w-[160px] min-h-[44px] bg-[#F5F5F5] border-[#E5E5E5]"
+              aria-label="Filtrar por status"
+            >
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -196,11 +251,93 @@ export default function LeadListPage() {
               <SelectItem value="perdido">Perdido</SelectItem>
             </SelectContent>
           </Select>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="min-h-[44px] bg-[#F5F5F5] border-[#E5E5E5]"
+                aria-label="Filtros avançados"
+              >
+                <Filter className="mr-2 h-4 w-4" />
+                Filtros Avançados
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="end">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-primary">Filtros Avançados</h4>
+                <div className="space-y-2">
+                  <Label>Data de Criação</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="date"
+                      value={tempFilters.date_start}
+                      onChange={(e) =>
+                        setTempFilters((p) => ({ ...p, date_start: e.target.value }))
+                      }
+                      className="text-xs h-9"
+                    />
+                    <Input
+                      type="date"
+                      value={tempFilters.date_end}
+                      onChange={(e) => setTempFilters((p) => ({ ...p, date_end: e.target.value }))}
+                      className="text-xs h-9"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Valor Estimado</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min (R$)"
+                      value={tempFilters.value_min}
+                      onChange={(e) =>
+                        setTempFilters((p) => ({
+                          ...p,
+                          value_min: e.target.value ? Number(e.target.value) : '',
+                        }))
+                      }
+                      className="text-xs h-9"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max (R$)"
+                      value={tempFilters.value_max}
+                      onChange={(e) =>
+                        setTempFilters((p) => ({
+                          ...p,
+                          value_max: e.target.value ? Number(e.target.value) : '',
+                        }))
+                      }
+                      className="text-xs h-9"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between pt-2">
+                  <Button variant="ghost" size="sm" onClick={clearAdvancedFilters}>
+                    Limpar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-primary text-primary-foreground"
+                    onClick={applyAdvancedFilters}
+                  >
+                    Aplicar Filtros
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Select
             value={filters.sort}
             onValueChange={(v) => setFilters((prev) => ({ ...prev, sort: v }))}
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger
+              className="w-full sm:w-[160px] min-h-[44px] bg-[#F5F5F5] border-[#E5E5E5]"
+              aria-label="Ordenar leads"
+            >
               <SelectValue placeholder="Ordenar por" />
             </SelectTrigger>
             <SelectContent>
@@ -214,46 +351,61 @@ export default function LeadListPage() {
       </div>
 
       {hasError ? (
-        <div className="text-center p-8 bg-white rounded-lg border">
-          <p className="text-destructive mb-4">Erro ao carregar dados</p>
-          <Button onClick={loadData} variant="outline">
+        <div className="text-center p-12 bg-red-50 rounded-xl border border-red-100 flex flex-col items-center">
+          <XCircle className="h-10 w-10 text-red-600 mb-4" />
+          <h3 className="text-xl font-bold text-red-900 mb-2">Erro ao carregar dados</h3>
+          <p className="text-red-700 mb-6 max-w-md">
+            Ocorreu um problema ao buscar a lista de leads. Por favor, tente novamente.
+          </p>
+          <Button
+            onClick={loadData}
+            className="bg-secondary text-secondary-foreground hover:bg-secondary/90 min-h-[44px] font-semibold px-8 shadow-sm"
+          >
             Tentar novamente
           </Button>
         </div>
       ) : isLoading ? (
-        <div className={isMobile ? '' : 'border rounded-lg bg-white overflow-hidden'}>
+        <div
+          className={
+            isMobile ? '' : 'border border-[#E5E5E5] rounded-xl bg-white shadow-sm overflow-hidden'
+          }
+        >
           {isMobile ? (
             renderSkeletons()
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Valor Estimado</TableHead>
-                  <TableHead>Data de Criação</TableHead>
-                  <TableHead>Próx. Follow-up</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>{renderSkeletons()}</TableBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-[#F5F5F5]">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-bold text-primary">Cliente</TableHead>
+                    <TableHead className="font-bold text-primary">Status</TableHead>
+                    <TableHead className="font-bold text-primary">Valor Estimado</TableHead>
+                    <TableHead className="font-bold text-primary">Data de Criação</TableHead>
+                    <TableHead className="font-bold text-primary">Próx. Follow-up</TableHead>
+                    <TableHead className="w-[80px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>{renderSkeletons()}</TableBody>
+              </Table>
+            </div>
           )}
         </div>
       ) : leads.length === 0 ? (
-        <div className="text-center p-12 bg-white rounded-lg border flex flex-col items-center">
-          <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center mb-4">
-            <FileText className="h-6 w-6 text-muted-foreground" />
+        <div className="text-center p-16 bg-[#F5F5F5] rounded-xl border border-[#E5E5E5] flex flex-col items-center">
+          <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-6">
+            <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium mb-1">Nenhum lead cadastrado</h3>
-          <p className="text-muted-foreground mb-4">
-            Você ainda não tem leads ou a busca não retornou resultados.
+          <h3 className="text-xl font-bold text-primary mb-2">Nenhum lead cadastrado</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm">
+            Você ainda não tem leads ou a busca não retornou resultados. Comece criando um novo
+            lead!
           </p>
           <Button
             onClick={() => {
               setSelectedLead(null)
               setFormOpen(true)
             }}
+            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold min-h-[44px] px-8 shadow-sm"
           >
             Criar Lead
           </Button>
@@ -263,123 +415,151 @@ export default function LeadListPage() {
           {leads.map((lead) => (
             <Card
               key={lead.id}
-              className="overflow-hidden cursor-pointer"
+              className="overflow-hidden cursor-pointer shadow-md border-[#E5E5E5] hover:shadow-lg transition-shadow bg-white rounded-xl"
               onClick={() => {
                 setSelectedLead(lead)
                 setDetailsOpen(true)
               }}
+              role="button"
+              aria-label={`Ver detalhes do lead de ${lead.expand?.cliente_id?.descricao || 'Sem Cliente'}`}
             >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold line-clamp-1">
+              <CardContent className="p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-bold text-primary text-lg line-clamp-1 pr-2">
                     {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
                   </h3>
-                  <Badge variant="outline" className={statusColors[lead.status]}>
+                  <Badge
+                    variant="outline"
+                    className={`whitespace-nowrap font-semibold ${statusColors[lead.status]}`}
+                  >
                     {statusLabels[lead.status] || lead.status}
                   </Badge>
                 </div>
-                <div className="text-sm text-muted-foreground mb-3">
-                  {lead.expand?.cliente_id?.cnpj_cpf}
+                <div className="text-sm text-muted-foreground mb-4 bg-[#F5F5F5] px-2 py-1 rounded inline-block">
+                  CNPJ/CPF: {lead.expand?.cliente_id?.cnpj_cpf || '-'}
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium">{formatCurrency(lead.valor_estimado)}</span>
-                  <span className="text-muted-foreground flex items-center">
-                    {lead.proximo_followup
-                      ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
-                      : '-'}
-                  </span>
+                <div className="grid grid-cols-2 gap-2 text-sm border-t border-[#E5E5E5] pt-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      Valor
+                    </p>
+                    <p className="font-bold text-primary">{formatCurrency(lead.valor_estimado)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                      Follow-up
+                    </p>
+                    <p className="font-medium text-foreground">
+                      {lead.proximo_followup
+                        ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                        : '-'}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="border rounded-lg bg-white overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Valor Estimado</TableHead>
-                <TableHead>Data de Criação</TableHead>
-                <TableHead>Próx. Follow-up</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {leads.map((lead) => (
-                <TableRow
-                  key={lead.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => {
-                    setSelectedLead(lead)
-                    setDetailsOpen(true)
-                  }}
-                >
-                  <TableCell>
-                    <div className="font-medium">
-                      {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {lead.expand?.cliente_id?.cnpj_cpf}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusColors[lead.status]}>
-                      {statusLabels[lead.status] || lead.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(lead.valor_estimado)}
-                  </TableCell>
-                  <TableCell>{format(new Date(lead.created), 'dd/MM/yyyy')}</TableCell>
-                  <TableCell>
-                    {lead.proximo_followup
-                      ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
-                      : '-'}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedLead(lead)
-                            setDetailsOpen(true)
-                          }}
-                        >
-                          <FileText className="mr-2 h-4 w-4" />
-                          Detalhes
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedLead(lead)
-                            setFormOpen(true)
-                          }}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        {(user?.role === 'admin' || user?.role === 'gerente') && (
-                          <DropdownMenuItem
-                            className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
-                            onClick={() => handleDelete(lead.id)}
-                          >
-                            <Trash className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+        <div className="border border-[#E5E5E5] rounded-xl bg-white shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-[#F5F5F5]">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-bold text-primary py-4">Cliente</TableHead>
+                  <TableHead className="font-bold text-primary py-4">Status</TableHead>
+                  <TableHead className="font-bold text-primary py-4">Valor Estimado</TableHead>
+                  <TableHead className="font-bold text-primary py-4">Data de Criação</TableHead>
+                  <TableHead className="font-bold text-primary py-4">Próx. Follow-up</TableHead>
+                  <TableHead className="w-[80px] py-4"></TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {leads.map((lead, index) => (
+                  <TableRow
+                    key={lead.id}
+                    className={`cursor-pointer transition-colors hover:bg-accent hover:text-white group ${index % 2 === 0 ? 'bg-white' : 'bg-[#F5F5F5]'}`}
+                    onClick={() => {
+                      setSelectedLead(lead)
+                      setDetailsOpen(true)
+                    }}
+                  >
+                    <TableCell className="py-4">
+                      <div className="font-bold text-primary group-hover:text-white">
+                        {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
+                      </div>
+                      <div className="text-xs text-muted-foreground group-hover:text-white/80 mt-1">
+                        {lead.expand?.cliente_id?.cnpj_cpf}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge
+                        variant="outline"
+                        className={`font-semibold bg-white ${statusColors[lead.status]}`}
+                      >
+                        {statusLabels[lead.status] || lead.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-bold py-4">
+                      {formatCurrency(lead.valor_estimado)}
+                    </TableCell>
+                    <TableCell className="py-4 font-medium text-muted-foreground group-hover:text-white/90">
+                      {format(new Date(lead.created), 'dd/MM/yyyy')}
+                    </TableCell>
+                    <TableCell className="py-4 font-medium">
+                      {lead.proximo_followup
+                        ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="h-10 w-10 p-0 hover:bg-white/20 rounded-full"
+                            aria-label="Ações do lead"
+                          >
+                            <MoreHorizontal className="h-5 w-5 text-primary group-hover:text-white" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 shadow-lg rounded-xl">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedLead(lead)
+                              setDetailsOpen(true)
+                            }}
+                            className="cursor-pointer py-2.5"
+                          >
+                            <FileText className="mr-2 h-4 w-4 text-accent" />
+                            <span className="font-medium">Detalhes</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedLead(lead)
+                              setFormOpen(true)
+                            }}
+                            className="cursor-pointer py-2.5"
+                          >
+                            <Edit className="mr-2 h-4 w-4 text-accent" />
+                            <span className="font-medium">Editar</span>
+                          </DropdownMenuItem>
+                          {(user?.role === 'admin' || user?.role === 'gerente') && (
+                            <DropdownMenuItem
+                              className="text-destructive focus:bg-red-50 focus:text-destructive cursor-pointer py-2.5"
+                              onClick={() => handleDelete(lead.id)}
+                            >
+                              <Trash className="mr-2 h-4 w-4" />
+                              <span className="font-medium">Excluir</span>
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 

@@ -246,10 +246,19 @@ export function LeadFormDialog({ open, onOpenChange, lead }: LeadFormDialogProps
             />
 
             <div className="flex justify-end pt-4 space-x-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="min-h-[44px]"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting}
+                className="min-h-[44px] bg-secondary text-secondary-foreground hover:bg-secondary/90 font-semibold"
+              >
                 Salvar
               </Button>
             </div>

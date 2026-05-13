@@ -16,10 +16,10 @@ import { ptBR } from 'date-fns/locale'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export const statusColors: Record<string, string> = {
-  novo: 'bg-blue-100 text-blue-800',
-  proposta_enviada: 'bg-yellow-100 text-yellow-800',
-  fechado: 'bg-green-100 text-green-800',
-  perdido: 'bg-red-100 text-red-800',
+  novo: 'bg-[#4A90E2]/20 text-[#1A3A52] border-[#4A90E2]/30',
+  proposta_enviada: 'bg-[#FFC107]/20 text-[#8B6914] border-[#FFC107]/30',
+  fechado: 'bg-green-100 text-green-800 border-green-200',
+  perdido: 'bg-red-100 text-red-800 border-red-200',
 }
 
 export const statusLabels: Record<string, string> = {
