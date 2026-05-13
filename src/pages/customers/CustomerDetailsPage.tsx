@@ -25,6 +25,8 @@ import { ContatoDetailsDialog } from '@/components/contatos/ContatoDetailsDialog
 import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PhoneCall } from 'lucide-react'
 
 export default function CustomerDetailsPage() {
   const { id } = useParams()
@@ -290,12 +292,36 @@ export default function CustomerDetailsPage() {
         </TabsContent>
 
         <TabsContent value="historico">
-          <Card>
+          <Card className="shadow-subtle border-muted">
             <CardContent className="p-6">
               <div className="space-y-8">
-                {contatos.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground font-medium">
-                    Nenhum contato registrado.
+                {loading ? (
+                  <div className="space-y-6">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex gap-4">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-1/4" />
+                          <Skeleton className="h-3 w-1/5" />
+                          <Skeleton className="h-10 w-full" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : contatos.length === 0 ? (
+                  <div className="text-center py-12 flex flex-col items-center justify-center">
+                    <PhoneCall className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-bold text-[#1A3A52]">Nenhum contato registrado</h3>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                      Não há histórico de interações para este cliente.
+                    </p>
+                    <Button
+                      onClick={() => setFormOpen(true)}
+                      className="mt-6 bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold min-h-[44px]"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Registrar primeiro contato
+                    </Button>
                   </div>
                 ) : (
                   contatos.map((contato, index) => {

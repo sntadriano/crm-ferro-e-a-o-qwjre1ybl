@@ -5,6 +5,7 @@ import {
   MapPin,
   Mail,
   Calendar,
+  Phone,
   User,
   Clock,
   Trash2,
@@ -39,7 +40,7 @@ export function ContatoDetailsDialog({
     if (tipo === 'whatsapp') return <MessageSquare className="h-5 w-5 text-green-500" />
     if (tipo === 'visita') return <MapPin className="h-5 w-5 text-orange-500" />
     if (tipo === 'email') return <Mail className="h-5 w-5 text-purple-500" />
-    return null
+    return <Phone className="h-5 w-5 text-blue-500" />
   }
 
   const handleDelete = async () => {
@@ -111,33 +112,42 @@ export function ContatoDetailsDialog({
 
             <Separator />
 
-            <div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <User className="h-3 w-3" /> Registrado por:{' '}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-muted-foreground bg-muted/20 p-3 rounded-md">
+              <div className="flex items-center gap-2">
+                <User className="h-3.5 w-3.5" />
+                <span className="font-medium">Registrado por:</span>{' '}
                 {contato.expand?.usuario_id?.name || 'Sistema'}
               </div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Criado em:{' '}
-                {format(new Date(contato.created), 'dd/MM/yyyy')}
+              <div className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="font-medium">Criado em:</span>{' '}
+                {format(new Date(contato.created), 'dd/MM/yyyy HH:mm')}
               </div>
+              {contato.updated && contato.updated !== contato.created && (
+                <div className="flex items-center gap-2 sm:col-span-2">
+                  <Edit2 className="h-3.5 w-3.5" />
+                  <span className="font-medium">Última edição em:</span>{' '}
+                  {format(new Date(contato.updated), 'dd/MM/yyyy HH:mm')}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t">
             <Button
               variant="outline"
               className="text-destructive hover:bg-destructive/10 min-h-[44px]"
               onClick={handleDelete}
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir Contato
             </Button>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Button
                 variant="secondary"
                 className="flex-1 sm:flex-none min-h-[44px] bg-[#4A90E2] text-white hover:bg-[#3A7BC8]"
                 onClick={onEdit}
               >
-                <Edit2 className="mr-2 h-4 w-4" /> Editar
+                <Edit2 className="mr-2 h-4 w-4" /> Editar Contato
               </Button>
               <Button
                 className="flex-1 sm:flex-none min-h-[44px] bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold"
@@ -146,7 +156,7 @@ export function ContatoDetailsDialog({
                   setLeadFormOpen(true)
                 }}
               >
-                <LinkIcon className="mr-2 h-4 w-4" /> Criar Lead
+                <LinkIcon className="mr-2 h-4 w-4" /> Criar Novo Lead
               </Button>
             </div>
           </div>

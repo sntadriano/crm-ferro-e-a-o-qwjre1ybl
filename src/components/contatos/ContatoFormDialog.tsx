@@ -315,7 +315,7 @@ export function ContatoFormDialog({
                 disabled={form.formState.isSubmitting}
                 className="min-h-[44px] bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold"
               >
-                Salvar Contato
+                {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Contato'}
               </Button>
             </div>
           </form>
