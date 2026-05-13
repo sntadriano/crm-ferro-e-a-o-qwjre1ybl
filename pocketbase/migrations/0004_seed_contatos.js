@@ -12,9 +12,9 @@ migrate(
     const contatos = app.findCollectionByNameOrId('contatos')
 
     const seedClientes = [
-      { descricao: '3B LTDA', cnpj_cpf: '00000000000101' },
-      { descricao: 'COM. RIBEIRO', cnpj_cpf: '00000000000102' },
-      { descricao: 'FERRAGISTA BORJAO', cnpj_cpf: '00000000000103' },
+      { descricao: '3B LTDA', cnpj_cpf: '00000000000101', codigo: 'CLI-001' },
+      { descricao: 'COM. RIBEIRO', cnpj_cpf: '00000000000102', codigo: 'CLI-002' },
+      { descricao: 'FERRAGISTA BORJAO', cnpj_cpf: '00000000000103', codigo: 'CLI-003' },
     ]
 
     const createdClientes = {}
@@ -27,6 +27,7 @@ migrate(
         rec = new Record(clientes)
         rec.set('descricao', c.descricao)
         rec.set('cnpj_cpf', c.cnpj_cpf)
+        rec.set('codigo', c.codigo)
         app.save(rec)
       }
       createdClientes[c.descricao] = rec
