@@ -54,8 +54,8 @@ export function AppSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-                      <Link to={item.url}>
-                        <item.icon />
+                      <Link to={item.url} aria-label={item.title}>
+                        <item.icon aria-hidden="true" />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>

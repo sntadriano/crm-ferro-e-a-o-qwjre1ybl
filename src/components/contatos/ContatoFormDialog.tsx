@@ -303,19 +303,18 @@ export function ContatoFormDialog({
               )}
             />
 
-            <div className="flex justify-end pt-4 space-x-2">
+            <div className="flex justify-end pt-4 space-x-3">
               <Button
                 type="button"
-                variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="min-h-[44px]"
+                className="min-h-[44px] bg-[#4A90E2] text-white hover:bg-[#3A7BC8] font-bold px-6"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={form.formState.isSubmitting}
-                className="min-h-[44px] bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold"
+                className="min-h-[44px] bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold px-6"
               >
                 {form.formState.isSubmitting ? 'Salvando...' : 'Salvar Contato'}
               </Button>

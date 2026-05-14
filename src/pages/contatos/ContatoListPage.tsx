@@ -9,6 +9,7 @@ import {
   MessageSquare,
   PhoneCall,
   RefreshCcw,
+  Check,
 } from 'lucide-react'
 import { RecordModel } from 'pocketbase'
 import { format } from 'date-fns'
@@ -123,9 +124,14 @@ export default function ContatoListPage() {
     if (confirm('Tem certeza que deseja excluir este contato?')) {
       try {
         await deleteContato(id)
-        toast.success('Contato excluído com sucesso')
+        toast.success('Contato excluído com sucesso', {
+          className: 'bg-green-100 text-green-800 border-green-200',
+          icon: <Check className="h-4 w-4 text-green-600" />,
+        })
       } catch (err) {
-        toast.error('Erro ao excluir contato')
+        toast.error('Erro ao excluir contato', {
+          className: 'bg-red-100 text-red-800 border-red-200',
+        })
       }
     }
   }
@@ -245,6 +251,7 @@ export default function ContatoListPage() {
               <TableHeader className="bg-[#1A3A52] hover:bg-[#1A3A52]">
                 <TableRow>
                   <TableHead className="text-white font-semibold">Cliente</TableHead>
+                  <TableHead className="text-white font-semibold">Usuário</TableHead>
                   <TableHead
                     className="text-white font-semibold cursor-pointer select-none"
                     onClick={() => setSortField(sortField === 'tipo' ? '-tipo' : 'tipo')}
@@ -267,7 +274,7 @@ export default function ContatoListPage() {
               <TableBody>
                 {contatos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-16">
+                    <TableCell colSpan={7} className="text-center py-16">
                       <div className="flex flex-col items-center justify-center space-y-3">
                         <PhoneCall className="h-12 w-12 text-muted-foreground" />
                         <h3 className="text-lg font-bold text-[#1A3A52]">
@@ -300,11 +307,12 @@ export default function ContatoListPage() {
                       <TableCell className="font-medium">
                         {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
                       </TableCell>
+                      <TableCell>{contato.expand?.usuario_id?.name || 'Sistema'}</TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
                           className={cn(
-                            'capitalize flex items-center gap-1.5 w-fit bg-white',
+                            'capitalize flex items-center gap-1.5 w-fit bg-white group-hover:bg-white/20 group-hover:border-white group-hover:text-white',
                             contato.tipo === 'whatsapp'
                               ? 'border-blue-500 text-blue-700'
                               : contato.tipo === 'visita'
@@ -320,7 +328,7 @@ export default function ContatoListPage() {
                       </TableCell>
                       <TableCell className="max-w-[300px]">
                         <p
-                          className="truncate text-muted-foreground group-hover:text-white/90"
+                          className="truncate text-muted-foreground group-hover:text-white"
                           title={contato.descricao}
                         >
                           {contato.descricao}
@@ -328,7 +336,10 @@ export default function ContatoListPage() {
                       </TableCell>
                       <TableCell>
                         {contato.resultado && (
-                          <Badge variant="outline" className="capitalize bg-white text-foreground">
+                          <Badge
+                            variant="outline"
+                            className="capitalize bg-white text-foreground group-hover:bg-white/20 group-hover:border-white group-hover:text-white"
+                          >
                             {contato.resultado}
                           </Badge>
                         )}
@@ -379,7 +390,7 @@ export default function ContatoListPage() {
                     setSelectedContato(null)
                     setFormOpen(true)
                   }}
-                  className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold min-h-[44px]"
+                  className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold min-h-[44px] w-full"
                 >
                   Registrar Contato
                 </Button>
@@ -391,10 +402,15 @@ export default function ContatoListPage() {
                   className="shadow-subtle hover:border-[#4A90E2] border-border/60 transition-colors overflow-hidden"
                 >
                   <CardContent className="p-0">
-                    <div className="p-4 flex flex-col gap-3">
+                    <div className="p-4 flex flex-col gap-4">
                       <div className="flex justify-between items-start">
-                        <div className="font-bold text-[#1A3A52] line-clamp-1 pr-2">
-                          {contato.expand?.cliente_id?.descricao}
+                        <div>
+                          <div className="font-bold text-[#1A3A52] line-clamp-1 text-base">
+                            {contato.expand?.cliente_id?.descricao}
+                          </div>
+                          <div className="text-sm text-muted-foreground font-medium mt-1">
+                            Usuário: {contato.expand?.usuario_id?.name || 'Sistema'}
+                          </div>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -421,7 +437,7 @@ export default function ContatoListPage() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                      <div className="flex flex-wrap gap-3 text-sm">
+                      <div className="flex flex-wrap gap-3 text-sm mt-1">
                         <Badge
                           variant="outline"
                           className={cn(
@@ -435,21 +451,40 @@ export default function ContatoListPage() {
                         >
                           {getTipoIcon(contato.tipo)} {contato.tipo}
                         </Badge>
-                        <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                        <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/50 px-2 py-1 rounded-md font-medium">
                           <CalendarIcon className="h-3.5 w-3.5" />{' '}
                           {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
                         </div>
                       </div>
-                      <p className="text-sm text-foreground/80 line-clamp-2 mt-1">
+                      <p className="text-sm text-foreground/90 line-clamp-2 mt-1">
                         {contato.descricao}
                       </p>
                       {contato.resultado && (
                         <div className="mt-1">
-                          <Badge variant="outline" className="capitalize text-xs">
+                          <Badge
+                            variant="outline"
+                            className="capitalize text-xs bg-white text-foreground border-border"
+                          >
                             Resultado: {contato.resultado}
                           </Badge>
                         </div>
                       )}
+
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          className="w-full min-h-[44px] text-xs font-semibold border-border hover:bg-muted/50"
+                          onClick={() => handleOpenDetails(contato)}
+                        >
+                          Visualizar
+                        </Button>
+                        <Button
+                          className="w-full min-h-[44px] text-xs font-semibold bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800]"
+                          onClick={() => handleEdit(contato)}
+                        >
+                          Editar
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -465,13 +500,13 @@ export default function ContatoListPage() {
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     className={
                       page === 1
-                        ? 'pointer-events-none opacity-50 min-h-[44px]'
-                        : 'cursor-pointer min-h-[44px]'
+                        ? 'pointer-events-none opacity-50 min-h-[44px] text-[#1A3A52]'
+                        : 'cursor-pointer min-h-[44px] hover:bg-[#1A3A52]/10 hover:text-[#1A3A52] text-[#1A3A52]'
                     }
                   />
                 </PaginationItem>
                 <PaginationItem>
-                  <span className="text-sm font-medium text-muted-foreground px-4">
+                  <span className="text-sm font-semibold text-[#1A3A52] px-4">
                     Página {page} de {totalPages}
                   </span>
                 </PaginationItem>
@@ -480,8 +515,8 @@ export default function ContatoListPage() {
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     className={
                       page === totalPages
-                        ? 'pointer-events-none opacity-50 min-h-[44px]'
-                        : 'cursor-pointer min-h-[44px]'
+                        ? 'pointer-events-none opacity-50 min-h-[44px] text-[#1A3A52]'
+                        : 'cursor-pointer min-h-[44px] hover:bg-[#1A3A52]/10 hover:text-[#1A3A52] text-[#1A3A52]'
                     }
                   />
                 </PaginationItem>

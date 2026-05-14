@@ -284,7 +284,7 @@ export default function CustomerDetailsPage() {
               <p className="text-sm font-medium text-muted-foreground mt-1 max-w-md">
                 Este cliente ainda não possui leads comerciais ativos na plataforma.
               </p>
-              <Button className="mt-6 min-h-[44px] bg-[#4A90E2] text-white hover:bg-[#3A7BC8]">
+              <Button className="mt-6 min-h-[44px] font-bold bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800]">
                 Criar novo lead
               </Button>
             </CardContent>
@@ -326,18 +326,18 @@ export default function CustomerDetailsPage() {
                 ) : (
                   contatos.map((contato, index) => {
                     const isLast = index === contatos.length - 1 && !customer.registeredAt
-                    let icon = <Phone className="h-4 w-4 text-blue-600" />
+                    let icon = <Phone className="h-5 w-5 text-blue-600" />
                     let bg = 'bg-blue-100'
                     if (contato.tipo === 'email') {
-                      icon = <Mail className="h-4 w-4 text-purple-600" />
+                      icon = <Mail className="h-5 w-5 text-purple-600" />
                       bg = 'bg-purple-100'
                     }
                     if (contato.tipo === 'visita') {
-                      icon = <MapPin className="h-4 w-4 text-green-600" />
+                      icon = <MapPin className="h-5 w-5 text-green-600" />
                       bg = 'bg-green-100'
                     }
                     if (contato.tipo === 'whatsapp') {
-                      icon = <MessageSquare className="h-4 w-4 text-blue-600" />
+                      icon = <MessageSquare className="h-5 w-5 text-blue-600" />
                       bg = 'bg-blue-100'
                     }
 
@@ -350,14 +350,14 @@ export default function CustomerDetailsPage() {
                           setDetailsOpen(true)
                         }}
                       >
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center shrink-0">
                           <div
-                            className={`w-8 h-8 rounded-full ${bg} flex items-center justify-center z-10 shadow-sm`}
+                            className={`w-10 h-10 rounded-full ${bg} flex items-center justify-center z-10 shadow-sm border border-white`}
                           >
                             {icon}
                           </div>
                           {!isLast && (
-                            <div className="w-px h-full bg-border absolute top-8 bottom-[-2rem] left-4"></div>
+                            <div className="w-[2px] h-full bg-border/60 absolute top-10 bottom-[-2rem] left-5"></div>
                           )}
                         </div>
                         <div className="pb-2 flex-1">
@@ -385,10 +385,10 @@ export default function CustomerDetailsPage() {
                   })
                 )}
                 {customer.registeredAt && (
-                  <div className="flex gap-4 relative">
-                    <div className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center z-10 shadow-sm">
-                        <Activity className="h-4 w-4 text-emerald-600" />
+                  <div className="flex gap-4 relative pl-[0.1rem]">
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center z-10 shadow-sm border border-white">
+                        <Activity className="h-5 w-5 text-emerald-600" />
                       </div>
                     </div>
                     <div>
