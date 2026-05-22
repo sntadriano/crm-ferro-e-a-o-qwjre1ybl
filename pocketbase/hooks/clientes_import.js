@@ -1,37 +1,14 @@
-// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
   (e) => {
     const body = e.requestInfo().body
 
-    if (!body.fileData && (!body.rows || !Array.isArray(body.rows))) {
-      return e.badRequestError('Arquivo não enviado ou formato inválido.')
+    if (!body.rows || !Array.isArray(body.rows)) {
+      return e.badRequestError('Formato inválido. Apenas CSV é suportado.')
     }
 
-    let rows = []
-
-    if (body.fileData && body.fileName) {
-      const isXlsx =
-        body.fileName.toLowerCase().endsWith('.xlsx') ||
-        body.fileName.toLowerCase().endsWith('.xls')
-      if (isXlsx) {
-        try {
-          const XLSX = require('xlsx')
-          const base64 = body.fileData.includes(',') ? body.fileData.split(',')[1] : body.fileData
-          const workbook = XLSX.read(base64, { type: 'base64' })
-          const sheetName = workbook.SheetNames[0]
-          const sheet = workbook.Sheets[sheetName]
-          rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
-        } catch (err) {
-          return e.badRequestError('Erro ao processar o arquivo XLSX: ' + err.message)
-        }
-      }
-    }
-
-    if (rows.length === 0 && body.rows && Array.isArray(body.rows)) {
-      rows = body.rows
-    }
+    let rows = body.rows
 
     if (rows.length < 2) {
       return e.badRequestError('Arquivo vazio ou sem dados válidos.')
