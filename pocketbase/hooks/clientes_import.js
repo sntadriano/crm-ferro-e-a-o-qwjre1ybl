@@ -1,4 +1,3 @@
-// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
@@ -6,17 +5,10 @@ routerAdd(
     const body = e.requestInfo().body
     let rows = []
 
-    if (body.fileBase64 && body.fileName && body.fileName.toLowerCase().endsWith('.xlsx')) {
-      const xlsx = require('xlsx')
-      const buffer = Buffer.from(body.fileBase64, 'base64')
-      const workbook = xlsx.read(buffer, { type: 'buffer' })
-      const firstSheet = workbook.SheetNames[0]
-      const worksheet = workbook.Sheets[firstSheet]
-      rows = xlsx.utils.sheet_to_json(worksheet, { header: 1, defval: '' })
-    } else if (body.rows && Array.isArray(body.rows)) {
+    if (body.rows && Array.isArray(body.rows)) {
       rows = body.rows
     } else {
-      return e.badRequestError('Formato inválido. Envie um CSV (rows) ou XLSX (fileBase64).')
+      return e.badRequestError('Formato inválido. Envie um CSV (rows).')
     }
 
     if (!rows || rows.length < 2) {

@@ -71,19 +71,8 @@ export function ImportDialog() {
       if (file.name.toLowerCase().endsWith('.csv')) {
         const text = await file.text()
         bodyData.rows = parseCSV(text)
-      } else if (file.name.toLowerCase().endsWith('.xlsx')) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = (e) => {
-            const result = e.target?.result as string
-            resolve(result.split(',')[1])
-          }
-          reader.onerror = reject
-          reader.readAsDataURL(file)
-        })
-        bodyData.fileBase64 = base64
       } else {
-        throw new Error('Apenas arquivos .csv ou .xlsx são suportados.')
+        throw new Error('Apenas arquivos .csv são suportados.')
       }
 
       const result = await pb.send('/backend/v1/clientes/import', {
@@ -141,8 +130,8 @@ export function ImportDialog() {
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha (.csv ou .xlsx) para cadastrar ou atualizar clientes. O
-            CNPJ/CPF será usado como identificador único para atualizar registros existentes.
+            Faça upload de uma planilha (.csv) para cadastrar ou atualizar clientes. O CNPJ/CPF será
+            usado como identificador único para atualizar registros existentes.
           </DialogDescription>
         </DialogHeader>
 
@@ -153,10 +142,10 @@ export function ImportDialog() {
               <div className="text-sm font-medium text-foreground mb-1">
                 Clique para selecionar ou arraste o arquivo
               </div>
-              <div className="text-xs text-muted-foreground">Suporta arquivos .csv ou .xlsx</div>
+              <div className="text-xs text-muted-foreground">Suporta arquivos .csv</div>
               <input
                 type="file"
-                accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".csv"
                 className="hidden"
                 id="excel-upload"
                 onChange={handleFileChange}
