@@ -1,22 +1,31 @@
+// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
   (e) => {
     const body = e.requestInfo().body
+    let rows = []
 
-    if (!body.rows || !Array.isArray(body.rows)) {
-      return e.badRequestError('Formato inválido. Apenas CSV é suportado.')
+    if (body.fileBase64 && body.fileName && body.fileName.toLowerCase().endsWith('.xlsx')) {
+      const xlsx = require('xlsx')
+      const buffer = Buffer.from(body.fileBase64, 'base64')
+      const workbook = xlsx.read(buffer, { type: 'buffer' })
+      const firstSheet = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[firstSheet]
+      rows = xlsx.utils.sheet_to_json(worksheet, { header: 1, defval: '' })
+    } else if (body.rows && Array.isArray(body.rows)) {
+      rows = body.rows
+    } else {
+      return e.badRequestError('Formato inválido. Envie um CSV (rows) ou XLSX (fileBase64).')
     }
 
-    let rows = body.rows
-
-    if (rows.length < 2) {
+    if (!rows || rows.length < 2) {
       return e.badRequestError('Arquivo vazio ou sem dados válidos.')
     }
 
     const normalizeHeader = (h) => {
       if (!h) return ''
-      let s = String(h).toUpperCase()
+      let s = String(h).toUpperCase().trim()
       const accents = {
         Á: 'A',
         À: 'A',
@@ -77,12 +86,7 @@ routerAdd(
     const idxStatus = findCol(['STATUS', 'SITUACAO'])
 
     if (idxDescricao === -1 || idxCnpjCpf === -1) {
-      const missing = []
-      if (idxDescricao === -1) missing.push('DESCRICAO')
-      if (idxCnpjCpf === -1) missing.push('CNPJ/CPF')
-      return e.badRequestError(
-        `O arquivo deve conter as colunas obrigatórias: ${missing.join(' e ')}. Verifique os cabeçalhos da sua planilha.`,
-      )
+      return e.badRequestError(`O arquivo deve conter as colunas 'DESCRICAO' e 'CNPJ/CPF'.`)
     }
 
     let total = 0
@@ -128,7 +132,7 @@ routerAdd(
           : ''
 
       const codigoVal = getValue(idxCodigo)
-      const codigo = codigoVal ? parseInt(codigoVal, 10) : 0
+      const codigo = codigoVal ? parseInt(codigoVal.replace(/[^\d]/g, ''), 10) : 0
       const fantasia = getValue(idxFantasia)
       const endereco = getValue(idxEndereco)
       const bairro = getValue(idxBairro)
@@ -138,7 +142,7 @@ routerAdd(
       const fone = getValue(idxFone)
       const celular = getValue(idxCelular)
       const vendedorVal = getValue(idxVendedor)
-      const vendedor = vendedorVal ? parseInt(vendedorVal, 10) : 0
+      const vendedor = vendedorVal ? parseInt(vendedorVal.replace(/[^\d]/g, ''), 10) : 0
       const tipo = getValue(idxTipo)
       const insc_estadual = getValue(idxInscEstadual)
       const email = getValue(idxEmail)
