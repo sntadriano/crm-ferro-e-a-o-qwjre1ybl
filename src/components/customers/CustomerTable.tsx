@@ -96,10 +96,10 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
                   variant="ghost"
                   size="icon"
                   asChild
-                  className="opacity-0 group-hover:opacity-100 transition-opacity min-h-[44px] min-w-[44px]"
+                  className="transition-colors min-h-[44px] min-w-[44px] hover:bg-muted"
                 >
                   <Link to={`/clientes/${customer.id}`}>
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-muted-foreground" />
                     <span className="sr-only">Ver detalhes</span>
                   </Link>
                 </Button>

@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/customers/StatusBadge'
 import { Separator } from '@/components/ui/separator'
 import { getContatosByCliente } from '@/services/contatos'
+import { getLeads } from '@/services/leads'
 import { useRealtime } from '@/hooks/use-realtime'
 import { ContatoDetailsDialog } from '@/components/contatos/ContatoDetailsDialog'
 import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
@@ -33,7 +34,9 @@ export default function CustomerDetailsPage() {
   const navigate = useNavigate()
   const [customer, setCustomer] = useState<any>(null)
   const [contatos, setContatos] = useState<RecordModel[]>([])
+  const [leads, setLeads] = useState<RecordModel[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingLeads, setLoadingLeads] = useState(true)
   const [selectedContato, setSelectedContato] = useState<RecordModel | null>(null)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
@@ -44,8 +47,23 @@ export default function CustomerDetailsPage() {
     }
   }
 
+  const loadLeads = () => {
+    if (id) {
+      getLeads(1, 50, { cliente_id: id })
+        .then((data) => {
+          setLeads(data.items || [])
+          setLoadingLeads(false)
+        })
+        .catch(() => setLoadingLeads(false))
+    }
+  }
+
   useRealtime('contatos', () => {
     loadContatos()
+  })
+
+  useRealtime('leads', () => {
+    loadLeads()
   })
 
   useEffect(() => {
@@ -76,12 +94,31 @@ export default function CustomerDetailsPage() {
           },
         })
         loadContatos()
+        loadLeads()
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [id])
 
-  if (loading) return <div>Carregando...</div>
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-12 w-12 rounded-md" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+        </div>
+        <Skeleton className="h-10 w-full max-w-sm rounded-md" />
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="md:col-span-2 h-64 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
 
   if (!customer) {
     return (
@@ -277,16 +314,62 @@ export default function CustomerDetailsPage() {
         </TabsContent>
 
         <TabsContent value="leads">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-              <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-4" />
-              <h3 className="text-lg font-bold text-[#1A3A52]">Nenhum lead vinculado</h3>
-              <p className="text-sm font-medium text-muted-foreground mt-1 max-w-md">
-                Este cliente ainda não possui leads comerciais ativos na plataforma.
-              </p>
-              <Button className="mt-6 min-h-[44px] font-bold bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800]">
-                Criar novo lead
-              </Button>
+          <Card className="shadow-subtle border-muted">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {loadingLeads ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                    ))}
+                  </div>
+                ) : leads.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Briefcase className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-bold text-[#1A3A52]">Nenhum lead vinculado</h3>
+                    <p className="text-sm font-medium text-muted-foreground mt-1 max-w-md">
+                      Este cliente ainda não possui leads comerciais ativos na plataforma.
+                    </p>
+                    <Button className="mt-6 min-h-[44px] font-bold bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800]">
+                      Criar novo lead
+                    </Button>
+                  </div>
+                ) : (
+                  leads.map((lead) => (
+                    <div
+                      key={lead.id}
+                      className="border rounded-lg p-4 hover:bg-muted/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div>
+                        <div className="font-bold text-[#1A3A52] flex items-center gap-2">
+                          <Briefcase className="h-4 w-4" />
+                          Lead {lead.id.slice(0, 8).toUpperCase()}
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1 font-medium">
+                          Criado em:{' '}
+                          {format(new Date(lead.data_criacao || lead.created), 'dd/MM/yyyy')}
+                        </div>
+                        {lead.proximo_followup && (
+                          <div className="text-sm text-muted-foreground font-medium">
+                            Follow-up: {format(new Date(lead.proximo_followup), 'dd/MM/yyyy')}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col sm:items-end gap-2">
+                        <Badge variant="outline" className="uppercase w-fit font-bold">
+                          {lead.status.replace('_', ' ')}
+                        </Badge>
+                        <div className="font-bold text-lg text-emerald-600">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(lead.valor_estimado || 0)}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

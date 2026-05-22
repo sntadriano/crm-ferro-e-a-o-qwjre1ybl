@@ -9,6 +9,7 @@ export interface LeadFilters {
   date_end?: string
   value_min?: number | ''
   value_max?: number | ''
+  cliente_id?: string
 }
 
 export const getLeads = (page = 1, perPage = 20, filters: LeadFilters = {}) => {
@@ -21,6 +22,7 @@ export const getLeads = (page = 1, perPage = 20, filters: LeadFilters = {}) => {
     f.push(`valor_estimado >= ${filters.value_min}`)
   if (filters.value_max !== undefined && filters.value_max !== '')
     f.push(`valor_estimado <= ${filters.value_max}`)
+  if (filters.cliente_id) f.push(`cliente_id = '${filters.cliente_id}'`)
 
   return pb.collection('leads').getList(page, perPage, {
     filter: f.join(' && '),
