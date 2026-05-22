@@ -36,13 +36,11 @@ export function ImportDialog() {
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
-        const dataUrl = e.target?.result as string
-        // Exclude the data header (e.g. data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,)
-        const fileBase64 = dataUrl.split(',')[1]
+        const fileText = e.target?.result as string
 
         const result = await pb.send('/backend/v1/clientes/import', {
           method: 'POST',
-          body: JSON.stringify({ fileBase64 }),
+          body: JSON.stringify({ fileText }),
           headers: { 'Content-Type': 'application/json' },
         })
 
@@ -83,7 +81,7 @@ export function ImportDialog() {
       setIsImporting(false)
     }
 
-    reader.readAsDataURL(file)
+    reader.readAsText(file)
   }
 
   const resetAndClose = () => {
@@ -99,14 +97,14 @@ export function ImportDialog() {
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && resetAndClose()}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
-          <FileSpreadsheet className="h-4 w-4" /> Importar Excel
+          <FileSpreadsheet className="h-4 w-4" /> Importar Planilha
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha .xlsx para cadastrar novos clientes. O CNPJ/CPF será usado
+            Faça upload de uma planilha .csv para cadastrar novos clientes. O CNPJ/CPF será usado
             para verificar duplicidades (registros duplicados ou inválidos serão ignorados).
           </DialogDescription>
         </DialogHeader>
@@ -118,10 +116,10 @@ export function ImportDialog() {
               <div className="text-sm font-medium text-foreground mb-1">
                 Clique para selecionar ou arraste o arquivo
               </div>
-              <div className="text-xs text-muted-foreground">Suporta apenas arquivos .xlsx</div>
+              <div className="text-xs text-muted-foreground">Suporta apenas arquivos .csv</div>
               <input
                 type="file"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                accept=".csv"
                 className="hidden"
                 id="excel-upload"
                 onChange={handleFileChange}

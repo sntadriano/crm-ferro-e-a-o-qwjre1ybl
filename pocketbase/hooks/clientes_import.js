@@ -1,29 +1,75 @@
-// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
   (e) => {
-    const xlsx = require('xlsx')
     const body = e.requestInfo().body
 
-    if (!body || !body.fileBase64) {
+    if (!body || !body.fileText) {
       return e.badRequestError('Arquivo não enviado na requisição.')
     }
 
-    let workbook
-    try {
-      workbook = xlsx.read(body.fileBase64, { type: 'base64' })
-    } catch (err) {
-      return e.badRequestError('Falha ao ler o arquivo Excel. Verifique o formato.')
+    const text = body.fileText
+
+    // Basic CSV parser
+    const parseCSV = (str) => {
+      const result = []
+      let row = []
+      let inQuotes = false
+      let val = ''
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i]
+        if (inQuotes) {
+          if (char === '"') {
+            if (i + 1 < str.length && str[i + 1] === '"') {
+              val += '"'
+              i++
+            } else {
+              inQuotes = false
+            }
+          } else {
+            val += char
+          }
+        } else {
+          if (char === '"') {
+            inQuotes = true
+          } else if (char === ',' || char === ';') {
+            // support both comma and semicolon
+            row.push(val)
+            val = ''
+          } else if (char === '\n' || char === '\r') {
+            row.push(val)
+            val = ''
+            // Only push row if it has content (avoids empty lines)
+            if (row.some((c) => c !== '')) result.push(row)
+            row = []
+            if (char === '\r' && i + 1 < str.length && str[i + 1] === '\n') {
+              i++
+            }
+          } else {
+            val += char
+          }
+        }
+      }
+      if (val !== '' || row.length > 0) {
+        row.push(val)
+        if (row.some((c) => c !== '')) result.push(row)
+      }
+      return result
     }
 
-    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
-      return e.badRequestError('Planilha vazia.')
+    const parsed = parseCSV(text)
+    if (parsed.length < 2) {
+      return e.badRequestError('Planilha vazia ou sem cabeçalhos.')
     }
 
-    const firstSheetName = workbook.SheetNames[0]
-    const worksheet = workbook.Sheets[firstSheetName]
-    const rows = xlsx.utils.sheet_to_json(worksheet, { defval: '' })
+    const headers = parsed[0].map((h) => h.trim().toLowerCase())
+    const rows = parsed.slice(1).map((row) => {
+      const obj = {}
+      headers.forEach((h, i) => {
+        obj[h] = row[i] ? row[i].trim() : ''
+      })
+      return obj
+    })
 
     let created = 0
     let skipped = 0
@@ -32,7 +78,6 @@ routerAdd(
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]
 
-      // Helper to read multiple possible column names
       const getVal = (keys) => {
         for (const k of keys) {
           if (row[k] !== undefined && row[k] !== null && row[k] !== '') {
@@ -42,48 +87,24 @@ routerAdd(
         return ''
       }
 
-      const descricao = getVal([
-        'descricao',
-        'Descricao',
-        'DESCRICAO',
-        'descricao_',
-        'nome',
-        'Nome',
-        'NOME',
-      ])
-      const fantasia = getVal(['fantasia', 'Fantasia', 'FANTASIA', 'fantasia_'])
-      let cnpj_cpf = getVal([
-        'cnpj_cpf',
-        'CNPJ_CPF',
-        'CnpjCpf',
-        'CNPJ',
-        'CPF',
-        'cnpj_cpf_',
-        'cnpj',
-        'cpf',
-      ])
+      const descricao = getVal(['descricao', 'descricao_', 'nome'])
+      const fantasia = getVal(['fantasia', 'fantasia_'])
+      let cnpj_cpf = getVal(['cnpj_cpf', 'cnpj', 'cpf', 'cnpj_cpf_'])
       cnpj_cpf = String(cnpj_cpf).replace(/\D/g, '')
 
-      const codigo = getVal(['codigo', 'Codigo', 'CODIGO', 'codigo_'])
-      const insc_estadual = getVal([
-        'insc_estadual',
-        'InscEstadual',
-        'INSC_ESTADUAL',
-        'insc_estadual_',
-        'ie',
-        'IE',
-      ])
-      const fone = getVal(['fone', 'Fone', 'FONE', 'telefone', 'Telefone', 'fone_'])
-      const celular = getVal(['celular', 'Celular', 'CELULAR', 'celular_'])
-      const email = getVal(['email', 'Email', 'EMAIL'])
-      const endereco = getVal(['endereco', 'Endereco', 'ENDERECO', 'endereco_'])
-      const bairro = getVal(['bairro', 'Bairro', 'BAIRRO', 'bairro_'])
-      const cidade = getVal(['cidade', 'Cidade', 'CIDADE', 'cidade_'])
-      const uf = getVal(['uf', 'Uf', 'UF'])
-      const cep = getVal(['cep', 'Cep', 'CEP', 'cep_'])
-      const tipo = getVal(['tipo', 'Tipo', 'TIPO'])
-      const vendedor = getVal(['vendedor', 'Vendedor', 'VENDEDOR'])
-      const status = getVal(['status', 'Status', 'STATUS'])
+      const codigo = getVal(['codigo', 'codigo_'])
+      const insc_estadual = getVal(['insc_estadual', 'ie', 'insc_estadual_'])
+      const fone = getVal(['fone', 'telefone', 'fone_'])
+      const celular = getVal(['celular', 'celular_'])
+      const email = getVal(['email'])
+      const endereco = getVal(['endereco', 'endereco_'])
+      const bairro = getVal(['bairro', 'bairro_'])
+      const cidade = getVal(['cidade', 'cidade_'])
+      const uf = getVal(['uf'])
+      const cep = getVal(['cep', 'cep_'])
+      const tipo = getVal(['tipo'])
+      const vendedor = getVal(['vendedor'])
+      const status = getVal(['status'])
 
       if (!descricao) {
         errors.push({ row: i + 2, reason: 'Descrição (nome) é obrigatória' })
@@ -101,9 +122,7 @@ routerAdd(
         let existingRecord
         try {
           existingRecord = $app.findFirstRecordByData('clientes', 'cnpj_cpf', cnpj_cpf)
-        } catch (err) {
-          // Not found
-        }
+        } catch (err) {}
 
         if (existingRecord) {
           skipped++
@@ -156,12 +175,12 @@ routerAdd(
     try {
       const auditCollection = $app.findCollectionByNameOrId('audit_logs')
       const auditRecord = new Record(auditCollection)
-      auditRecord.set('usuario_id', e.auth.id || '')
+      auditRecord.set('usuario_id', e.auth?.id || '')
       auditRecord.set(
         'usuario_nome',
         e.auth ? e.auth.getString('name') || e.auth.getString('email') : 'Sistema',
       )
-      auditRecord.set('acao', 'importacao_clientes_excel')
+      auditRecord.set('acao', 'importacao_clientes_csv')
       auditRecord.set('detalhes', {
         total_linhas: rows.length,
         sucesso: created,
