@@ -1,39 +1,111 @@
+// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
   (e) => {
     const body = e.requestInfo().body
 
-    if (!body.rows || !Array.isArray(body.rows)) {
+    if (!body.fileData && (!body.rows || !Array.isArray(body.rows))) {
       return e.badRequestError('Arquivo não enviado ou formato inválido.')
     }
 
-    const rows = body.rows
-    if (rows.length < 2) {
-      return e.badRequestError('Arquivo vazio ou sem dados.')
+    let rows = []
+
+    if (body.fileData && body.fileName) {
+      const isXlsx =
+        body.fileName.toLowerCase().endsWith('.xlsx') ||
+        body.fileName.toLowerCase().endsWith('.xls')
+      if (isXlsx) {
+        try {
+          const XLSX = require('xlsx')
+          const base64 = body.fileData.includes(',') ? body.fileData.split(',')[1] : body.fileData
+          const workbook = XLSX.read(base64, { type: 'base64' })
+          const sheetName = workbook.SheetNames[0]
+          const sheet = workbook.Sheets[sheetName]
+          rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+        } catch (err) {
+          return e.badRequestError('Erro ao processar o arquivo XLSX: ' + err.message)
+        }
+      }
     }
 
-    const headerRow = rows[0].map((h) => (h ? String(h).toUpperCase().trim() : ''))
+    if (rows.length === 0 && body.rows && Array.isArray(body.rows)) {
+      rows = body.rows
+    }
 
-    const idxCodigo = headerRow.indexOf('CODIGO')
-    const idxDescricao = headerRow.indexOf('DESCRICAO')
-    const idxFantasia = headerRow.indexOf('FANTASIA')
-    const idxEndereco = headerRow.indexOf('ENDERECO')
-    const idxBairro = headerRow.indexOf('BAIRRO')
-    const idxCidade = headerRow.indexOf('CIDADE')
-    const idxUf = headerRow.indexOf('UF')
-    const idxCep = headerRow.indexOf('CEP')
-    const idxFone = headerRow.indexOf('FONE')
-    const idxCelular = headerRow.indexOf('CELULAR')
-    const idxVendedor = headerRow.indexOf('VENDEDOR')
-    const idxCadastro = headerRow.indexOf('CADASTRO')
-    const idxTipo = headerRow.indexOf('TIPO')
-    const idxCnpjCpf = headerRow.indexOf('CNPJ/CPF')
-    const idxInscEstadual = headerRow.indexOf('INSC ESTADUAL')
-    const idxEmail = headerRow.indexOf('EMAIL')
+    if (rows.length < 2) {
+      return e.badRequestError('Arquivo vazio ou sem dados válidos.')
+    }
+
+    const normalizeHeader = (h) => {
+      if (!h) return ''
+      let s = String(h).toUpperCase()
+      const accents = {
+        Á: 'A',
+        À: 'A',
+        Â: 'A',
+        Ã: 'A',
+        Ä: 'A',
+        É: 'E',
+        È: 'E',
+        Ê: 'E',
+        Ë: 'E',
+        Í: 'I',
+        Ì: 'I',
+        Î: 'I',
+        Ï: 'I',
+        Ó: 'O',
+        Ò: 'O',
+        Ô: 'O',
+        Õ: 'O',
+        Ö: 'O',
+        Ú: 'U',
+        Ù: 'U',
+        Û: 'U',
+        Ü: 'U',
+        Ç: 'C',
+        Ñ: 'N',
+      }
+      return s
+        .replace(/[ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ]/g, (m) => accents[m] || m)
+        .replace(/[^A-Z0-9]/g, '')
+    }
+
+    const headerRow = rows[0].map(normalizeHeader)
+
+    const findCol = (names) => {
+      for (const name of names) {
+        const idx = headerRow.indexOf(normalizeHeader(name))
+        if (idx !== -1) return idx
+      }
+      return -1
+    }
+
+    const idxCodigo = findCol(['CODIGO'])
+    const idxDescricao = findCol(['DESCRICAO', 'NOME', 'CLIENTE', 'RAZAO SOCIAL'])
+    const idxFantasia = findCol(['FANTASIA', 'NOME FANTASIA'])
+    const idxEndereco = findCol(['ENDERECO', 'RUA', 'LOGRADOURO'])
+    const idxBairro = findCol(['BAIRRO'])
+    const idxCidade = findCol(['CIDADE', 'MUNICIPIO'])
+    const idxUf = findCol(['UF', 'ESTADO'])
+    const idxCep = findCol(['CEP'])
+    const idxFone = findCol(['FONE', 'TELEFONE', 'TELEFONE1'])
+    const idxCelular = findCol(['CELULAR', 'TELEFONE2', 'WHATSAPP'])
+    const idxVendedor = findCol(['VENDEDOR', 'COD VENDEDOR'])
+    const idxCadastro = findCol(['CADASTRO', 'DATA CADASTRO', 'CRIADO EM'])
+    const idxTipo = findCol(['TIPO', 'TIPO CLIENTE'])
+    const idxCnpjCpf = findCol(['CNPJ/CPF', 'CNPJ CPF', 'CNPJ', 'CPF', 'CNPJ_CPF', 'DOCUMENTO'])
+    const idxInscEstadual = findCol(['INSC ESTADUAL', 'IE', 'INSCRICAO ESTADUAL'])
+    const idxEmail = findCol(['EMAIL', 'E-MAIL'])
+    const idxStatus = findCol(['STATUS', 'SITUACAO'])
 
     if (idxDescricao === -1 || idxCnpjCpf === -1) {
-      return e.badRequestError('O arquivo deve conter as colunas DESCRICAO e CNPJ/CPF.')
+      const missing = []
+      if (idxDescricao === -1) missing.push('DESCRICAO')
+      if (idxCnpjCpf === -1) missing.push('CNPJ/CPF')
+      return e.badRequestError(
+        `O arquivo deve conter as colunas obrigatórias: ${missing.join(' e ')}. Verifique os cabeçalhos da sua planilha.`,
+      )
     }
 
     let total = 0
@@ -46,7 +118,12 @@ routerAdd(
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i]
-      if (!row || row.length === 0 || row.every((c) => !c)) continue
+      if (
+        !row ||
+        row.length === 0 ||
+        row.every((c) => c === undefined || c === null || String(c).trim() === '')
+      )
+        continue
       total++
 
       const rawDescricao = idxDescricao !== -1 ? row[idxDescricao] : ''
@@ -69,7 +146,9 @@ routerAdd(
       }
 
       const getValue = (idx) =>
-        idx !== -1 && row[idx] !== undefined && row[idx] !== '' ? String(row[idx]).trim() : ''
+        idx !== -1 && row[idx] !== undefined && row[idx] !== null && row[idx] !== ''
+          ? String(row[idx]).trim()
+          : ''
 
       const codigoVal = getValue(idxCodigo)
       const codigo = codigoVal ? parseInt(codigoVal, 10) : 0
@@ -86,15 +165,21 @@ routerAdd(
       const tipo = getValue(idxTipo)
       const insc_estadual = getValue(idxInscEstadual)
       const email = getValue(idxEmail)
+      const status = getValue(idxStatus)
 
       let cadastroDate = ''
       if (idxCadastro !== -1 && row[idxCadastro]) {
-        const s = String(row[idxCadastro]).trim()
-        const parts = s.split('/')
-        if (parts.length === 3) {
-          cadastroDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
-        } else if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
-          cadastroDate = s
+        if (typeof row[idxCadastro] === 'number') {
+          const date = new Date((row[idxCadastro] - 25569) * 86400 * 1000)
+          cadastroDate = date.toISOString().replace('T', ' ').replace('Z', '000Z')
+        } else {
+          const s = String(row[idxCadastro]).trim()
+          const parts = s.split('/')
+          if (parts.length === 3) {
+            cadastroDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
+          } else if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+            cadastroDate = s
+          }
         }
       }
 
@@ -121,6 +206,7 @@ routerAdd(
       record.set('uf', uf)
       record.set('cep', cep)
       record.set('tipo', tipo)
+      if (status) record.set('status', status)
       if (vendedor) record.set('vendedor', vendedor)
       if (cadastroDate) {
         try {
