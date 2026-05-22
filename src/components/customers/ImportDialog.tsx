@@ -35,61 +35,73 @@ export function ImportDialog() {
     }
   }
 
+  const parseCSV = (text: string): string[][] => {
+    const firstLine = text.split('\n')[0] || ''
+    const delimiter =
+      (firstLine.match(/;/g)?.length || 0) > (firstLine.match(/,/g)?.length || 0) ? ';' : ','
+
+    const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0)
+    return lines.map((line) => {
+      const result: string[] = []
+      let current = ''
+      let inQuotes = false
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i]
+        if (char === '"') {
+          inQuotes = !inQuotes
+        } else if (char === delimiter && !inQuotes) {
+          result.push(current)
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      result.push(current)
+      return result.map((v) => v.trim().replace(/^"|"$/g, ''))
+    })
+  }
+
   const handleImport = async () => {
     if (!file) return
     setIsImporting(true)
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      try {
-        const dataUrl = e.target?.result as string
-        const fileBase64 = dataUrl.split(',')[1]
+    try {
+      const text = await file.text()
+      const rows = parseCSV(text)
 
-        const result = await pb.send('/backend/v1/clientes/import', {
-          method: 'POST',
-          body: JSON.stringify({ fileBase64, fileName: file.name }),
-          headers: { 'Content-Type': 'application/json' },
-        })
+      const result = await pb.send('/backend/v1/clientes/import', {
+        method: 'POST',
+        body: JSON.stringify({ rows, fileName: file.name }),
+        headers: { 'Content-Type': 'application/json' },
+      })
 
-        setStats({
-          total: result.total || 0,
-          created: result.created || 0,
-          updated: result.updated || 0,
-          skipped: result.skipped || 0,
-          errors: result.errors || [],
-        })
+      setStats({
+        total: result.total || 0,
+        created: result.created || 0,
+        updated: result.updated || 0,
+        skipped: result.skipped || 0,
+        errors: result.errors || [],
+      })
 
-        toast({
-          title: 'Importação finalizada',
-          description: `${result.created} criados, ${result.updated} atualizados, ${result.skipped} ignorados/erros de ${result.total} lidos.`,
-          className:
-            result.errors?.length > 0
-              ? 'bg-amber-600 text-white border-none'
-              : 'bg-emerald-600 text-white border-none',
-        })
-
-        setImportDone(true)
-      } catch (error: any) {
-        toast({
-          title: 'Erro na importação',
-          description: error?.message || 'Erro ao processar o arquivo.',
-          variant: 'destructive',
-        })
-      } finally {
-        setIsImporting(false)
-      }
-    }
-
-    reader.onerror = () => {
       toast({
-        title: 'Erro',
-        description: 'Não foi possível ler o arquivo localmente.',
+        title: 'Importação finalizada',
+        description: `${result.created} criados, ${result.updated} atualizados, ${result.skipped} ignorados/erros de ${result.total} lidos.`,
+        className:
+          result.errors?.length > 0
+            ? 'bg-amber-600 text-white border-none'
+            : 'bg-emerald-600 text-white border-none',
+      })
+
+      setImportDone(true)
+    } catch (error: any) {
+      toast({
+        title: 'Erro na importação',
+        description: error?.message || 'Erro ao processar o arquivo.',
         variant: 'destructive',
       })
+    } finally {
       setIsImporting(false)
     }
-
-    reader.readAsDataURL(file)
   }
 
   const resetAndClose = () => {
@@ -112,8 +124,8 @@ export function ImportDialog() {
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha (.xlsx, .xls ou .csv) para cadastrar ou atualizar clientes.
-            O CNPJ/CPF será usado como identificador único para atualizar registros existentes.
+            Faça upload de uma planilha (.csv) para cadastrar ou atualizar clientes. O CNPJ/CPF será
+            usado como identificador único para atualizar registros existentes.
           </DialogDescription>
         </DialogHeader>
 
@@ -125,11 +137,11 @@ export function ImportDialog() {
                 Clique para selecionar ou arraste o arquivo
               </div>
               <div className="text-xs text-muted-foreground">
-                Suporta arquivos .xlsx, .xls e .csv
+                Suporta arquivos .csv (separados por ponto e vírgula ou vírgula)
               </div>
               <input
                 type="file"
-                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+                accept=".csv"
                 className="hidden"
                 id="excel-upload"
                 onChange={handleFileChange}

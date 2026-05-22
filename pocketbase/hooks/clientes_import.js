@@ -1,26 +1,14 @@
-// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
   (e) => {
-    const xlsx = require('xlsx')
     const body = e.requestInfo().body
 
-    if (!body.fileBase64) {
-      return e.badRequestError('Arquivo não enviado.')
+    if (!body.rows || !Array.isArray(body.rows)) {
+      return e.badRequestError('Arquivo não enviado ou formato inválido.')
     }
 
-    let wb
-    try {
-      wb = xlsx.read(body.fileBase64, { type: 'base64', cellDates: true })
-    } catch (err) {
-      return e.badRequestError('Erro ao ler o arquivo Excel/CSV.')
-    }
-
-    const sheetName = wb.SheetNames[0]
-    const sheet = wb.Sheets[sheetName]
-
-    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+    const rows = body.rows
     if (rows.length < 2) {
       return e.badRequestError('Arquivo vazio ou sem dados.')
     }
@@ -58,7 +46,7 @@ routerAdd(
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i]
-      if (!row || row.length === 0 || row.every((c) => c === '')) continue
+      if (!row || row.length === 0 || row.every((c) => !c)) continue
       total++
 
       const rawDescricao = idxDescricao !== -1 ? row[idxDescricao] : ''
@@ -101,18 +89,12 @@ routerAdd(
 
       let cadastroDate = ''
       if (idxCadastro !== -1 && row[idxCadastro]) {
-        const cellVal = row[idxCadastro]
-        if (cellVal instanceof Date && !isNaN(cellVal.getTime())) {
-          const pad = (n) => String(n).padStart(2, '0')
-          cadastroDate = `${cellVal.getUTCFullYear()}-${pad(cellVal.getUTCMonth() + 1)}-${pad(cellVal.getUTCDate())} 12:00:00.000Z`
-        } else {
-          const s = String(cellVal).trim()
-          const parts = s.split('/')
-          if (parts.length === 3) {
-            cadastroDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
-          } else if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
-            cadastroDate = s
-          }
+        const s = String(row[idxCadastro]).trim()
+        const parts = s.split('/')
+        if (parts.length === 3) {
+          cadastroDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
+        } else if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+          cadastroDate = s
         }
       }
 
