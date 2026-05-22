@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload, FileSpreadsheet, CheckCircle2, Loader2 } from 'lucide-react'
+import { Upload, FileSpreadsheet, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,176 +11,117 @@ import {
 } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
-import { Progress } from '@/components/ui/progress'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 export function ImportDialog() {
   const [open, setOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [stats, setStats] = useState({ total: 0, created: 0, updated: 0 })
+  const [importDone, setImportDone] = useState(false)
+  const [stats, setStats] = useState({ total: 0, created: 0, skipped: 0, errors: [] as any[] })
   const { toast } = useToast()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
+      setImportDone(false)
+      setStats({ total: 0, created: 0, skipped: 0, errors: [] })
     }
-  }
-
-  // Mocks an Excel to JSON parse since xlsx library is unavailable
-  const parseExcelMock = async (f: File) => {
-    return new Promise<any[]>((resolve) => {
-      setTimeout(() => {
-        resolve([
-          {
-            codigo_: 101,
-            descricao_: 'CLIENTE IMPORTADO 1',
-            fantasia_: 'CLI 1',
-            cnpj_cpf_: '00000000000101',
-            insc_estadual_: 'ISENTO',
-            celular_: '11999999999',
-            fone_: '',
-            email: 'contato@cli1.com',
-            endereco_: 'Rua A',
-            bairro_: 'Centro',
-            cidade_: 'São Paulo',
-            uf: 'SP',
-            cep_: '01000000',
-            tipo: 'J',
-            vendedor: 1,
-          },
-          {
-            codigo_: 102,
-            descricao_: 'CLIENTE IMPORTADO 2',
-            fantasia_: 'CLI 2',
-            cnpj_cpf_: '00000000000102',
-            insc_estadual_: 'ISENTO',
-            celular_: '11988888888',
-            fone_: '',
-            email: 'contato@cli2.com',
-            endereco_: 'Rua B',
-            bairro_: 'Jardins',
-            cidade_: 'São Paulo',
-            uf: 'SP',
-            cep_: '01400000',
-            tipo: 'J',
-            vendedor: 1,
-          },
-        ])
-      }, 1000)
-    })
   }
 
   const handleImport = async () => {
     if (!file) return
     setIsImporting(true)
-    setProgress(10)
 
-    try {
-      const rows = await parseExcelMock(file)
-      setStats({ total: rows.length, created: 0, updated: 0 })
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const dataUrl = e.target?.result as string
+        // Exclude the data header (e.g. data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,)
+        const fileBase64 = dataUrl.split(',')[1]
 
-      let createdCount = 0
-      let updatedCount = 0
+        const result = await pb.send('/backend/v1/clientes/import', {
+          method: 'POST',
+          body: JSON.stringify({ fileBase64 }),
+          headers: { 'Content-Type': 'application/json' },
+        })
 
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i]
-        const searchDoc = row.cnpj_cpf_.replace(/\D/g, '')
+        setStats({
+          total: result.total || 0,
+          created: result.created || 0,
+          skipped: result.skipped || 0,
+          errors: result.errors || [],
+        })
 
-        try {
-          const existing = await pb
-            .collection('clientes')
-            .getFirstListItem(`cnpj_cpf="${searchDoc}"`)
-          await pb.collection('clientes').update(existing.id, {
-            descricao: row.descricao_,
-            fantasia: row.fantasia_,
-            insc_estadual: row.insc_estadual_,
-            celular: row.celular_,
-            fone: row.fone_,
-            email: row.email,
-            endereco: row.endereco_,
-            bairro: row.bairro_,
-            cidade: row.cidade_,
-            uf: row.uf,
-            cep: row.cep_,
-            tipo: row.tipo,
-            vendedor: Number(row.vendedor) || 0,
-          })
-          updatedCount++
-        } catch (_) {
-          await pb.collection('clientes').create({
-            codigo: Number(row.codigo_) || 0,
-            descricao: row.descricao_,
-            fantasia: row.fantasia_,
-            cnpj_cpf: searchDoc,
-            insc_estadual: row.insc_estadual_,
-            celular: row.celular_,
-            fone: row.fone_,
-            email: row.email,
-            endereco: row.endereco_,
-            bairro: row.bairro_,
-            cidade: row.cidade_,
-            uf: row.uf,
-            cep: row.cep_,
-            tipo: row.tipo,
-            vendedor: Number(row.vendedor) || 0,
-            status: 'ativo',
-          })
-          createdCount++
-        }
+        toast({
+          title: 'Importação finalizada',
+          description: `${result.created} criados, ${result.skipped} ignorados de ${result.total} lidos.`,
+          className:
+            result.errors?.length > 0
+              ? 'bg-amber-600 text-white border-none'
+              : 'bg-emerald-600 text-white border-none',
+        })
 
-        setStats((prev) => ({ ...prev, created: createdCount, updated: updatedCount }))
-        setProgress(10 + Math.floor(((i + 1) / rows.length) * 90))
-      }
-
-      toast({
-        title: 'Importação concluída',
-        description: `Importando ${rows.length} clientes... ${createdCount} criados, ${updatedCount} atualizados.`,
-        className: 'bg-emerald-500 text-white border-none',
-      })
-      setTimeout(() => {
-        setOpen(false)
+        setImportDone(true)
+      } catch (error: any) {
+        toast({
+          title: 'Erro na importação',
+          description: error?.message || 'Erro ao processar o arquivo.',
+          variant: 'destructive',
+        })
+      } finally {
         setIsImporting(false)
-        setFile(null)
-        setProgress(0)
-      }, 1000)
-    } catch (error) {
+      }
+    }
+
+    reader.onerror = () => {
       toast({
-        title: 'Erro na importação',
-        description: 'Verifique o formato do arquivo e tente novamente.',
+        title: 'Erro',
+        description: 'Não foi possível ler o arquivo localmente.',
         variant: 'destructive',
       })
       setIsImporting(false)
     }
+
+    reader.readAsDataURL(file)
+  }
+
+  const resetAndClose = () => {
+    setOpen(false)
+    setTimeout(() => {
+      setFile(null)
+      setImportDone(false)
+      setStats({ total: 0, created: 0, skipped: 0, errors: [] })
+    }, 300)
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && resetAndClose()}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
           <FileSpreadsheet className="h-4 w-4" /> Importar Excel
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha .xlsx para atualizar ou criar registros (Upsert). O CNPJ/CPF
-            será usado como chave única.
+            Faça upload de uma planilha .xlsx para cadastrar novos clientes. O CNPJ/CPF será usado
+            para verificar duplicidades (registros duplicados ou inválidos serão ignorados).
           </DialogDescription>
         </DialogHeader>
 
-        {!isImporting ? (
-          <div className="space-y-4">
+        {!isImporting && !importDone && (
+          <div className="space-y-4 py-4">
             <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:bg-muted/50 transition-colors">
               <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-4" />
               <div className="text-sm font-medium text-foreground mb-1">
                 Clique para selecionar ou arraste o arquivo
               </div>
-              <div className="text-xs text-muted-foreground">Suporta apenas .xlsx</div>
+              <div className="text-xs text-muted-foreground">Suporta apenas arquivos .xlsx</div>
               <input
                 type="file"
-                accept=".xlsx"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 className="hidden"
                 id="excel-upload"
                 onChange={handleFileChange}
@@ -195,9 +136,9 @@ export function ImportDialog() {
             {file && (
               <div className="flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50 p-3 rounded-md">
                 <CheckCircle2 className="h-4 w-4" />
-                <span className="font-medium">{file.name}</span>
-                <span className="text-muted-foreground ml-auto">
-                  ({(file.size / 1024).toFixed(1)} KB)
+                <span className="font-medium truncate">{file.name}</span>
+                <span className="text-muted-foreground ml-auto flex-shrink-0">
+                  {(file.size / 1024).toFixed(1)} KB
                 </span>
               </div>
             )}
@@ -206,27 +147,67 @@ export function ImportDialog() {
               Iniciar Importação
             </Button>
           </div>
-        ) : (
-          <div className="space-y-6 py-6">
-            <div className="flex flex-col items-center justify-center text-center space-y-4">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <div className="text-sm font-medium">Processando registros...</div>
+        )}
+
+        {isImporting && (
+          <div className="space-y-6 py-12 flex flex-col items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <div className="text-sm font-medium text-center">
+              Processando e validando planilha...
+              <br />
+              <span className="text-muted-foreground text-xs">
+                Isso pode levar alguns instantes.
+              </span>
             </div>
-            <Progress value={progress} className="w-full" />
-            <div className="grid grid-cols-3 gap-2 text-center text-sm">
-              <div className="bg-muted p-2 rounded-md">
-                <div className="font-bold">{stats.total}</div>
+          </div>
+        )}
+
+        {importDone && (
+          <div className="space-y-6 py-4 flex-1 overflow-hidden flex flex-col">
+            <div className="grid grid-cols-3 gap-3 text-center text-sm">
+              <div className="bg-muted p-3 rounded-md">
+                <div className="font-bold text-lg">{stats.total}</div>
                 <div className="text-xs text-muted-foreground">Lidos</div>
               </div>
-              <div className="bg-emerald-50 text-emerald-700 p-2 rounded-md">
-                <div className="font-bold">{stats.created}</div>
+              <div className="bg-emerald-50 text-emerald-700 p-3 rounded-md">
+                <div className="font-bold text-lg">{stats.created}</div>
                 <div className="text-xs opacity-80">Criados</div>
               </div>
-              <div className="bg-blue-50 text-blue-700 p-2 rounded-md">
-                <div className="font-bold">{stats.updated}</div>
-                <div className="text-xs opacity-80">Atualizados</div>
+              <div className="bg-amber-50 text-amber-700 p-3 rounded-md">
+                <div className="font-bold text-lg">{stats.skipped}</div>
+                <div className="text-xs opacity-80">Ignorados/Erros</div>
               </div>
             </div>
+
+            {stats.errors.length > 0 ? (
+              <div className="flex-1 overflow-hidden flex flex-col bg-muted/30 rounded-md border">
+                <div className="p-3 border-b bg-muted/50 flex items-center gap-2 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  Problemas encontrados ({stats.errors.length})
+                </div>
+                <ScrollArea className="flex-1 p-0">
+                  <ul className="divide-y text-sm">
+                    {stats.errors.map((err, idx) => (
+                      <li key={idx} className="p-3 flex gap-3 hover:bg-muted/50">
+                        <span className="font-medium min-w-[65px] text-muted-foreground">
+                          Linha {err.row}
+                        </span>
+                        <span className="text-foreground">{err.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 bg-emerald-50 rounded-md text-emerald-700">
+                <CheckCircle2 className="h-10 w-10 mb-2" />
+                <span className="font-medium text-center">Importação concluída sem erros!</span>
+              </div>
+            )}
+
+            <Button className="w-full" onClick={resetAndClose}>
+              Fechar
+            </Button>
           </div>
         )}
       </DialogContent>
