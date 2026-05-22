@@ -18,14 +18,20 @@ export function ImportDialog() {
   const [file, setFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const [importDone, setImportDone] = useState(false)
-  const [stats, setStats] = useState({ total: 0, created: 0, skipped: 0, errors: [] as any[] })
+  const [stats, setStats] = useState({
+    total: 0,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    errors: [] as any[],
+  })
   const { toast } = useToast()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0])
       setImportDone(false)
-      setStats({ total: 0, created: 0, skipped: 0, errors: [] })
+      setStats({ total: 0, created: 0, updated: 0, skipped: 0, errors: [] })
     }
   }
 
@@ -36,24 +42,26 @@ export function ImportDialog() {
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
-        const fileText = e.target?.result as string
+        const dataUrl = e.target?.result as string
+        const fileBase64 = dataUrl.split(',')[1]
 
         const result = await pb.send('/backend/v1/clientes/import', {
           method: 'POST',
-          body: JSON.stringify({ fileText }),
+          body: JSON.stringify({ fileBase64, fileName: file.name }),
           headers: { 'Content-Type': 'application/json' },
         })
 
         setStats({
           total: result.total || 0,
           created: result.created || 0,
+          updated: result.updated || 0,
           skipped: result.skipped || 0,
           errors: result.errors || [],
         })
 
         toast({
           title: 'Importação finalizada',
-          description: `${result.created} criados, ${result.skipped} ignorados de ${result.total} lidos.`,
+          description: `${result.created} criados, ${result.updated} atualizados, ${result.skipped} ignorados/erros de ${result.total} lidos.`,
           className:
             result.errors?.length > 0
               ? 'bg-amber-600 text-white border-none'
@@ -81,7 +89,7 @@ export function ImportDialog() {
       setIsImporting(false)
     }
 
-    reader.readAsText(file)
+    reader.readAsDataURL(file)
   }
 
   const resetAndClose = () => {
@@ -89,7 +97,7 @@ export function ImportDialog() {
     setTimeout(() => {
       setFile(null)
       setImportDone(false)
-      setStats({ total: 0, created: 0, skipped: 0, errors: [] })
+      setStats({ total: 0, created: 0, updated: 0, skipped: 0, errors: [] })
     }, 300)
   }
 
@@ -104,8 +112,8 @@ export function ImportDialog() {
         <DialogHeader>
           <DialogTitle>Importar Clientes</DialogTitle>
           <DialogDescription>
-            Faça upload de uma planilha .csv para cadastrar novos clientes. O CNPJ/CPF será usado
-            para verificar duplicidades (registros duplicados ou inválidos serão ignorados).
+            Faça upload de uma planilha (.xlsx, .xls ou .csv) para cadastrar ou atualizar clientes.
+            O CNPJ/CPF será usado como identificador único para atualizar registros existentes.
           </DialogDescription>
         </DialogHeader>
 
@@ -116,10 +124,12 @@ export function ImportDialog() {
               <div className="text-sm font-medium text-foreground mb-1">
                 Clique para selecionar ou arraste o arquivo
               </div>
-              <div className="text-xs text-muted-foreground">Suporta apenas arquivos .csv</div>
+              <div className="text-xs text-muted-foreground">
+                Suporta arquivos .xlsx, .xls e .csv
+              </div>
               <input
                 type="file"
-                accept=".csv"
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                 className="hidden"
                 id="excel-upload"
                 onChange={handleFileChange}
@@ -162,7 +172,7 @@ export function ImportDialog() {
 
         {importDone && (
           <div className="space-y-6 py-4 flex-1 overflow-hidden flex flex-col">
-            <div className="grid grid-cols-3 gap-3 text-center text-sm">
+            <div className="grid grid-cols-4 gap-3 text-center text-sm">
               <div className="bg-muted p-3 rounded-md">
                 <div className="font-bold text-lg">{stats.total}</div>
                 <div className="text-xs text-muted-foreground">Lidos</div>
@@ -171,9 +181,13 @@ export function ImportDialog() {
                 <div className="font-bold text-lg">{stats.created}</div>
                 <div className="text-xs opacity-80">Criados</div>
               </div>
+              <div className="bg-blue-50 text-blue-700 p-3 rounded-md">
+                <div className="font-bold text-lg">{stats.updated}</div>
+                <div className="text-xs opacity-80">Atualizados</div>
+              </div>
               <div className="bg-amber-50 text-amber-700 p-3 rounded-md">
                 <div className="font-bold text-lg">{stats.skipped}</div>
-                <div className="text-xs opacity-80">Ignorados/Erros</div>
+                <div className="text-xs opacity-80">Erros</div>
               </div>
             </div>
 

@@ -1,205 +1,162 @@
+// @deps xlsx@0.18.5
 routerAdd(
   'POST',
   '/backend/v1/clientes/import',
   (e) => {
+    const xlsx = require('xlsx')
     const body = e.requestInfo().body
 
-    if (!body || !body.fileText) {
-      return e.badRequestError('Arquivo não enviado na requisição.')
+    if (!body.fileBase64) {
+      return e.badRequestError('Arquivo não enviado.')
     }
 
-    const text = body.fileText
-
-    // Basic CSV parser
-    const parseCSV = (str) => {
-      const result = []
-      let row = []
-      let inQuotes = false
-      let val = ''
-      for (let i = 0; i < str.length; i++) {
-        const char = str[i]
-        if (inQuotes) {
-          if (char === '"') {
-            if (i + 1 < str.length && str[i + 1] === '"') {
-              val += '"'
-              i++
-            } else {
-              inQuotes = false
-            }
-          } else {
-            val += char
-          }
-        } else {
-          if (char === '"') {
-            inQuotes = true
-          } else if (char === ',' || char === ';') {
-            // support both comma and semicolon
-            row.push(val)
-            val = ''
-          } else if (char === '\n' || char === '\r') {
-            row.push(val)
-            val = ''
-            // Only push row if it has content (avoids empty lines)
-            if (row.some((c) => c !== '')) result.push(row)
-            row = []
-            if (char === '\r' && i + 1 < str.length && str[i + 1] === '\n') {
-              i++
-            }
-          } else {
-            val += char
-          }
-        }
-      }
-      if (val !== '' || row.length > 0) {
-        row.push(val)
-        if (row.some((c) => c !== '')) result.push(row)
-      }
-      return result
+    let wb
+    try {
+      wb = xlsx.read(body.fileBase64, { type: 'base64', cellDates: true })
+    } catch (err) {
+      return e.badRequestError('Erro ao ler o arquivo Excel/CSV.')
     }
 
-    const parsed = parseCSV(text)
-    if (parsed.length < 2) {
-      return e.badRequestError('Planilha vazia ou sem cabeçalhos.')
+    const sheetName = wb.SheetNames[0]
+    const sheet = wb.Sheets[sheetName]
+
+    const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+    if (rows.length < 2) {
+      return e.badRequestError('Arquivo vazio ou sem dados.')
     }
 
-    const headers = parsed[0].map((h) => h.trim().toLowerCase())
-    const rows = parsed.slice(1).map((row) => {
-      const obj = {}
-      headers.forEach((h, i) => {
-        obj[h] = row[i] ? row[i].trim() : ''
-      })
-      return obj
-    })
+    const headerRow = rows[0].map((h) => (h ? String(h).toUpperCase().trim() : ''))
 
+    const idxCodigo = headerRow.indexOf('CODIGO')
+    const idxDescricao = headerRow.indexOf('DESCRICAO')
+    const idxFantasia = headerRow.indexOf('FANTASIA')
+    const idxEndereco = headerRow.indexOf('ENDERECO')
+    const idxBairro = headerRow.indexOf('BAIRRO')
+    const idxCidade = headerRow.indexOf('CIDADE')
+    const idxUf = headerRow.indexOf('UF')
+    const idxCep = headerRow.indexOf('CEP')
+    const idxFone = headerRow.indexOf('FONE')
+    const idxCelular = headerRow.indexOf('CELULAR')
+    const idxVendedor = headerRow.indexOf('VENDEDOR')
+    const idxCadastro = headerRow.indexOf('CADASTRO')
+    const idxTipo = headerRow.indexOf('TIPO')
+    const idxCnpjCpf = headerRow.indexOf('CNPJ/CPF')
+    const idxInscEstadual = headerRow.indexOf('INSC ESTADUAL')
+    const idxEmail = headerRow.indexOf('EMAIL')
+
+    if (idxDescricao === -1 || idxCnpjCpf === -1) {
+      return e.badRequestError('O arquivo deve conter as colunas DESCRICAO e CNPJ/CPF.')
+    }
+
+    let total = 0
     let created = 0
+    let updated = 0
     let skipped = 0
-    let errors = []
+    const errors = []
 
-    for (let i = 0; i < rows.length; i++) {
+    const col = $app.findCollectionByNameOrId('clientes')
+
+    for (let i = 1; i < rows.length; i++) {
       const row = rows[i]
+      if (!row || row.length === 0 || row.every((c) => c === '')) continue
+      total++
 
-      const getVal = (keys) => {
-        for (const k of keys) {
-          if (row[k] !== undefined && row[k] !== null && row[k] !== '') {
-            return row[k]
+      const rawDescricao = idxDescricao !== -1 ? row[idxDescricao] : ''
+      const rawCnpjCpf = idxCnpjCpf !== -1 ? row[idxCnpjCpf] : ''
+
+      let descricao = rawDescricao ? String(rawDescricao).trim() : ''
+      let cnpj_cpf_raw = rawCnpjCpf ? String(rawCnpjCpf).trim() : ''
+
+      if (!descricao || !cnpj_cpf_raw) {
+        skipped++
+        errors.push({ row: i + 1, reason: 'DESCRICAO ou CNPJ/CPF ausente' })
+        continue
+      }
+
+      const cnpj_cpf = cnpj_cpf_raw.replace(/[^\d]/g, '')
+      if (!cnpj_cpf) {
+        skipped++
+        errors.push({ row: i + 1, reason: 'CNPJ/CPF inválido após limpeza' })
+        continue
+      }
+
+      const getValue = (idx) =>
+        idx !== -1 && row[idx] !== undefined && row[idx] !== '' ? String(row[idx]).trim() : ''
+
+      const codigoVal = getValue(idxCodigo)
+      const codigo = codigoVal ? parseInt(codigoVal, 10) : 0
+      const fantasia = getValue(idxFantasia)
+      const endereco = getValue(idxEndereco)
+      const bairro = getValue(idxBairro)
+      const cidade = getValue(idxCidade)
+      const uf = getValue(idxUf)
+      const cep = getValue(idxCep)
+      const fone = getValue(idxFone)
+      const celular = getValue(idxCelular)
+      const vendedorVal = getValue(idxVendedor)
+      const vendedor = vendedorVal ? parseInt(vendedorVal, 10) : 0
+      const tipo = getValue(idxTipo)
+      const insc_estadual = getValue(idxInscEstadual)
+      const email = getValue(idxEmail)
+
+      let cadastroDate = ''
+      if (idxCadastro !== -1 && row[idxCadastro]) {
+        const cellVal = row[idxCadastro]
+        if (cellVal instanceof Date && !isNaN(cellVal.getTime())) {
+          const pad = (n) => String(n).padStart(2, '0')
+          cadastroDate = `${cellVal.getUTCFullYear()}-${pad(cellVal.getUTCMonth() + 1)}-${pad(cellVal.getUTCDate())} 12:00:00.000Z`
+        } else {
+          const s = String(cellVal).trim()
+          const parts = s.split('/')
+          if (parts.length === 3) {
+            cadastroDate = `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
+          } else if (s.match(/^\d{4}-\d{2}-\d{2}/)) {
+            cadastroDate = s
           }
         }
-        return ''
       }
 
-      const descricao = getVal(['descricao', 'descricao_', 'nome'])
-      const fantasia = getVal(['fantasia', 'fantasia_'])
-      let cnpj_cpf = getVal(['cnpj_cpf', 'cnpj', 'cpf', 'cnpj_cpf_'])
-      cnpj_cpf = String(cnpj_cpf).replace(/\D/g, '')
-
-      const codigo = getVal(['codigo', 'codigo_'])
-      const insc_estadual = getVal(['insc_estadual', 'ie', 'insc_estadual_'])
-      const fone = getVal(['fone', 'telefone', 'fone_'])
-      const celular = getVal(['celular', 'celular_'])
-      const email = getVal(['email'])
-      const endereco = getVal(['endereco', 'endereco_'])
-      const bairro = getVal(['bairro', 'bairro_'])
-      const cidade = getVal(['cidade', 'cidade_'])
-      const uf = getVal(['uf'])
-      const cep = getVal(['cep', 'cep_'])
-      const tipo = getVal(['tipo'])
-      const vendedor = getVal(['vendedor'])
-      const status = getVal(['status'])
-
-      if (!descricao) {
-        errors.push({ row: i + 2, reason: 'Descrição (nome) é obrigatória' })
-        skipped++
-        continue
+      let record
+      let isNew = false
+      try {
+        record = $app.findFirstRecordByFilter('clientes', 'cnpj_cpf = {:cnpj}', { cnpj: cnpj_cpf })
+      } catch (_) {
+        record = new Record(col)
+        isNew = true
       }
 
-      if (!cnpj_cpf) {
-        errors.push({ row: i + 2, reason: 'CNPJ/CPF é obrigatório' })
-        skipped++
-        continue
+      if (codigo) record.set('codigo', codigo)
+      record.set('descricao', descricao)
+      record.set('fantasia', fantasia)
+      record.set('cnpj_cpf', cnpj_cpf)
+      record.set('insc_estadual', insc_estadual)
+      record.set('fone', fone)
+      record.set('celular', celular)
+      if (email) record.set('email', email)
+      record.set('endereco', endereco)
+      record.set('bairro', bairro)
+      record.set('cidade', cidade)
+      record.set('uf', uf)
+      record.set('cep', cep)
+      record.set('tipo', tipo)
+      if (vendedor) record.set('vendedor', vendedor)
+      if (cadastroDate) {
+        try {
+          record.set('cadastro', cadastroDate)
+        } catch (e) {}
       }
 
       try {
-        let existingRecord
-        try {
-          existingRecord = $app.findFirstRecordByData('clientes', 'cnpj_cpf', cnpj_cpf)
-        } catch (err) {}
-
-        if (existingRecord) {
-          skipped++
-          errors.push({ row: i + 2, reason: `CNPJ/CPF ${cnpj_cpf} já existe` })
-        } else {
-          const collection = $app.findCollectionByNameOrId('clientes')
-          const newRecord = new Record(collection)
-
-          newRecord.set('descricao', String(descricao))
-          newRecord.set('fantasia', String(fantasia))
-          newRecord.set('cnpj_cpf', cnpj_cpf)
-          newRecord.set('insc_estadual', String(insc_estadual))
-          newRecord.set('fone', String(fone))
-          newRecord.set('celular', String(celular))
-
-          const emailStr = String(email)
-          if (emailStr && emailStr.includes('@')) {
-            newRecord.set('email', emailStr)
-          }
-
-          newRecord.set('endereco', String(endereco))
-          newRecord.set('bairro', String(bairro))
-          newRecord.set('cidade', String(cidade))
-          newRecord.set('uf', String(uf).substring(0, 2).toUpperCase())
-          newRecord.set('cep', String(cep))
-          newRecord.set('tipo', String(tipo))
-          newRecord.set('status', String(status) || 'ativo')
-
-          if (codigo) {
-            const num = Number(codigo)
-            if (!isNaN(num)) newRecord.set('codigo', num)
-          }
-
-          if (vendedor) {
-            const vendedorNum = Number(vendedor)
-            if (!isNaN(vendedorNum)) {
-              newRecord.set('vendedor', vendedorNum)
-            }
-          }
-
-          $app.save(newRecord)
-          created++
-        }
-      } catch (err) {
+        $app.save(record)
+        if (isNew) created++
+        else updated++
+      } catch (saveErr) {
         skipped++
-        errors.push({ row: i + 2, reason: err.message || 'Erro ao salvar no banco' })
+        errors.push({ row: i + 1, reason: saveErr.message || 'Erro de validação ao salvar' })
       }
     }
 
-    try {
-      const auditCollection = $app.findCollectionByNameOrId('audit_logs')
-      const auditRecord = new Record(auditCollection)
-      auditRecord.set('usuario_id', e.auth?.id || '')
-      auditRecord.set(
-        'usuario_nome',
-        e.auth ? e.auth.getString('name') || e.auth.getString('email') : 'Sistema',
-      )
-      auditRecord.set('acao', 'importacao_clientes_csv')
-      auditRecord.set('detalhes', {
-        total_linhas: rows.length,
-        sucesso: created,
-        ignorados: skipped,
-        erros: errors.length,
-      })
-      $app.save(auditRecord)
-    } catch (auditErr) {
-      $app
-        .logger()
-        .error('Erro ao registrar log de auditoria na importacao', 'erro', auditErr.message)
-    }
-
-    return e.json(200, {
-      total: rows.length,
-      created,
-      skipped,
-      errors,
-    })
+    return e.json(200, { total, created, updated, skipped, errors })
   },
   $apis.requireAuth(),
 )
