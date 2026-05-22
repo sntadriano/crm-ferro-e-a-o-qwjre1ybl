@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/lib/utils'
@@ -30,20 +31,21 @@ const items = [
 export function AppSidebar() {
   const location = useLocation()
   const { user, signOut } = useAuth()
+  const { setOpenMobile, isMobile } = useSidebar()
 
-  const userName = user?.name || 'Usuário'
+  const userName = user?.name || user?.email || 'Usuário'
 
   return (
     <Sidebar variant="inset" className="border-r-0 [&>[data-sidebar=sidebar]]:bg-[#1A3A52]">
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2 font-bold text-xl text-white">
-            <div className="bg-[#4A90E2] text-white p-1.5 rounded-md flex items-center justify-center">
+          <div className="flex items-center gap-2 font-bold text-xl text-white line-clamp-1">
+            <div className="bg-[#4A90E2] text-white p-1.5 rounded-md flex items-center justify-center shrink-0">
               <Users className="h-6 w-6" />
             </div>
-            <span>CRM Eldorado</span>
+            <span className="truncate">Ferro e Aço Eldorado</span>
           </div>
-          <div className="text-sm font-medium text-white/90">Olá, {userName} Eldorado</div>
+          <div className="text-sm font-medium text-white/90">Olá, {userName}</div>
         </div>
       </SidebarHeader>
 
@@ -63,12 +65,13 @@ export function AppSidebar() {
                       asChild
                       isActive={isActive}
                       tooltip={item.title}
+                      onClick={() => isMobile && setOpenMobile(false)}
                       className={cn(
-                        'h-11 text-[14px] text-white transition-colors duration-200 ease-in-out',
+                        'h-12 text-[15px] font-medium text-white transition-colors duration-200 ease-in-out',
                         'hover:text-[#FFC107] hover:bg-transparent',
                         'data-[active=true]:bg-[#4A90E2] data-[active=true]:text-[#FFC107]',
                         'data-[active=true]:hover:bg-[#4A90E2] data-[active=true]:hover:text-[#FFC107]',
-                        '[&>svg]:size-5 [&>svg]:shrink-0',
+                        '[&>svg]:!w-[22px] [&>svg]:!h-[22px] [&>svg]:shrink-0',
                       )}
                     >
                       <Link to={item.url} aria-label={item.title}>
@@ -88,11 +91,14 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => signOut()}
+              onClick={() => {
+                if (isMobile) setOpenMobile(false)
+                signOut()
+              }}
               className={cn(
-                'h-11 text-[14px] text-white transition-colors duration-200 ease-in-out',
+                'h-12 text-[15px] font-medium text-white transition-colors duration-200 ease-in-out',
                 'hover:text-[#FFC107] hover:bg-transparent',
-                '[&>svg]:size-5 [&>svg]:shrink-0',
+                '[&>svg]:!w-[22px] [&>svg]:!h-[22px] [&>svg]:shrink-0',
               )}
               aria-label="Sair do sistema"
             >
