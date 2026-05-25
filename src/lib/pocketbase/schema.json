@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-25T19:12:05.309Z",
+  "generatedAt": "2026-05-25T19:16:56.333Z",
   "collections": [
     {
       "name": "users",
@@ -485,6 +485,13 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["registrado", "conferido"]
         }
       ],
       "indexes": []
