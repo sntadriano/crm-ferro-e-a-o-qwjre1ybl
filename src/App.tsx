@@ -14,6 +14,7 @@ import LeadListPage from './pages/leads/LeadListPage'
 import ContatoListPage from './pages/contatos/ContatoListPage'
 import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/admin/AdminPage'
+import RelatoriosPage from './pages/relatorios/RelatoriosPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth()
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/leads" element={<LeadListPage />} />
               <Route path="/contatos" element={<ContatoListPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/relatorios" element={<RelatoriosPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
