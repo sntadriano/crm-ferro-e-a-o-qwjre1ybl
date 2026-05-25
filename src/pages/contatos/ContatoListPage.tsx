@@ -54,7 +54,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
-import { canExport } from '@/lib/permissions'
+import { canExport, canUseFilters } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 
 export default function ContatoListPage() {
@@ -69,10 +69,23 @@ export default function ContatoListPage() {
   const [totalPages, setTotalPages] = useState(1)
   const [search, setSearch] = useState('')
   const [tipoFilter, setTipoFilter] = useState('all')
-  const [clienteFilter, setClienteFilter] = useState('all')
+  const [vendedorFilter, setVendedorFilter] = useState('all')
+  const [resultadoFilter, setResultadoFilter] = useState('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sortField, setSortField] = useState('-data_contato')
+  const [vendedores, setVendedores] = useState<RecordModel[]>([])
+
+  const showFilters = canUseFilters(user?.role, 'contatos', user?.email)
+
+  useEffect(() => {
+    import('@/lib/pocketbase/client').then(({ default: pb }) => {
+      pb.collection('users')
+        .getFullList({ filter: "role = 'vendedor' || role = 'admin'" })
+        .then(setVendedores)
+        .catch(console.error)
+    })
+  }, [])
 
   // Dialogs
   const [formOpen, setFormOpen] = useState(false)
@@ -85,7 +98,8 @@ export default function ContatoListPage() {
     try {
       let filterExp = []
       if (tipoFilter !== 'all') filterExp.push(`tipo = '${tipoFilter}'`)
-      if (clienteFilter !== 'all') filterExp.push(`cliente_id = '${clienteFilter}'`)
+      if (resultadoFilter !== 'all') filterExp.push(`resultado = '${resultadoFilter}'`)
+      if (vendedorFilter !== 'all') filterExp.push(`usuario_id = '${vendedorFilter}'`)
       if (search) {
         const safeSearch = search.replace(/'/g, "\\'")
         filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
@@ -115,7 +129,7 @@ export default function ContatoListPage() {
     }, 300)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [page, search, tipoFilter, clienteFilter, dateFrom, dateTo, sortField])
+  }, [page, search, tipoFilter, vendedorFilter, resultadoFilter, dateFrom, dateTo, sortField])
 
   useRealtime('contatos', () => loadData())
 
@@ -167,7 +181,8 @@ export default function ContatoListPage() {
               getData={async () => {
                 let filterExp = []
                 if (tipoFilter !== 'all') filterExp.push(`tipo = '${tipoFilter}'`)
-                if (clienteFilter !== 'all') filterExp.push(`cliente_id = '${clienteFilter}'`)
+                if (resultadoFilter !== 'all') filterExp.push(`resultado = '${resultadoFilter}'`)
+                if (vendedorFilter !== 'all') filterExp.push(`usuario_id = '${vendedorFilter}'`)
                 if (search) {
                   const safeSearch = search.replace(/'/g, "\\'")
                   filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
@@ -205,48 +220,89 @@ export default function ContatoListPage() {
         </div>
       </div>
 
-      <div className="bg-card p-4 rounded-lg shadow-subtle border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="relative lg:col-span-2">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome do cliente..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 min-h-[44px]"
-          />
-        </div>
-        <Select value={tipoFilter} onValueChange={setTipoFilter}>
-          <SelectTrigger className="min-h-[44px]">
-            <SelectValue placeholder="Tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os tipos</SelectItem>
-            <SelectItem value="whatsapp">WhatsApp</SelectItem>
-            <SelectItem value="visita">Visita</SelectItem>
-            <SelectItem value="email">Email</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2 lg:col-span-2">
-          <div className="flex-1">
+      {showFilters && (
+        <div className="bg-card p-4 rounded-lg shadow-subtle border grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <div className="relative lg:col-span-2">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              type="date"
-              className="min-h-[44px]"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              title="Data Início"
+              placeholder="Buscar por nome do cliente..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 min-h-[44px]"
             />
           </div>
-          <div className="flex-1">
-            <Input
-              type="date"
-              className="min-h-[44px]"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              title="Data Fim"
-            />
+          <Select value={tipoFilter} onValueChange={setTipoFilter}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tipos (Todos)</SelectItem>
+              <SelectItem value="whatsapp">WhatsApp</SelectItem>
+              <SelectItem value="visita">Visita</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={resultadoFilter} onValueChange={setResultadoFilter}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder="Resultado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Resultados (Todos)</SelectItem>
+              <SelectItem value="sucesso">Sucesso</SelectItem>
+              <SelectItem value="pendente">Pendente</SelectItem>
+              <SelectItem value="sem resposta">Sem resposta</SelectItem>
+              <SelectItem value="não interessado">Não interessado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={vendedorFilter} onValueChange={setVendedorFilter}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder="Vendedor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Vendedores (Todos)</SelectItem>
+              {vendedores.map((v) => (
+                <SelectItem key={v.id} value={v.id}>
+                  {v.name || v.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex gap-2 lg:col-span-2">
+            <div className="flex-1">
+              <Input
+                type="date"
+                className="min-h-[44px]"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                title="Data Início"
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                type="date"
+                className="min-h-[44px]"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                title="Data Fim"
+              />
+            </div>
           </div>
+          <Button
+            variant="outline"
+            className="min-h-[44px]"
+            onClick={() => {
+              setSearch('')
+              setTipoFilter('all')
+              setResultadoFilter('all')
+              setVendedorFilter('all')
+              setDateFrom('')
+              setDateTo('')
+            }}
+          >
+            Limpar
+          </Button>
         </div>
-      </div>
+      )}
 
       {error ? (
         <div className="text-center py-16 bg-red-50 rounded-lg border border-red-200 shadow-subtle flex flex-col items-center justify-center space-y-4 animate-fade-in">
@@ -254,7 +310,7 @@ export default function ContatoListPage() {
             <RefreshCcw className="h-8 w-8 text-red-600" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-bold text-red-800">Erro ao carregar contatos</h3>
+            <h3 className="text-lg font-bold text-red-800">Ocorreu um erro ao carregar os dados</h3>
             <p className="text-sm text-red-600">Ocorreu um problema de conexão com o servidor.</p>
           </div>
           <Button
@@ -315,7 +371,7 @@ export default function ContatoListPage() {
                       <div className="flex flex-col items-center justify-center space-y-3">
                         <PhoneCall className="h-12 w-12 text-muted-foreground" />
                         <h3 className="text-lg font-bold text-[#1A3A52]">
-                          Nenhum contato registrado
+                          Nenhum resultado encontrado
                         </h3>
                         <p className="text-sm text-muted-foreground">
                           Tente limpar os filtros ou registre uma nova interação.
@@ -420,7 +476,7 @@ export default function ContatoListPage() {
             {contatos.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow-subtle border flex flex-col items-center">
                 <PhoneCall className="h-10 w-10 text-muted-foreground mb-3" />
-                <h3 className="font-bold text-[#1A3A52]">Nenhum contato registrado</h3>
+                <h3 className="font-bold text-[#1A3A52]">Nenhum resultado encontrado</h3>
                 <p className="text-sm text-muted-foreground mb-4">Mude os filtros para buscar</p>
                 <Button
                   onClick={() => {

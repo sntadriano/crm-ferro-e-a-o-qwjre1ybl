@@ -3,7 +3,8 @@ import { RecordModel } from 'pocketbase'
 import { getLeads, deleteLead, LeadFilters } from '@/services/leads'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
-import { canExport } from '@/lib/permissions'
+import { canExport, canUseFilters } from '@/lib/permissions'
+import pb from '@/lib/pocketbase/client'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -49,6 +50,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
 import { useIsMobile } from '@/hooks/use-mobile'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
 
 export default function LeadListPage() {
   const { user } = useAuth()
@@ -61,6 +69,7 @@ export default function LeadListPage() {
   const [filters, setFilters] = useState<LeadFilters>({
     search: '',
     status: 'todos',
+    vendedor_id: 'todos',
     sort: '-created',
     date_start: '',
     date_end: '',
@@ -69,6 +78,19 @@ export default function LeadListPage() {
   })
 
   const [tempFilters, setTempFilters] = useState<LeadFilters>(filters)
+  const [vendedores, setVendedores] = useState<RecordModel[]>([])
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  const [totalPages, setTotalPages] = useState(1)
+  const [page, setPage] = useState(1)
+
+  const showFilters = canUseFilters(user?.role, 'leads', user?.email)
+
+  useEffect(() => {
+    pb.collection('users')
+      .getFullList({ filter: "role = 'vendedor' || role = 'admin'" })
+      .then(setVendedores)
+      .catch(console.error)
+  }, [])
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
   const [formOpen, setFormOpen] = useState(false)
@@ -86,8 +108,9 @@ export default function LeadListPage() {
     setIsLoading(true)
     setHasError(false)
     try {
-      const data = await getLeads(1, 20, filters)
+      const data = await getLeads(page, 20, filters)
       setLeads(data.items)
+      setTotalPages(data.totalPages)
     } catch (err) {
       console.error(err)
       setHasError(true)
@@ -98,7 +121,7 @@ export default function LeadListPage() {
 
   useEffect(() => {
     loadData()
-  }, [filters])
+  }, [filters, page])
 
   useRealtime('leads', () => {
     loadData()
@@ -126,20 +149,20 @@ export default function LeadListPage() {
   }
 
   const clearAdvancedFilters = () => {
-    setTempFilters((prev) => ({
-      ...prev,
+    const defaultFilters = {
+      search: '',
+      status: 'todos',
+      vendedor_id: 'todos',
+      sort: '-created',
       date_start: '',
       date_end: '',
       value_min: '',
       value_max: '',
-    }))
-    setFilters((prev) => ({
-      ...prev,
-      date_start: '',
-      date_end: '',
-      value_min: '',
-      value_max: '',
-    }))
+    }
+    setDebouncedSearch('')
+    setTempFilters(defaultFilters)
+    setFilters(defaultFilters)
+    setPage(1)
   }
 
   const formatCurrency = (value: number) => {
@@ -253,142 +276,133 @@ export default function LeadListPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-[#E5E5E5]">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por cliente..."
-            className="pl-10 min-h-[44px] border-[#E5E5E5] bg-[#F5F5F5] focus-visible:ring-accent"
-            value={debouncedSearch}
-            onChange={(e) => setDebouncedSearch(e.target.value)}
-            aria-label="Buscar leads por cliente"
-          />
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <Select
-            value={filters.status}
-            onValueChange={(v) => setFilters((prev) => ({ ...prev, status: v }))}
-          >
-            <SelectTrigger
-              className="w-full sm:w-[160px] min-h-[44px] bg-[#F5F5F5] border-[#E5E5E5]"
-              aria-label="Filtrar por status"
-            >
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os Status</SelectItem>
-              <SelectItem value="novo">Novo</SelectItem>
-              <SelectItem value="proposta_enviada">Proposta Enviada</SelectItem>
-              <SelectItem value="fechado">Fechado</SelectItem>
-              <SelectItem value="perdido">Perdido</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="min-h-[44px] bg-[#F5F5F5] border-[#E5E5E5]"
-                aria-label="Filtros avançados"
+      {showFilters && (
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-[#E5E5E5] flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por cliente..."
+                className="pl-10 min-h-[44px]"
+                value={debouncedSearch}
+                onChange={(e) => setDebouncedSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select
+                value={filters.status}
+                onValueChange={(v) => {
+                  setFilters((p) => ({ ...p, status: v }))
+                  setPage(1)
+                }}
               >
-                <Filter className="mr-2 h-4 w-4" />
-                Filtros Avançados
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4" align="end">
-              <div className="space-y-4">
-                <h4 className="font-semibold text-primary">Filtros Avançados</h4>
-                <div className="space-y-2">
-                  <Label>Data de Criação</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="date"
-                      value={tempFilters.date_start}
-                      onChange={(e) =>
-                        setTempFilters((p) => ({ ...p, date_start: e.target.value }))
-                      }
-                      className="text-xs h-9"
-                    />
-                    <Input
-                      type="date"
-                      value={tempFilters.date_end}
-                      onChange={(e) => setTempFilters((p) => ({ ...p, date_end: e.target.value }))}
-                      className="text-xs h-9"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Valor Estimado</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min (R$)"
-                      value={tempFilters.value_min}
-                      onChange={(e) =>
-                        setTempFilters((p) => ({
-                          ...p,
-                          value_min: e.target.value ? Number(e.target.value) : '',
-                        }))
-                      }
-                      className="text-xs h-9"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max (R$)"
-                      value={tempFilters.value_max}
-                      onChange={(e) =>
-                        setTempFilters((p) => ({
-                          ...p,
-                          value_max: e.target.value ? Number(e.target.value) : '',
-                        }))
-                      }
-                      className="text-xs h-9"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm" onClick={clearAdvancedFilters}>
-                    Limpar
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="bg-primary text-primary-foreground"
-                    onClick={applyAdvancedFilters}
-                  >
-                    Aplicar Filtros
-                  </Button>
-                </div>
+                <SelectTrigger className="w-full sm:w-[160px] min-h-[44px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos Status</SelectItem>
+                  <SelectItem value="novo">Novo</SelectItem>
+                  <SelectItem value="proposta_enviada">Proposta Enviada</SelectItem>
+                  <SelectItem value="fechado">Fechado</SelectItem>
+                  <SelectItem value="perdido">Perdido</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.vendedor_id}
+                onValueChange={(v) => {
+                  setFilters((p) => ({ ...p, vendedor_id: v }))
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[160px] min-h-[44px]">
+                  <SelectValue placeholder="Vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos Vendedores</SelectItem>
+                  {vendedores.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.name || v.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-1 gap-2">
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs">Data de Criação (De)</Label>
+                <Input
+                  type="date"
+                  className="h-9"
+                  value={filters.date_start}
+                  onChange={(e) => {
+                    setFilters((p) => ({ ...p, date_start: e.target.value }))
+                    setPage(1)
+                  }}
+                />
               </div>
-            </PopoverContent>
-          </Popover>
-
-          <Select
-            value={filters.sort}
-            onValueChange={(v) => setFilters((prev) => ({ ...prev, sort: v }))}
-          >
-            <SelectTrigger
-              className="w-full sm:w-[160px] min-h-[44px] bg-[#F5F5F5] border-[#E5E5E5]"
-              aria-label="Ordenar leads"
-            >
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="-created">Mais recentes</SelectItem>
-              <SelectItem value="created">Mais antigos</SelectItem>
-              <SelectItem value="-valor_estimado">Maior valor</SelectItem>
-              <SelectItem value="valor_estimado">Menor valor</SelectItem>
-            </SelectContent>
-          </Select>
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs">Data de Criação (Até)</Label>
+                <Input
+                  type="date"
+                  className="h-9"
+                  value={filters.date_end}
+                  onChange={(e) => {
+                    setFilters((p) => ({ ...p, date_end: e.target.value }))
+                    setPage(1)
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex flex-1 gap-2">
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs">Valor (Mín)</Label>
+                <Input
+                  type="number"
+                  className="h-9"
+                  value={filters.value_min}
+                  onChange={(e) => {
+                    setFilters((p) => ({
+                      ...p,
+                      value_min: e.target.value ? Number(e.target.value) : '',
+                    }))
+                    setPage(1)
+                  }}
+                />
+              </div>
+              <div className="flex-1 space-y-1">
+                <Label className="text-xs">Valor (Máx)</Label>
+                <Input
+                  type="number"
+                  className="h-9"
+                  value={filters.value_max}
+                  onChange={(e) => {
+                    setFilters((p) => ({
+                      ...p,
+                      value_max: e.target.value ? Number(e.target.value) : '',
+                    }))
+                    setPage(1)
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex items-end gap-2">
+              <Button variant="outline" className="h-9" onClick={clearAdvancedFilters}>
+                Limpar
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {hasError ? (
         <div className="text-center p-12 bg-red-50 rounded-xl border border-red-100 flex flex-col items-center">
           <XCircle className="h-10 w-10 text-red-600 mb-4" />
-          <h3 className="text-xl font-bold text-red-900 mb-2">Erro ao carregar dados</h3>
-          <p className="text-red-700 mb-6 max-w-md">
-            Ocorreu um problema ao buscar a lista de leads. Por favor, tente novamente.
-          </p>
+          <h3 className="text-xl font-bold text-red-900 mb-2">
+            Ocorreu um erro ao carregar os dados
+          </h3>
+          <p className="text-red-700 mb-6 max-w-md">Tente novamente.</p>
           <Button
             onClick={loadData}
             className="bg-secondary text-secondary-foreground hover:bg-secondary/90 min-h-[44px] font-semibold px-8 shadow-sm"
@@ -427,10 +441,9 @@ export default function LeadListPage() {
           <div className="h-16 w-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-6">
             <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-bold text-primary mb-2">Nenhum lead cadastrado</h3>
+          <h3 className="text-xl font-bold text-primary mb-2">Nenhum resultado encontrado</h3>
           <p className="text-muted-foreground mb-6 max-w-sm">
-            Você ainda não tem leads ou a busca não retornou resultados. Comece criando um novo
-            lead!
+            A busca ou filtros atuais não retornaram nenhum registro.
           </p>
           <Button
             onClick={() => {
@@ -592,6 +605,32 @@ export default function LeadListPage() {
               </TableBody>
             </Table>
           </div>
+        </div>
+      )}
+
+      {!isLoading && !hasError && leads.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4">
+          <div className="text-sm text-muted-foreground hidden sm:block">
+            Página {page} de {totalPages}
+          </div>
+          <Pagination className="w-auto mx-0">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  className={page === 1 ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  className={
+                    page === totalPages ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 

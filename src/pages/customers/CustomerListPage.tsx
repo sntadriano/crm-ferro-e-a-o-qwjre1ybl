@@ -1,104 +1,228 @@
-import { useState, useMemo, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Users, AlertCircle, RefreshCcw, Info } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { Plus, Users, AlertCircle, RefreshCcw, Info, Search, Filter, X } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
-import { useCustomers } from '@/hooks/use-customers'
 import { useAuth } from '@/hooks/use-auth'
-import { canExport } from '@/lib/permissions'
+import { canExport, canUseFilters } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { Button } from '@/components/ui/button'
 import { CustomerTable } from '@/components/customers/CustomerTable'
 import { CustomerCardList } from '@/components/customers/CustomerCardList'
 import { ImportDialog } from '@/components/customers/ImportDialog'
-import { CustomerFilters } from '@/components/customers/CustomerFilters'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
+import { getClientes, ClienteFilters } from '@/services/clientes'
+import pb from '@/lib/pocketbase/client'
+import { RecordModel } from 'pocketbase'
+import { Customer } from '@/types/customer'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 const ITEMS_PER_PAGE = 20
+
+const mapToCustomer = (r: RecordModel): Customer => ({
+  id: r.id,
+  code: r.codigo?.toString() || '',
+  name: r.descricao,
+  tradeName: r.fantasia,
+  document: r.cnpj_cpf,
+  phone: r.fone,
+  mobile: r.celular,
+  email: r.email,
+  status: r.status || 'Ativo',
+  seller: r.vendedor?.toString() || '',
+  registeredAt: r.cadastro || r.created,
+  city: r.cidade,
+})
 
 export default function CustomerListPage() {
   const { user } = useAuth()
   const isMobile = useIsMobile()
-  const { customers, isLoading, hasError, fetchCustomers } = useCustomers()
-  const [searchParams, setSearchParams] = useSearchParams()
 
-  const search = searchParams.get('q') || ''
-  const status = searchParams.get('status') || 'all'
-  const seller = searchParams.get('seller') || 'all'
-  const sort = searchParams.get('sort') || 'date_desc'
-  const page = parseInt(searchParams.get('page') || '1', 10)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [totalItems, setTotalItems] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
 
-  const updateParam = (key: string, value: string | number) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (value && value !== 'all') newParams.set(key, value.toString())
-    else newParams.delete(key)
-    if (key !== 'page') newParams.set('page', '1')
-    setSearchParams(newParams)
+  const [page, setPage] = useState(1)
+  const [filters, setFilters] = useState<ClienteFilters>({
+    search: '',
+    status: 'all',
+    vendedor: 'all',
+    cidade: 'all',
+    date_start: '',
+    date_end: '',
+    sort: 'descricao',
+  })
+
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [vendedores, setVendedores] = useState<RecordModel[]>([])
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+
+  const showFilters = canUseFilters(user?.role, 'clientes', user?.email)
+
+  useEffect(() => {
+    pb.collection('users')
+      .getFullList({ filter: "role = 'vendedor' || role = 'admin'" })
+      .then(setVendedores)
+      .catch(console.error)
+  }, [])
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setFilters((prev) => ({ ...prev, search: debouncedSearch }))
+      setPage(1)
+    }, 500)
+    return () => clearTimeout(handler)
+  }, [debouncedSearch])
+
+  const fetchCustomers = async () => {
+    setIsLoading(true)
+    setHasError(false)
+    try {
+      const res = await getClientes(page, ITEMS_PER_PAGE, filters)
+      setCustomers(res.items.map(mapToCustomer))
+      setTotalItems(res.totalItems)
+    } catch (err) {
+      console.error(err)
+      setHasError(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const clearFilters = () => setSearchParams(new URLSearchParams())
+  useEffect(() => {
+    fetchCustomers()
+  }, [page, filters])
 
-  const uniqueSellers = useMemo(() => {
-    return Array.from(new Set(customers.map((c) => c.seller)))
-      .filter(Boolean)
-      .sort()
-  }, [customers])
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
 
-  const processedCustomers = useMemo(() => {
-    let filtered = customers.filter((c) => {
-      const matchSearch =
-        !search ||
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.tradeName?.toLowerCase().includes(search.toLowerCase()) ||
-        c.document.replace(/\D/g, '').includes(search.replace(/\D/g, ''))
-      const matchStatus = status === 'all' || c.status === status
-      const matchSeller = seller === 'all' || c.seller === seller
-      return matchSearch && matchStatus && matchSeller
+  const clearFilters = () => {
+    setDebouncedSearch('')
+    setFilters({
+      search: '',
+      status: 'all',
+      vendedor: 'all',
+      cidade: 'all',
+      date_start: '',
+      date_end: '',
+      sort: 'descricao',
     })
+    setPage(1)
+  }
 
-    filtered.sort((a, b) => {
-      switch (sort) {
-        case 'name_asc':
-          return a.name.localeCompare(b.name)
-        case 'name_desc':
-          return b.name.localeCompare(a.name)
-        case 'date_asc':
-          return new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime()
-        case 'date_desc':
-          return new Date(b.registeredAt).getTime() - new Date(a.registeredAt).getTime()
-        case 'status_asc':
-          return a.status.localeCompare(b.status)
-        default:
-          return 0
-      }
-    })
-
-    return filtered
-  }, [customers, search, status, seller, sort])
-
-  const totalPages = Math.ceil(processedCustomers.length / ITEMS_PER_PAGE)
-  const paginatedCustomers = processedCustomers.slice(
-    (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE,
+  const renderFilters = () => (
+    <div className="bg-card p-4 rounded-lg border shadow-sm grid gap-4 grid-cols-1 md:grid-cols-4 items-end mt-4">
+      <div className="space-y-1.5 md:col-span-2">
+        <Label className="text-xs text-muted-foreground">Busca</Label>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Nome, Fantasia ou Documento..."
+            className="pl-9"
+            value={debouncedSearch}
+            onChange={(e) => setDebouncedSearch(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Status</Label>
+        <Select
+          value={filters.status}
+          onValueChange={(v) => {
+            setFilters((p) => ({ ...p, status: v }))
+            setPage(1)
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Todos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="Ativo">Ativo</SelectItem>
+            <SelectItem value="Inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Vendedor</Label>
+        <Select
+          value={filters.vendedor}
+          onValueChange={(v) => {
+            setFilters((p) => ({ ...p, vendedor: v }))
+            setPage(1)
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Todos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {vendedores.map((v) => (
+              <SelectItem key={v.id} value={v.codigo?.toString() || v.id}>
+                {v.name || v.email}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Data Cadastro (De)</Label>
+        <Input
+          type="date"
+          value={filters.date_start}
+          onChange={(e) => {
+            setFilters((p) => ({ ...p, date_start: e.target.value }))
+            setPage(1)
+          }}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Data Cadastro (Até)</Label>
+        <Input
+          type="date"
+          value={filters.date_end}
+          onChange={(e) => {
+            setFilters((p) => ({ ...p, date_end: e.target.value }))
+            setPage(1)
+          }}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">Cidade</Label>
+        <Input
+          placeholder="Nome da cidade"
+          value={filters.cidade === 'all' ? '' : filters.cidade}
+          onChange={(e) => {
+            setFilters((p) => ({ ...p, cidade: e.target.value || 'all' }))
+            setPage(1)
+          }}
+        />
+      </div>
+      <div>
+        <Button variant="outline" className="w-full gap-2" onClick={clearFilters}>
+          <X className="h-4 w-4" /> Limpar filtros
+        </Button>
+      </div>
+    </div>
   )
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <Alert className="bg-primary/5 text-primary border-primary/20">
-        <Info className="h-4 w-4" />
-        <AlertDescription className="text-sm font-medium">
-          Aviso: Os dados exibidos são temporários e armazenados localmente na memória. Conecte um
-          backend (Skip Cloud/Supabase) para persistência definitiva.
-        </AlertDescription>
-      </Alert>
-
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Gestão de Clientes</h1>
@@ -109,7 +233,14 @@ export default function CustomerListPage() {
         <div className="flex w-full sm:w-auto items-center gap-3">
           {canExport(user?.role, 'clientes', user?.email) && (
             <ExportDropdown
-              data={processedCustomers}
+              getData={async () => {
+                const res = await getClientes(1, 10000, filters)
+                return res.items.map((r) => ({
+                  ...r,
+                  status: r.status || 'Ativo',
+                  cadastro: r.cadastro ? new Date(r.cadastro).toLocaleDateString() : '',
+                }))
+              }}
               columns={[
                 { header: 'Código', key: 'codigo' },
                 { header: 'Razão Social', key: 'descricao' },
@@ -137,73 +268,62 @@ export default function CustomerListPage() {
         </div>
       </div>
 
+      {showFilters &&
+        (isMobile ? (
+          <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen} className="w-full">
+            <CollapsibleTrigger asChild>
+              <Button variant="outline" className="w-full flex justify-between">
+                <span className="flex items-center gap-2">
+                  <Filter className="h-4 w-4" /> Filtros Avançados
+                </span>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>{renderFilters()}</CollapsibleContent>
+          </Collapsible>
+        ) : (
+          renderFilters()
+        ))}
+
       {hasError ? (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-red-50 rounded-lg border border-red-200 mt-8">
           <AlertCircle className="h-12 w-12 text-red-600 mb-4" />
-          <h3 className="text-lg font-bold text-red-900">Erro ao carregar clientes</h3>
-          <p className="text-sm text-red-800 mt-1 mb-6 max-w-md">
-            Ocorreu um problema de conexão ao tentar buscar os clientes. Verifique sua internet e
-            tente novamente.
-          </p>
-          <Button onClick={fetchCustomers} variant="secondary" className="gap-2 min-h-[44px]">
+          <h3 className="text-lg font-bold text-red-900">Ocorreu um erro ao carregar os dados</h3>
+          <Button onClick={fetchCustomers} variant="secondary" className="gap-2 min-h-[44px] mt-4">
             <RefreshCcw className="h-4 w-4" /> Tentar novamente
           </Button>
         </div>
-      ) : customers.length > 0 ? (
+      ) : customers.length > 0 || isLoading ? (
         <>
-          <CustomerFilters
-            search={search}
-            setSearch={(v) => updateParam('q', v)}
-            status={status}
-            setStatus={(v) => updateParam('status', v)}
-            seller={seller}
-            setSeller={(v) => updateParam('seller', v)}
-            sort={sort}
-            setSort={(v) => updateParam('sort', v)}
-            onClear={clearFilters}
-            sellers={uniqueSellers}
-          />
-
-          {!isLoading && processedCustomers.length === 0 && (
-            <div className="border rounded-md p-12 text-center bg-card">
-              <p className="text-muted-foreground">
-                Nenhum cliente encontrado com os filtros atuais.
-              </p>
-              <Button variant="link" onClick={clearFilters}>
-                Limpar filtros
-              </Button>
-            </div>
-          )}
-
           <div className="min-h-[400px]">
             {isMobile ? (
-              <CustomerCardList customers={paginatedCustomers} />
+              <CustomerCardList customers={customers} />
             ) : (
-              <CustomerTable customers={paginatedCustomers} isLoading={isLoading} />
+              <CustomerTable customers={customers} isLoading={isLoading} />
             )}
           </div>
 
           {!isLoading && totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 text-sm text-muted-foreground">
-              <div>
-                Exibindo {(page - 1) * ITEMS_PER_PAGE + 1} a{' '}
-                {Math.min(page * ITEMS_PER_PAGE, processedCustomers.length)} de{' '}
-                {processedCustomers.length} clientes
+            <div className="flex items-center justify-between pt-4">
+              <div className="text-sm text-muted-foreground hidden sm:block">
+                Mostrando {(page - 1) * ITEMS_PER_PAGE + 1} a{' '}
+                {Math.min(page * ITEMS_PER_PAGE, totalItems)} de {totalItems}
               </div>
               <Pagination className="w-auto mx-0">
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      onClick={() => updateParam('page', Math.max(1, page - 1))}
+                      onClick={() => setPage(Math.max(1, page - 1))}
                       className={page === 1 ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
                     />
                   </PaginationItem>
                   <PaginationItem>
-                    <PaginationLink isActive>{page}</PaginationLink>
+                    <span className="px-4 text-sm font-medium">
+                      Página {page} de {totalPages}
+                    </span>
                   </PaginationItem>
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => updateParam('page', Math.min(totalPages, page + 1))}
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
                       className={
                         page === totalPages ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
                       }
@@ -217,19 +337,13 @@ export default function CustomerListPage() {
       ) : (
         <div className="flex flex-col items-center justify-center p-12 text-center bg-card rounded-lg border border-dashed mt-8">
           <Users className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-bold">Nenhum cliente cadastrado</h3>
-          <p className="text-sm text-muted-foreground mt-1 mb-6 max-w-md">
-            Sua base de clientes está vazia. Comece adicionando seu primeiro cliente manualmente ou
-            via importação de Excel.
+          <h3 className="text-lg font-bold">Nenhum resultado encontrado</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-6">
+            Tente ajustar os filtros ou limpar a busca.
           </p>
-          <div className="flex gap-4">
-            <ImportDialog />
-            <Button asChild variant="secondary" className="min-h-[44px]">
-              <Link to="/clientes/novo">
-                <Plus className="h-4 w-4 mr-2" /> Criar cliente
-              </Link>
-            </Button>
-          </div>
+          <Button onClick={clearFilters} variant="outline" className="min-h-[44px]">
+            Limpar filtros
+          </Button>
         </div>
       )}
     </div>

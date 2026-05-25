@@ -10,12 +10,15 @@ export interface LeadFilters {
   value_min?: number | ''
   value_max?: number | ''
   cliente_id?: string
+  vendedor_id?: string
 }
 
 export const getLeads = (page = 1, perPage = 20, filters: LeadFilters = {}) => {
   const f = []
-  if (filters.search) f.push(`cliente_id.descricao ~ '${filters.search}'`)
+  if (filters.search) f.push(`cliente_id.descricao ~ '${filters.search.replace(/'/g, "\\'")}'`)
   if (filters.status && filters.status !== 'todos') f.push(`status = '${filters.status}'`)
+  if (filters.vendedor_id && filters.vendedor_id !== 'todos')
+    f.push(`usuario_id = '${filters.vendedor_id}'`)
   if (filters.date_start) f.push(`created >= '${filters.date_start} 00:00:00'`)
   if (filters.date_end) f.push(`created <= '${filters.date_end} 23:59:59'`)
   if (filters.value_min !== undefined && filters.value_min !== '')
