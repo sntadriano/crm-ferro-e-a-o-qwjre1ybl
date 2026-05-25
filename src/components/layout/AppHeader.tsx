@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom'
-import { Bell, User } from 'lucide-react'
+import { User } from 'lucide-react'
+import { NotificationCenter } from '@/components/notifications/NotificationCenter'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Button } from '@/components/ui/button'
@@ -73,14 +74,7 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-primary-foreground hover:bg-primary-foreground/10"
-          aria-label="Notificações"
-        >
-          <Bell className="h-5 w-5" />
-        </Button>
+        <NotificationCenter />
         <Button
           variant="ghost"
           size="icon"

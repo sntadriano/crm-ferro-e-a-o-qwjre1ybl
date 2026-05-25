@@ -12,7 +12,9 @@ import {
   Clock,
   ArrowRight,
   ShieldAlert,
+  BellRing,
 } from 'lucide-react'
+import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -37,6 +39,7 @@ type DashboardData = {
   clients: { total: number; active: number; inactive: number }
   leads: { total: number; novo: number; proposta: number; fechado: number; perdido: number }
   contacts: { recent: any[]; last24h: number; last7d: number; last30d: number }
+  pendingFollowups: any[]
 }
 
 const chartConfig = {
@@ -53,6 +56,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [data, setData] = useState<DashboardData | null>(null)
+
+  const [contatoOpen, setContatoOpen] = useState(false)
+  const [selectedClienteId, setSelectedClienteId] = useState('')
 
   const fetchData = async () => {
     setLoading(true)
@@ -75,6 +81,19 @@ export default function DashboardPage() {
         .getList(1, 1, { filter: "status = 'proposta_enviada'" })
       const leadsFech = await pb.collection('leads').getList(1, 1, { filter: "status = 'fechado'" })
       const leadsPerd = await pb.collection('leads').getList(1, 1, { filter: "status = 'perdido'" })
+
+      const now = new Date()
+      const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ')
+      let pendingFollowupsRes = { items: [] }
+      try {
+        pendingFollowupsRes = await pb.collection('leads').getList(1, 10, {
+          filter: `status != 'fechado' && status != 'perdido' && proximo_followup != '' && proximo_followup <= '${in24h}'`,
+          sort: 'proximo_followup',
+          expand: 'cliente_id',
+        })
+      } catch {
+        /* intentionally ignored */
+      }
 
       // Contacts Summary
       let contatos = []
@@ -130,6 +149,7 @@ export default function DashboardPage() {
           perdido: leadsPerd.totalItems,
         },
         contacts: { recent: contatos, last24h: c24, last7d: c7, last30d: c30 },
+        pendingFollowups: pendingFollowupsRes.items,
       })
       setLoading(false)
     } catch (err) {
@@ -368,6 +388,81 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Pending Follow-ups Table */}
+      {data.pendingFollowups.length > 0 && (
+        <Card className="shadow-subtle border-l-4 border-l-red-500 mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-red-600 flex items-center gap-2">
+                <BellRing className="h-5 w-5" /> Follow-ups Pendentes
+              </CardTitle>
+              <CardDescription>
+                Oportunidades que exigem atenção imediata (vencem em ≤ 24h ou atrasadas).
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/leads">Ir para Leads</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.pendingFollowups.map((lead) => {
+                    const isOverdue = new Date(lead.proximo_followup) < new Date()
+                    return (
+                      <TableRow key={lead.id}>
+                        <TableCell className="font-medium text-[#1A3A52]">
+                          {lead.expand?.cliente_id?.descricao || 'Desconhecido'}
+                        </TableCell>
+                        <TableCell>
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          }).format(lead.valor_estimado || 0)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={isOverdue ? 'destructive' : 'secondary'}
+                            className={!isOverdue ? 'bg-yellow-100 text-yellow-800' : ''}
+                          >
+                            {isOverdue ? 'Atrasado' : 'Vence hoje'}
+                          </Badge>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(lead.proximo_followup), 'dd/MM/yyyy HH:mm', {
+                              locale: ptBR,
+                            })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClienteId(lead.cliente_id)
+                              setContatoOpen(true)
+                            }}
+                          >
+                            Registrar Contato
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Recent Contacts Table */}
       {user?.role !== 'gerente' && (
         <Card className="shadow-subtle">
@@ -442,6 +537,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      <ContatoFormDialog
+        open={contatoOpen}
+        onOpenChange={setContatoOpen}
+        clienteId={selectedClienteId}
+        onSuccess={fetchData}
+      />
     </div>
   )
 }

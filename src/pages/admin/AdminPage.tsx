@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users, Activity, Plus } from 'lucide-react'
+import { Users, Activity, Plus, Mail } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,7 @@ export default function AdminPage() {
   const { toast } = useToast()
   const [users, setUsers] = useState<any[]>([])
   const [logs, setLogs] = useState<any[]>([])
+  const [emailConfigs, setEmailConfigs] = useState<any[]>([])
 
   const loadData = async () => {
     try {
@@ -28,6 +29,8 @@ export default function AdminPage() {
       setUsers(usersData)
       const logsData = await pb.collection('audit_logs').getList(1, 20, { sort: '-timestamp' })
       setLogs(logsData.items)
+      const emailData = await pb.collection('email_config').getList(1, 5)
+      setEmailConfigs(emailData.items)
     } catch (err) {
       console.error(err)
     }
@@ -62,7 +65,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
@@ -142,6 +145,47 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-bold flex items-center gap-2">
+            <Mail className="h-5 w-5" /> Configurações de E-mail
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Provedor</TableHead>
+                <TableHead>Remetente</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {emailConfigs.map((cfg) => (
+                <TableRow key={cfg.id}>
+                  <TableCell className="font-medium">
+                    {cfg.api_provider || 'Não definido'}
+                  </TableCell>
+                  <TableCell>{cfg.email_remetente}</TableCell>
+                  <TableCell>
+                    <Badge variant={cfg.status ? 'default' : 'secondary'}>
+                      {cfg.status ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {emailConfigs.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
+                    Nenhuma configuração encontrada.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

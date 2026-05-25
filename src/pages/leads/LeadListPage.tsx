@@ -46,6 +46,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { BellRing, Clock, CheckCircle } from 'lucide-react'
+
+const getFollowupStatus = (dateStr: string) => {
+  if (!dateStr)
+    return { color: 'bg-gray-100 text-gray-500 border-gray-200', label: 'Sem data', icon: null }
+  const d = new Date(dateStr)
+  const now = new Date()
+  const diffH = (d.getTime() - now.getTime()) / (1000 * 60 * 60)
+
+  if (diffH < 0)
+    return { color: 'bg-red-100 text-red-700 border-red-200', label: 'Atrasado', icon: AlertCircle }
+  if (diffH <= 1)
+    return { color: 'bg-red-100 text-red-700 border-red-200', label: '< 1h', icon: BellRing }
+  if (diffH <= 24)
+    return { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: '< 24h', icon: Clock }
+  return {
+    color: 'bg-green-100 text-green-700 border-green-200',
+    label: 'No prazo',
+    icon: CheckCircle,
+  }
+}
 import { Card, CardContent } from '@/components/ui/card'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
@@ -494,11 +516,21 @@ export default function LeadListPage() {
                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
                       Follow-up
                     </p>
-                    <p className="font-medium text-foreground">
-                      {lead.proximo_followup
-                        ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
-                        : '-'}
-                    </p>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <span className="font-medium text-foreground text-sm">
+                        {lead.proximo_followup
+                          ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                          : '-'}
+                      </span>
+                      {lead.status !== 'fechado' && lead.status !== 'perdido' && (
+                        <Badge
+                          variant="outline"
+                          className={`w-fit text-[10px] ${getFollowupStatus(lead.proximo_followup).color}`}
+                        >
+                          {getFollowupStatus(lead.proximo_followup).label}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -515,7 +547,7 @@ export default function LeadListPage() {
                   <TableHead className="font-bold text-primary py-4">Status</TableHead>
                   <TableHead className="font-bold text-primary py-4">Valor Estimado</TableHead>
                   <TableHead className="font-bold text-primary py-4">Data de Criação</TableHead>
-                  <TableHead className="font-bold text-primary py-4">Próx. Follow-up</TableHead>
+                  <TableHead className="font-bold text-primary py-4">Status Follow-up</TableHead>
                   <TableHead className="w-[80px] py-4"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -552,9 +584,39 @@ export default function LeadListPage() {
                       {format(new Date(lead.created), 'dd/MM/yyyy')}
                     </TableCell>
                     <TableCell className="py-4 font-medium">
-                      {lead.proximo_followup
-                        ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
-                        : '-'}
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className="text-sm">
+                          {lead.proximo_followup
+                            ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                            : '-'}
+                        </span>
+                        {lead.status !== 'fechado' && lead.status !== 'perdido' && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-semibold flex gap-1 items-center px-1.5 py-0 ${getFollowupStatus(lead.proximo_followup).color}`}
+                                >
+                                  {getFollowupStatus(lead.proximo_followup).icon &&
+                                    (() => {
+                                      const Icon = getFollowupStatus(lead.proximo_followup).icon!
+                                      return <Icon className="h-3 w-3" />
+                                    })()}
+                                  {getFollowupStatus(lead.proximo_followup).label}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {lead.proximo_followup
+                                    ? `Vence em: ${format(new Date(lead.proximo_followup), "dd/MM/yyyy 'às' HH:mm")}`
+                                    : 'Nenhum follow-up agendado'}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
