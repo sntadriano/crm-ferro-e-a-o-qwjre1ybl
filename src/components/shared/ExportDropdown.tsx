@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import { useIsMobile } from '@/hooks/use-mobile'
-import pb from '@/lib/pocketbase/client'
 import { format } from 'date-fns'
 
 interface ExportDropdownProps {
@@ -35,43 +34,97 @@ export function ExportDropdown({ data, getData, columns, filename, title }: Expo
         return
       }
 
-      const summary = {
-        total: exportData.length,
-        date: format(new Date(), 'dd/MM/yyyy'),
-        datetime: format(new Date(), 'dd/MM/yyyy HH:mm:ss'),
+      if (formatType === 'excel') {
+        const headers = columns.map((c) => c.header).join(',')
+        const rows = exportData.map((d) =>
+          columns
+            .map((c) => {
+              let val = d[c.key]
+              val = val === null || val === undefined ? '' : String(val)
+              val = val.replace(/"/g, '""')
+              return `"${val}"`
+            })
+            .join(','),
+        )
+        const csv = [headers, ...rows].join('\n')
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${filename}_${format(new Date(), 'yyyy-MM-dd')}.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        toast.success('Arquivo gerado com sucesso')
+      } else if (formatType === 'pdf') {
+        const printWindow = window.open('', '', 'width=800,height=600')
+        if (!printWindow) {
+          throw new Error('Bloqueador de pop-ups impediu a geração do PDF')
+        }
+
+        const html = `
+          <html>
+            <head>
+              <title>${title}</title>
+              <style>
+                body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f5f5f5; font-weight: bold; }
+                .header { margin-bottom: 20px; }
+                .header h2 { margin: 0 0 10px 0; }
+                .summary { color: #666; font-size: 14px; margin-top: 5px; }
+                @media print {
+                  @page { margin: 1cm; }
+                }
+              </style>
+            </head>
+            <body>
+              <div class="header">
+                <h2>${title}</h2>
+                <div class="summary">Total de registros: ${exportData.length}</div>
+                <div class="summary">Data de exportação: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}</div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    ${columns.map((c) => `<th>${c.header}</th>`).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${exportData
+                    .map(
+                      (d) => `
+                    <tr>
+                      ${columns
+                        .map((c) => {
+                          const val =
+                            d[c.key] === null || d[c.key] === undefined ? '' : String(d[c.key])
+                          return `<td>${val}</td>`
+                        })
+                        .join('')}
+                    </tr>
+                  `,
+                    )
+                    .join('')}
+                </tbody>
+              </table>
+              <script>
+                window.onload = () => {
+                  setTimeout(() => {
+                    window.print();
+                    window.close();
+                  }, 250);
+                }
+              </script>
+            </body>
+          </html>
+        `
+        printWindow.document.write(html)
+        printWindow.document.close()
+        toast.success('Visualização para PDF gerada')
       }
-
-      const endpoint =
-        formatType === 'excel' ? '/backend/v1/export/excel' : '/backend/v1/export/pdf'
-      const extension = formatType === 'excel' ? 'xlsx' : 'pdf'
-
-      const urlStr = pb.buildUrl(endpoint)
-      const token = pb.authStore.token
-
-      const res = await fetch(urlStr, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, columns, data: exportData, summary }),
-      })
-
-      if (!res.ok) {
-        throw new Error('Falha na exportação')
-      }
-
-      const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${filename}_${format(new Date(), 'yyyy-MM-dd')}.${extension}`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-
-      toast.success('Arquivo gerado com sucesso')
     } catch (err) {
       console.error(err)
       toast.error('Erro ao gerar arquivo', {
