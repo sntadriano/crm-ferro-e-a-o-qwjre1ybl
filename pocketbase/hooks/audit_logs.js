@@ -5,17 +5,21 @@ onRecordAfterCreateSuccess(
     record.set('usuario_id', e.auth ? e.auth.id : 'system')
     record.set('usuario_nome', e.auth ? e.auth.getString('name') : 'System')
     record.set('acao', 'CREATE')
+    record.set('tabela', e.record.collection().name)
+    record.set('registro_id', e.record.id)
 
     let exp = {}
     try {
       exp = e.record.publicExport()
     } catch (_) {}
 
-    record.set('detalhes', {
-      collection: e.record.collection().name,
-      recordId: e.record.id,
-      data: exp,
-    })
+    record.set('detalhes', [
+      {
+        campo: 'all',
+        valor_anterior: null,
+        valor_novo: exp,
+      },
+    ])
     $app.saveNoValidate(record)
     e.next()
   },
@@ -23,6 +27,7 @@ onRecordAfterCreateSuccess(
   'leads',
   'contatos',
   'users',
+  'producao',
 )
 
 onRecordAfterUpdateSuccess(
@@ -32,17 +37,30 @@ onRecordAfterUpdateSuccess(
     record.set('usuario_id', e.auth ? e.auth.id : 'system')
     record.set('usuario_nome', e.auth ? e.auth.getString('name') : 'System')
     record.set('acao', 'UPDATE')
+    record.set('tabela', e.record.collection().name)
+    record.set('registro_id', e.record.id)
 
-    let exp = {}
+    let expNovo = {}
+    let expAntigo = {}
     try {
-      exp = e.record.publicExport()
+      expNovo = e.record.publicExport()
+      if (e.record.original()) {
+        expAntigo = e.record.original().publicExport()
+      }
     } catch (_) {}
 
-    record.set('detalhes', {
-      collection: e.record.collection().name,
-      recordId: e.record.id,
-      data: exp,
-    })
+    const changes = []
+    for (const key in expNovo) {
+      if (JSON.stringify(expNovo[key]) !== JSON.stringify(expAntigo[key]) && key !== 'updated') {
+        changes.push({
+          campo: key,
+          valor_anterior: expAntigo[key],
+          valor_novo: expNovo[key],
+        })
+      }
+    }
+
+    record.set('detalhes', changes)
     $app.saveNoValidate(record)
     e.next()
   },
@@ -50,6 +68,7 @@ onRecordAfterUpdateSuccess(
   'leads',
   'contatos',
   'users',
+  'producao',
 )
 
 onRecordAfterDeleteSuccess(
@@ -59,7 +78,21 @@ onRecordAfterDeleteSuccess(
     record.set('usuario_id', e.auth ? e.auth.id : 'system')
     record.set('usuario_nome', e.auth ? e.auth.getString('name') : 'System')
     record.set('acao', 'DELETE')
-    record.set('detalhes', { collection: e.record.collection().name, recordId: e.record.id })
+    record.set('tabela', e.record.collection().name)
+    record.set('registro_id', e.record.id)
+
+    let expAntigo = {}
+    try {
+      expAntigo = e.record.publicExport()
+    } catch (_) {}
+
+    record.set('detalhes', [
+      {
+        campo: 'all',
+        valor_anterior: expAntigo,
+        valor_novo: null,
+      },
+    ])
     $app.saveNoValidate(record)
     e.next()
   },
@@ -67,4 +100,5 @@ onRecordAfterDeleteSuccess(
   'leads',
   'contatos',
   'users',
+  'producao',
 )

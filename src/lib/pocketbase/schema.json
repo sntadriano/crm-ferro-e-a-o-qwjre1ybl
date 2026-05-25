@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-25T19:16:56.333Z",
+  "generatedAt": "2026-05-25T19:24:34.175Z",
   "collections": [
     {
       "name": "users",
@@ -381,8 +381,8 @@
       "name": "audit_logs",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin'",
-        "view": "@request.auth.role = 'admin'",
+        "list": "@request.auth.role = 'admin' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'julia' && (tabela = 'leads' || tabela = 'contatos')) || (@request.auth.role = 'gerente' && tabela = 'producao')",
+        "view": "@request.auth.role = 'admin' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'julia' && (tabela = 'leads' || tabela = 'contatos')) || (@request.auth.role = 'gerente' && tabela = 'producao')",
         "create": "",
         "update": null,
         "delete": null
@@ -432,6 +432,18 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "tabela",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "registro_id",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []

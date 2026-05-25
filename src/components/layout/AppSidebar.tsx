@@ -27,6 +27,7 @@ const items = [
   },
   { title: 'Leads', url: '/leads', icon: Target, roles: ['admin', 'julia', 'vendedor'] },
   { title: 'Administração', url: '/admin', icon: Settings, roles: ['admin'] },
+  { title: 'Auditoria', url: '/auditoria', icon: History, roles: ['admin', 'julia', 'gerente'] },
 ]
 
 export function AppSidebar() {
