@@ -14,8 +14,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'rec
 import pb from '@/lib/pocketbase/client'
 import { StateDisplay } from '../components/StateDisplay'
 import { format, subDays } from 'date-fns'
+import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
 
 export function LeadsTab({ filters, refreshKey }: any) {
+  const { user } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -82,6 +86,28 @@ export function LeadsTab({ filters, refreshKey }: any) {
       empty={!loading && !error && data.length === 0}
       onRetry={() => {}}
     >
+      {canExport(user?.role, 'leads', user?.email) && data.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <ExportDropdown
+            data={data.map((d) => ({
+              ...d,
+              valor_estimado_fmt: new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+              }).format(d.valor_estimado || 0),
+              data_criacao_fmt: format(new Date(d.created), 'dd/MM/yyyy'),
+            }))}
+            columns={[
+              { header: 'Status', key: 'status' },
+              { header: 'Valor Estimado', key: 'valor_estimado_fmt' },
+              { header: 'Data de Criação', key: 'data_criacao_fmt' },
+            ]}
+            filename="relatorio_leads"
+            title="Relatório Gerencial - Leads"
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

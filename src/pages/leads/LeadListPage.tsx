@@ -3,6 +3,8 @@ import { RecordModel } from 'pocketbase'
 import { getLeads, deleteLead, LeadFilters } from '@/services/leads'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -208,17 +210,47 @@ export default function LeadListPage() {
             Acompanhe e gerencie as oportunidades de vendas.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setSelectedLead(null)
-            setFormOpen(true)
-          }}
-          className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold min-h-[44px] w-full md:w-auto shadow-sm"
-          aria-label="Criar novo lead"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Criar Lead
-        </Button>
+        <div className="flex w-full md:w-auto items-center gap-3">
+          {canExport(user?.role, 'leads', user?.email) && (
+            <ExportDropdown
+              getData={async () => {
+                const res = await getLeads(1, 10000, filters)
+                return res.items.map((lead) => ({
+                  ...lead,
+                  cliente: lead.expand?.cliente_id?.descricao || 'Sem Cliente',
+                  valor_estimado_fmt: new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(lead.valor_estimado || 0),
+                  data_criacao_fmt: format(new Date(lead.created), 'dd/MM/yyyy'),
+                  proximo_followup_fmt: lead.proximo_followup
+                    ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                    : '-',
+                }))
+              }}
+              columns={[
+                { header: 'Cliente', key: 'cliente' },
+                { header: 'Status', key: 'status' },
+                { header: 'Valor Estimado', key: 'valor_estimado_fmt' },
+                { header: 'Data de Criação', key: 'data_criacao_fmt' },
+                { header: 'Próx. Follow-up', key: 'proximo_followup_fmt' },
+              ]}
+              filename="leads"
+              title="Relatório de Leads"
+            />
+          )}
+          <Button
+            onClick={() => {
+              setSelectedLead(null)
+              setFormOpen(true)
+            }}
+            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold min-h-[44px] w-full md:w-auto shadow-sm"
+            aria-label="Criar novo lead"
+          >
+            <Plus className="mr-2 h-5 w-5" />
+            Criar Lead
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-[#E5E5E5]">

@@ -3,6 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Plus, Users, AlertCircle, RefreshCcw, Info } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useCustomers } from '@/hooks/use-customers'
+import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { Button } from '@/components/ui/button'
 import { CustomerTable } from '@/components/customers/CustomerTable'
 import { CustomerCardList } from '@/components/customers/CustomerCardList'
@@ -21,6 +24,7 @@ import {
 const ITEMS_PER_PAGE = 20
 
 export default function CustomerListPage() {
+  const { user } = useAuth()
   const isMobile = useIsMobile()
   const { customers, isLoading, hasError, fetchCustomers } = useCustomers()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -103,6 +107,24 @@ export default function CustomerListPage() {
           </p>
         </div>
         <div className="flex w-full sm:w-auto items-center gap-3">
+          {canExport(user?.role, 'clientes', user?.email) && (
+            <ExportDropdown
+              data={processedCustomers}
+              columns={[
+                { header: 'Código', key: 'codigo' },
+                { header: 'Razão Social', key: 'descricao' },
+                { header: 'Nome Fantasia', key: 'fantasia' },
+                { header: 'CNPJ/CPF', key: 'cnpj_cpf' },
+                { header: 'Telefone', key: 'fone' },
+                { header: 'Email', key: 'email' },
+                { header: 'Cidade', key: 'cidade' },
+                { header: 'UF', key: 'uf' },
+                { header: 'Status', key: 'status' },
+              ]}
+              filename="clientes"
+              title="Relatório de Clientes"
+            />
+          )}
           <ImportDialog />
           <Button
             asChild

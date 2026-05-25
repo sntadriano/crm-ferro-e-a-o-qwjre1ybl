@@ -14,8 +14,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line } from 'rec
 import pb from '@/lib/pocketbase/client'
 import { StateDisplay } from '../components/StateDisplay'
 import { format, subDays } from 'date-fns'
+import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
 
 export function ProducaoTab({ filters, refreshKey }: any) {
+  const { user } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -84,6 +88,24 @@ export function ProducaoTab({ filters, refreshKey }: any) {
       empty={!loading && !error && data.length === 0}
       onRetry={() => {}}
     >
+      {canExport(user?.role, 'producao', user?.email) && data.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <ExportDropdown
+            data={data.map((d) => ({
+              ...d,
+              data_producao_fmt: format(new Date(d.data_producao), 'dd/MM/yyyy'),
+            }))}
+            columns={[
+              { header: 'Item', key: 'item' },
+              { header: 'Quantidade', key: 'quantidade' },
+              { header: 'Data Produção', key: 'data_producao_fmt' },
+            ]}
+            filename="relatorio_producao"
+            title="Relatório Gerencial - Produção"
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

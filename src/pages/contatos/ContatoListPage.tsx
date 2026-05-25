@@ -53,8 +53,12 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
 
 export default function ContatoListPage() {
+  const { user } = useAuth()
   const [contatos, setContatos] = useState<RecordModel[]>([])
   const [clientes, setClientes] = useState<RecordModel[]>([])
   const [loading, setLoading] = useState(true)
@@ -157,15 +161,48 @@ export default function ContatoListPage() {
           </h1>
           <p className="text-muted-foreground">Histórico de interações com clientes</p>
         </div>
-        <Button
-          onClick={() => {
-            setSelectedContato(null)
-            setFormOpen(true)
-          }}
-          className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] min-h-[44px] font-bold w-full sm:w-auto"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Registrar Contato
-        </Button>
+        <div className="flex w-full sm:w-auto items-center gap-3">
+          {canExport(user?.role, 'contatos', user?.email) && (
+            <ExportDropdown
+              getData={async () => {
+                let filterExp = []
+                if (tipoFilter !== 'all') filterExp.push(`tipo = '${tipoFilter}'`)
+                if (clienteFilter !== 'all') filterExp.push(`cliente_id = '${clienteFilter}'`)
+                if (search) {
+                  const safeSearch = search.replace(/'/g, "\\'")
+                  filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
+                }
+                if (dateFrom) filterExp.push(`data_contato >= '${dateFrom} 00:00:00'`)
+                if (dateTo) filterExp.push(`data_contato <= '${dateTo} 23:59:59'`)
+
+                const res = await getContatos(1, 10000, filterExp.join(' && '), sortField)
+                return res.items.map((contato) => ({
+                  ...contato,
+                  cliente: contato.expand?.cliente_id?.descricao || 'Desconhecido',
+                  data_fmt: format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm'),
+                }))
+              }}
+              columns={[
+                { header: 'Cliente', key: 'cliente' },
+                { header: 'Tipo', key: 'tipo' },
+                { header: 'Descrição', key: 'descricao' },
+                { header: 'Resultado', key: 'resultado' },
+                { header: 'Data Contato', key: 'data_fmt' },
+              ]}
+              filename="contatos"
+              title="Relatório de Contatos"
+            />
+          )}
+          <Button
+            onClick={() => {
+              setSelectedContato(null)
+              setFormOpen(true)
+            }}
+            className="bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] min-h-[44px] font-bold w-full sm:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Registrar Contato
+          </Button>
+        </div>
       </div>
 
       <div className="bg-card p-4 rounded-lg shadow-subtle border grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

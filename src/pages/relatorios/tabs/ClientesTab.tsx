@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Users, UserCheck, UserX } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
+import { format } from 'date-fns'
 import {
   Table,
   TableBody,
@@ -32,6 +36,7 @@ const COLORS = [
 ]
 
 export function ClientesTab({ filters, refreshKey, usersMap }: any) {
+  const { user } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -98,6 +103,28 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
       empty={!loading && !error && data.length === 0}
       onRetry={() => {}}
     >
+      {canExport(user?.role, 'clientes', user?.email) && data.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <ExportDropdown
+            data={data.map((d) => ({
+              ...d,
+              data_cadastro_fmt: format(new Date(d.created), 'dd/MM/yyyy'),
+            }))}
+            columns={[
+              { header: 'Código', key: 'codigo' },
+              { header: 'Razão Social', key: 'descricao' },
+              { header: 'CNPJ/CPF', key: 'cnpj_cpf' },
+              { header: 'Cidade', key: 'cidade' },
+              { header: 'UF', key: 'uf' },
+              { header: 'Status', key: 'status' },
+              { header: 'Data Cadastro', key: 'data_cadastro_fmt' },
+            ]}
+            filename="relatorio_clientes"
+            title="Relatório Gerencial - Clientes"
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

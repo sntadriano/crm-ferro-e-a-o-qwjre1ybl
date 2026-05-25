@@ -14,8 +14,12 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import pb from '@/lib/pocketbase/client'
 import { StateDisplay } from '../components/StateDisplay'
 import { subDays, format } from 'date-fns'
+import { useAuth } from '@/hooks/use-auth'
+import { canExport } from '@/lib/permissions'
+import { ExportDropdown } from '@/components/shared/ExportDropdown'
 
 export function ContatosTab({ filters, refreshKey, usersList }: any) {
+  const { user } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -87,6 +91,26 @@ export function ContatosTab({ filters, refreshKey, usersList }: any) {
       empty={!loading && !error && data.length === 0}
       onRetry={() => {}}
     >
+      {canExport(user?.role, 'contatos', user?.email) && data.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <ExportDropdown
+            data={data.map((d) => ({
+              ...d,
+              vendedor: d.expand?.usuario_id?.name || 'Desconhecido',
+              data_fmt: format(new Date(d.data_contato), 'dd/MM/yyyy HH:mm'),
+            }))}
+            columns={[
+              { header: 'Vendedor', key: 'vendedor' },
+              { header: 'Tipo', key: 'tipo' },
+              { header: 'Resultado', key: 'resultado' },
+              { header: 'Data', key: 'data_fmt' },
+            ]}
+            filename="relatorio_contatos"
+            title="Relatório Gerencial - Contatos"
+          />
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
