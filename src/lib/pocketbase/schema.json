@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T11:38:28.791Z",
+  "generatedAt": "2026-05-26T12:43:37.171Z",
   "collections": [
     {
       "name": "users",
@@ -724,6 +724,69 @@
         }
       ],
       "indexes": []
+    },
+    {
+      "name": "itens_producao",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
+        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
+        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Armações", "Arame 1kg", "Corte e dobra", "Barras 6m", "Barras 12m"]
+        },
+        {
+          "name": "unidade",
+          "type": "select",
+          "required": true,
+          "system": false,
+          "selectValues": ["Unidades", "Rolos", "Kg", "Barras"]
+        },
+        {
+          "name": "status",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_itens_producao_nome ON itens_producao (nome)",
+        "CREATE INDEX idx_itens_producao_status ON itens_producao (status)"
+      ]
     }
   ]
 }

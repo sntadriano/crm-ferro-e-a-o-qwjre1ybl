@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Users, Settings, Target, History, LogOut, BarChart, PieChart } from 'lucide-react'
+import { Users, Settings, Target, History, LogOut, BarChart, PieChart, Package } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -46,6 +46,12 @@ const items = [
   { title: 'Leads', url: '/leads', icon: Target, roles: ['admin', 'julia', 'vendedor'] },
   { title: 'Administração', url: '/admin', icon: Settings, roles: ['admin'] },
   { title: 'Auditoria', url: '/auditoria', icon: History, roles: ['admin', 'julia', 'gerente'] },
+  {
+    title: 'Itens de Produção',
+    url: '/producao/itens',
+    icon: Package,
+    roles: ['admin', 'julia', 'gerente', 'paulo'],
+  },
 ]
 
 export function AppSidebar() {

@@ -19,6 +19,7 @@ import AuditPage from './pages/admin/AuditPage'
 import ContatoFormPage from './pages/contatos/ContatoFormPage'
 import ValidacaoPage from './pages/contatos/ValidacaoPage'
 import VendasReportPage from './pages/relatorios/VendasReportPage'
+import ItensProducaoPage from './pages/producao/ItensProducaoPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth()
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/relatorios" element={<RelatoriosPage />} />
               <Route path="/relatorios/vendas" element={<VendasReportPage />} />
               <Route path="/auditoria" element={<AuditPage />} />
+              <Route path="/producao/itens" element={<ItensProducaoPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
