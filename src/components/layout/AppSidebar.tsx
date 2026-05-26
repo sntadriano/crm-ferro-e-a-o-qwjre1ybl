@@ -25,6 +25,24 @@ const items = [
     icon: History,
     roles: ['admin', 'julia', 'vendedor'],
   },
+  {
+    title: 'Registrar Contato',
+    url: '/contatos/novo',
+    icon: Target,
+    roles: ['admin', 'julia', 'vendedor'],
+  },
+  {
+    title: 'Aprovações',
+    url: '/contatos/aprovacoes',
+    icon: History,
+    roles: ['admin', 'julia', 'gerente'],
+  },
+  {
+    title: 'Relatório de Vendas',
+    url: '/relatorios/vendas',
+    icon: PieChart,
+    roles: ['admin', 'julia', 'vendedor', 'gerente'],
+  },
   { title: 'Leads', url: '/leads', icon: Target, roles: ['admin', 'julia', 'vendedor'] },
   { title: 'Administração', url: '/admin', icon: Settings, roles: ['admin'] },
   { title: 'Auditoria', url: '/auditoria', icon: History, roles: ['admin', 'julia', 'gerente'] },
@@ -56,9 +74,15 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
               {items.map((item) => {
-                if (item.roles && !item.roles.includes(user?.role)) {
-                  return null
+                let isAllowed = true
+                if (item.roles) {
+                  isAllowed = item.roles.includes(user?.role)
+                  if (item.title === 'Aprovações' && user?.name?.toLowerCase().includes('alex')) {
+                    isAllowed = true
+                  }
                 }
+
+                if (!isAllowed) return null
 
                 const isActive = location.pathname.startsWith(item.url)
                 return (

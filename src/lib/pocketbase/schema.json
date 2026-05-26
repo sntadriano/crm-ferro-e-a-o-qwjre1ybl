@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-25T20:04:09.968Z",
+  "generatedAt": "2026-05-26T10:26:57.748Z",
   "collections": [
     {
       "name": "users",
@@ -273,10 +273,10 @@
       "name": "contatos",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && cliente_id.vendedor = @request.auth.codigo))",
+        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'julia' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id))",
         "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && cliente_id.vendedor = @request.auth.codigo))",
-        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && cliente_id.vendedor = @request.auth.codigo))",
-        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && cliente_id.vendedor = @request.auth.codigo))",
+        "create": "@request.auth.active = true",
+        "update": "@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex'",
         "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia')"
       },
       "fields": [
@@ -299,7 +299,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["whatsapp", "visita", "email"]
+          "selectValues": ["whatsapp", "visita", "email", "visita_presencial", "telefone"]
         },
         {
           "name": "descricao",
@@ -332,6 +332,25 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "teve_pedido",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_pedido",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_aprovacao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente", "aprovado"]
         }
       ],
       "indexes": []
