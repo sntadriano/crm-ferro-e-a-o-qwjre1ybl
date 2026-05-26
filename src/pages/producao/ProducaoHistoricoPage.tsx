@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
 import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns'
-import { Download, Search, Printer, History, AlertCircle } from 'lucide-react'
+import { Download, Search, Printer, History, AlertCircle, Camera } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -43,6 +43,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
+import { PhotoGalleryDialog } from '@/components/producao/PhotoGalleryDialog'
 
 export default function ProducaoHistoricoPage() {
   const { user } = useAuth()
@@ -64,6 +65,7 @@ export default function ProducaoHistoricoPage() {
   const [selectedRecord, setSelectedRecord] = useState<ProducaoRecord | null>(null)
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [loadingAudit, setLoadingAudit] = useState(false)
+  const [galleryRecord, setGalleryRecord] = useState<ProducaoRecord | null>(null)
 
   const [page, setPage] = useState(1)
   const perPage = 20
@@ -413,6 +415,9 @@ export default function ProducaoHistoricoPage() {
                             <TableHead className="text-white">Data/Hora</TableHead>
                             <TableHead className="text-white">Usuário</TableHead>
                             <TableHead className="text-white">Status</TableHead>
+                            {user?.role !== 'vendedor' && (
+                              <TableHead className="text-white w-[80px]">Fotos</TableHead>
+                            )}
                             <TableHead className="text-white text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -443,6 +448,29 @@ export default function ProducaoHistoricoPage() {
                                   {r.status === 'conferido' ? 'Conferido' : 'Registrado'}
                                 </Badge>
                               </TableCell>
+                              {user?.role !== 'vendedor' && (
+                                <TableCell>
+                                  {r.expand?.fotos_producao_via_producao_id &&
+                                  r.expand.fotos_producao_via_producao_id.length > 0 ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                                      onClick={() => setGalleryRecord(r)}
+                                      title="Ver fotos"
+                                    >
+                                      <Camera className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <div
+                                      className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
+                                      title="Sem fotos"
+                                    >
+                                      <Camera className="h-4 w-4 text-white/30" />
+                                    </div>
+                                  )}
+                                </TableCell>
+                              )}
                               <TableCell className="text-right">
                                 <Button
                                   size="sm"
@@ -544,8 +572,28 @@ export default function ProducaoHistoricoPage() {
                   </p>
                 </div>
               )}
+              {user?.role !== 'vendedor' &&
+                selectedRecord.expand?.fotos_producao_via_producao_id &&
+                selectedRecord.expand.fotos_producao_via_producao_id.length > 0 && (
+                  <div className="pt-2 border-t border-white/10">
+                    <Button
+                      variant="outline"
+                      className="w-full bg-blue-500/10 border-blue-500/30 text-blue-400 hover:bg-blue-500/20"
+                      onClick={() => setGalleryRecord(selectedRecord)}
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Visualizar{' '}
+                      {selectedRecord.expand.fotos_producao_via_producao_id.reduce(
+                        (acc, r) => acc + r.arquivo.length,
+                        0,
+                      )}{' '}
+                      Foto(s) de Evidência
+                    </Button>
+                  </div>
+                )}
+
               <div>
-                <h4 className="font-semibold mb-3 border-b border-white/10 pb-2">
+                <h4 className="font-semibold mb-3 border-b border-white/10 pb-2 mt-4">
                   Histórico de Alterações
                 </h4>
                 {loadingAudit ? (
@@ -591,6 +639,12 @@ export default function ProducaoHistoricoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <PhotoGalleryDialog
+        open={!!galleryRecord}
+        onOpenChange={(o) => !o && setGalleryRecord(null)}
+        fotosRecords={galleryRecord?.expand?.fotos_producao_via_producao_id}
+      />
     </div>
   )
 }

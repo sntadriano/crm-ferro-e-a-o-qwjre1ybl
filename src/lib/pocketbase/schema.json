@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T12:57:08.689Z",
+  "generatedAt": "2026-05-26T13:15:47.842Z",
   "collections": [
     {
       "name": "users",
@@ -806,6 +806,47 @@
         "CREATE INDEX idx_itens_producao_nome ON itens_producao (nome)",
         "CREATE INDEX idx_itens_producao_status ON itens_producao (status)"
       ]
+    },
+    {
+      "name": "fotos_producao",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'julia' || @request.auth.role = 'paulo')",
+        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'julia' || @request.auth.role = 'paulo')",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
+        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')"
+      },
+      "fields": [
+        {
+          "name": "producao_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "producao"
+        },
+        {
+          "name": "arquivo",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_fotos_producao_producao_id ON fotos_producao (producao_id)"]
     }
   ]
 }

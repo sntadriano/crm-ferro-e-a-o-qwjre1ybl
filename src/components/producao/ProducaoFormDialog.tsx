@@ -12,6 +12,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import {
   Select,
@@ -27,8 +28,10 @@ import { toast } from 'sonner'
 
 import { createProducao, updateProducao, ProducaoRecord } from '@/services/producao'
 import { getActiveItensProducao, ItemProducao } from '@/services/itens-producao'
+import { uploadFotosProducao } from '@/services/fotos_producao'
 import { useAuth } from '@/hooks/use-auth'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
+import { X, ImagePlus } from 'lucide-react'
 
 const schema = z.object({
   item_id: z.string().min(1, 'Selecione um item'),
@@ -49,6 +52,8 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
   const { user } = useAuth()
   const [items, setItems] = useState<ItemProducao[]>([])
   const [loading, setLoading] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [previewUrls, setPreviewUrls] = useState<string[]>([])
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -61,6 +66,11 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
   })
 
   useEffect(() => {
+    if (!open) {
+      previewUrls.forEach((url) => URL.revokeObjectURL(url))
+      setPreviewUrls([])
+      setSelectedFiles([])
+    }
     if (open) {
       getActiveItensProducao()
         .then(setItems)
@@ -83,6 +93,50 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
     }
   }, [open, record, form])
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return
+
+    const files = Array.from(e.target.files)
+    const validTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif']
+    const maxSize = 5 * 1024 * 1024 // 5MB
+
+    const newValidFiles: File[] = []
+
+    files.forEach((file) => {
+      if (!validTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.heic')) {
+        toast.error(`Formato inválido: ${file.name}. Apenas JPG, PNG e HEIC são permitidos.`)
+        return
+      }
+      if (file.size > maxSize) {
+        toast.error(`Arquivo muito grande: ${file.name}. Máximo de 5MB.`)
+        return
+      }
+      newValidFiles.push(file)
+    })
+
+    if (selectedFiles.length + newValidFiles.length > 5) {
+      toast.error('Máximo de 5 fotos permitido.')
+      return
+    }
+
+    const updatedFiles = [...selectedFiles, ...newValidFiles].slice(0, 5)
+    setSelectedFiles(updatedFiles)
+
+    const newPreviewUrls = updatedFiles.map((file) => URL.createObjectURL(file))
+    setPreviewUrls(newPreviewUrls)
+  }
+
+  const removeFile = (index: number) => {
+    const newFiles = [...selectedFiles]
+    newFiles.splice(index, 1)
+    setSelectedFiles(newFiles)
+
+    const newUrls = [...previewUrls]
+    URL.revokeObjectURL(newUrls[index])
+    newUrls.splice(index, 1)
+    setPreviewUrls(newUrls)
+  }
+
   const onSubmit = async (values: FormValues) => {
     setLoading(true)
     try {
@@ -99,7 +153,17 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
         await updateProducao(record.id, data)
         toast.success('Produção atualizada com sucesso')
       } else {
-        await createProducao(data)
+        const newRecord = await createProducao(data)
+
+        if (selectedFiles.length > 0) {
+          try {
+            await uploadFotosProducao(newRecord.id, selectedFiles)
+          } catch (uploadError) {
+            toast.error('Produção registrada, mas houve um erro ao enviar as fotos.')
+            console.error(uploadError)
+          }
+        }
+
         toast.success('Produção registrada com sucesso')
       }
       onOpenChange(false)
@@ -197,6 +261,60 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
                 </FormItem>
               )}
             />
+
+            {!record && (
+              <div className="space-y-3">
+                <FormLabel>Fotos de Evidência (Máx. 5)</FormLabel>
+
+                {selectedFiles.length < 5 && (
+                  <div className="flex items-center justify-center w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer bg-muted/50 hover:bg-muted border-border">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <ImagePlus className="w-6 h-6 mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-semibold">Clique para enviar</span> ou arraste e
+                          solte
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PNG, JPG, HEIC (Máx. 5MB)
+                        </p>
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        multiple
+                        accept=".jpg,.jpeg,.png,.heic"
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {previewUrls.length > 0 && (
+                  <div className="grid grid-cols-5 gap-2 mt-2">
+                    {previewUrls.map((url, i) => (
+                      <div
+                        key={i}
+                        className="relative aspect-square rounded-md overflow-hidden border border-border group"
+                      >
+                        <img
+                          src={url}
+                          alt={`Preview ${i + 1}`}
+                          className="object-cover w-full h-full"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFile(i)}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {record && (
               <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">

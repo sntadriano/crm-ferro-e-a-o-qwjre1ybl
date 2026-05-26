@@ -11,6 +11,7 @@ import {
   CalendarIcon,
   ClipboardList,
   AlertTriangle,
+  Camera,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -54,6 +55,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ProducaoFormDialog } from '@/components/producao/ProducaoFormDialog'
+import { PhotoGalleryDialog } from '@/components/producao/PhotoGalleryDialog'
 import { cn } from '@/lib/utils'
 
 export default function ProducaoPage() {
@@ -69,6 +71,7 @@ export default function ProducaoPage() {
   const [selectedRecord, setSelectedRecord] = useState<ProducaoRecord | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [conferirRecord, setConferirRecord] = useState<ProducaoRecord | null>(null)
+  const [galleryRecord, setGalleryRecord] = useState<ProducaoRecord | null>(null)
 
   const isGestorOrAdmin = user?.role === 'admin' || user?.role === 'gerente'
   const isJulia = user?.role === 'julia'
@@ -264,6 +267,7 @@ export default function ProducaoPage() {
                   <TableHead>Data/Hora</TableHead>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Status</TableHead>
+                  {user?.role !== 'vendedor' && <TableHead className="w-[80px]">Fotos</TableHead>}
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -300,6 +304,29 @@ export default function ProducaoPage() {
                           )}
                       </div>
                     </TableCell>
+                    {user?.role !== 'vendedor' && (
+                      <TableCell>
+                        {record.expand?.fotos_producao_via_producao_id &&
+                        record.expand.fotos_producao_via_producao_id.length > 0 ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                            onClick={() => setGalleryRecord(record)}
+                            title="Ver fotos"
+                          >
+                            <Camera className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <div
+                            className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
+                            title="Sem fotos"
+                          >
+                            <Camera className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         {record.status === 'registrado' && canConferir && (
@@ -372,7 +399,24 @@ export default function ProducaoPage() {
                         )}
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2">
+
+                  {user?.role !== 'vendedor' &&
+                    record.expand?.fotos_producao_via_producao_id &&
+                    record.expand.fotos_producao_via_producao_id.length > 0 && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950"
+                          onClick={() => setGalleryRecord(record)}
+                        >
+                          <Camera className="h-3 w-3" />
+                          Ver Evidências
+                        </Button>
+                      </div>
+                    )}
+
+                  <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2 mt-2">
                     <div>
                       <span className="block font-medium">Data/Hora</span>
                       {format(new Date(record.data_producao), 'dd/MM/yyyy HH:mm')}
@@ -499,6 +543,12 @@ export default function ProducaoPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PhotoGalleryDialog
+        open={!!galleryRecord}
+        onOpenChange={(o) => !o && setGalleryRecord(null)}
+        fotosRecords={galleryRecord?.expand?.fotos_producao_via_producao_id}
+      />
     </div>
   )
 }
