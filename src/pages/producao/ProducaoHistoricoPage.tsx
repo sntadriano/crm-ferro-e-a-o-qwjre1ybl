@@ -47,10 +47,6 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 export default function ProducaoHistoricoPage() {
   const { user } = useAuth()
 
-  if (!canViewProducaoHistorico(user?.role, user?.name)) {
-    return <Navigate to="/dashboard" replace />
-  }
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [records, setRecords] = useState<ProducaoRecord[]>([])
@@ -73,6 +69,7 @@ export default function ProducaoHistoricoPage() {
   const perPage = 20
 
   const fetchData = async () => {
+    if (!canViewProducaoHistorico(user?.role, user?.name)) return
     try {
       setLoading(true)
       setError(false)
@@ -176,6 +173,10 @@ export default function ProducaoHistoricoPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  if (!canViewProducaoHistorico(user?.role, user?.name)) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return (

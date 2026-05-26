@@ -63,3 +63,10 @@ export const getLeadAuditLogs = (leadId: string) => {
     sort: '-created',
   })
 }
+
+export const getProducaoAuditLogs = (producaoId: string) => {
+  return pb.collection('audit_logs').getFullList<AuditLog>({
+    filter: `registro_id = '${producaoId}' && tabela = 'producao'`,
+    sort: '-created',
+  })
+}

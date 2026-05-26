@@ -34,6 +34,14 @@ export const getProducoesRelatorio = async (startDate: string, endDate: string) 
   })
 }
 
+export const getFullProducoes = async (filter: string) => {
+  return pb.collection('producao').getFullList<ProducaoRecord>({
+    filter,
+    sort: '-data_producao',
+    expand: 'item_id,usuario_id',
+  })
+}
+
 export const getProducoes = async (params: {
   page?: number
   perPage?: number
