@@ -6,6 +6,7 @@ import {
   Mail,
   Calendar,
   Phone,
+  Home,
   User,
   Clock,
   Trash2,
@@ -37,8 +38,10 @@ export function ContatoDetailsDialog({
   const [leadFormOpen, setLeadFormOpen] = useState(false)
 
   const getTipoIcon = (tipo: string) => {
-    if (tipo === 'whatsapp') return <MessageSquare className="h-5 w-5 text-blue-500" />
-    if (tipo === 'visita') return <MapPin className="h-5 w-5 text-green-500" />
+    if (tipo === 'visita_presencial') return <Home className="h-5 w-5 text-blue-600" />
+    if (tipo === 'telefone') return <Phone className="h-5 w-5 text-green-600" />
+    if (tipo === 'whatsapp') return <MessageSquare className="h-5 w-5 text-blue-400" />
+    if (tipo === 'visita') return <MapPin className="h-5 w-5 text-purple-500" />
     if (tipo === 'email') return <Mail className="h-5 w-5 text-purple-500" />
     return <Phone className="h-5 w-5 text-blue-500" />
   }
@@ -83,10 +86,22 @@ export function ContatoDetailsDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-4 w-4" /> Data do Contato
+                  <Calendar className="h-4 w-4" /> Data / Hora
                 </p>
                 <p className="font-medium">
                   {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Status de Validação</p>
+                <p className="font-medium">
+                  {contato.status_validacao ? (
+                    <Badge variant="outline" className="capitalize">
+                      {contato.status_validacao}
+                    </Badge>
+                  ) : (
+                    '-'
+                  )}
                 </p>
               </div>
               <div className="space-y-1">
@@ -94,19 +109,52 @@ export function ContatoDetailsDialog({
                 <p className="font-medium">
                   {contato.resultado ? (
                     <Badge variant="outline" className="capitalize">
-                      {contato.resultado}
+                      {contato.resultado.replace(/_/g, ' ')}
                     </Badge>
                   ) : (
                     '-'
                   )}
                 </p>
               </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Teve Pedido?</p>
+                <p className="font-medium">
+                  {contato.teve_pedido ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                      Sim
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Não</Badge>
+                  )}
+                </p>
+              </div>
+              {contato.teve_pedido && contato.valor_pedido ? (
+                <div className="space-y-1 col-span-2 sm:col-span-1">
+                  <p className="text-sm text-muted-foreground">Valor do Pedido</p>
+                  <p className="font-medium text-emerald-700">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      contato.valor_pedido,
+                    )}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
+            {contato.observacoes_resultado && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-muted-foreground">
+                  Observações do Resultado
+                </h3>
+                <div className="bg-muted/30 p-3 rounded-lg text-sm whitespace-pre-wrap leading-relaxed border border-border/50">
+                  {contato.observacoes_resultado}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground">Descrição</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground">Observações Gerais</h3>
               <div className="bg-[#F5F5F5] p-4 rounded-lg text-sm whitespace-pre-wrap leading-relaxed shadow-inner">
-                {contato.descricao}
+                {contato.descricao || 'Nenhuma observação geral.'}
               </div>
             </div>
 
@@ -130,6 +178,18 @@ export function ContatoDetailsDialog({
                   {format(new Date(contato.updated), 'dd/MM/yyyy HH:mm')}
                 </div>
               )}
+              {contato.status_validacao &&
+                contato.status_validacao !== 'pendente' &&
+                contato.validado_por && (
+                  <div className="flex items-center gap-2 sm:col-span-2 text-blue-600 mt-2 border-t pt-2">
+                    <User className="h-3.5 w-3.5" />
+                    <span className="font-medium">Validado por:</span>{' '}
+                    {contato.expand?.validado_por?.name || 'Sistema'} em{' '}
+                    {contato.data_validacao
+                      ? format(new Date(contato.data_validacao), 'dd/MM/yyyy HH:mm')
+                      : ''}
+                  </div>
+                )}
             </div>
           </div>
 

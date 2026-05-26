@@ -17,7 +17,7 @@ import AdminPage from './pages/admin/AdminPage'
 import RelatoriosPage from './pages/relatorios/RelatoriosPage'
 import AuditPage from './pages/admin/AuditPage'
 import ContatoFormPage from './pages/contatos/ContatoFormPage'
-import AprovacoesPage from './pages/contatos/AprovacoesPage'
+import ValidacaoPage from './pages/contatos/ValidacaoPage'
 import VendasReportPage from './pages/relatorios/VendasReportPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -51,7 +51,7 @@ const App = () => (
               <Route path="/leads" element={<LeadListPage />} />
               <Route path="/contatos" element={<ContatoListPage />} />
               <Route path="/contatos/novo" element={<ContatoFormPage />} />
-              <Route path="/contatos/aprovacoes" element={<AprovacoesPage />} />
+              <Route path="/validacao" element={<ValidacaoPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/relatorios" element={<RelatoriosPage />} />
               <Route path="/relatorios/vendas" element={<VendasReportPage />} />

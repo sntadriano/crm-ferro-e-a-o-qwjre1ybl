@@ -4,12 +4,12 @@ export const getContatos = async (page = 1, perPage = 20, filter = '', sort = '-
   return pb.collection('contatos').getList(page, perPage, {
     filter,
     sort,
-    expand: 'cliente_id,usuario_id',
+    expand: 'cliente_id,usuario_id,validado_por',
   })
 }
 
 export const getContato = async (id: string) => {
-  return pb.collection('contatos').getOne(id, { expand: 'cliente_id,usuario_id' })
+  return pb.collection('contatos').getOne(id, { expand: 'cliente_id,usuario_id,validado_por' })
 }
 
 export const createContato = async (data: any) => {
@@ -58,6 +58,19 @@ export const rejeitarContato = async (id: string, userId: string) => {
     status_validacao: 'rejeitado',
     data_validacao: new Date().toISOString(),
     validado_por: userId,
+  })
+}
+
+export const getContatosValidacao = async (
+  page = 1,
+  perPage = 20,
+  filter = '',
+  sort = '-data_contato',
+) => {
+  return pb.collection('contatos').getList(page, perPage, {
+    filter,
+    sort,
+    expand: 'cliente_id,usuario_id,validado_por',
   })
 }
 

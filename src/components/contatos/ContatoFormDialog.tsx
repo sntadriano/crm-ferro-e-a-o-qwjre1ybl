@@ -111,8 +111,10 @@ export function ContatoFormDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="visita_presencial">Visita Presencial</SelectItem>
+                      <SelectItem value="telefone">Telefone</SelectItem>
                       <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="visita">Visita</SelectItem>
+                      <SelectItem value="visita">Outra Visita</SelectItem>
                       <SelectItem value="email">E-mail</SelectItem>
                     </SelectContent>
                   </Select>

@@ -32,8 +32,8 @@ const items = [
     roles: ['admin', 'julia', 'vendedor'],
   },
   {
-    title: 'Aprovações',
-    url: '/contatos/aprovacoes',
+    title: 'Validação',
+    url: '/validacao',
     icon: History,
     roles: ['admin', 'julia', 'gerente'],
   },

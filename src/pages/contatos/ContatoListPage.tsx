@@ -8,6 +8,8 @@ import {
   CalendarIcon,
   MessageSquare,
   PhoneCall,
+  Phone,
+  Home,
   RefreshCcw,
   Check,
 } from 'lucide-react'
@@ -160,10 +162,11 @@ export default function ContatoListPage() {
   }
 
   const getTipoIcon = (tipo: string) => {
+    if (tipo === 'visita_presencial') return <Home className="h-4 w-4" />
+    if (tipo === 'telefone') return <Phone className="h-4 w-4" />
     if (tipo === 'whatsapp') return <MessageSquare className="h-4 w-4" />
-    if (tipo === 'visita' || tipo === 'visita_presencial') return <MapPin className="h-4 w-4" />
+    if (tipo === 'visita') return <MapPin className="h-4 w-4" />
     if (tipo === 'email') return <Mail className="h-4 w-4" />
-    if (tipo === 'telefone') return <PhoneCall className="h-4 w-4" />
     return <PhoneCall className="h-4 w-4" />
   }
 
@@ -427,11 +430,13 @@ export default function ContatoListPage() {
                           variant="outline"
                           className={cn(
                             'capitalize flex items-center gap-1.5 w-fit bg-white group-hover:bg-white/20 group-hover:border-white group-hover:text-white',
-                            contato.tipo === 'whatsapp'
-                              ? 'border-blue-500 text-blue-700'
-                              : contato.tipo === 'visita'
-                                ? 'border-green-500 text-green-700'
-                                : 'border-purple-500 text-purple-700',
+                            contato.tipo === 'visita_presencial'
+                              ? 'border-blue-600 text-blue-700'
+                              : contato.tipo === 'telefone'
+                                ? 'border-green-600 text-green-700'
+                                : contato.tipo === 'whatsapp'
+                                  ? 'border-blue-400 text-blue-600'
+                                  : 'border-purple-500 text-purple-700',
                           )}
                         >
                           {getTipoIcon(contato.tipo)} {contato.tipo}
@@ -566,11 +571,13 @@ export default function ContatoListPage() {
                           variant="outline"
                           className={cn(
                             'capitalize flex items-center gap-1.5 w-fit',
-                            contato.tipo === 'whatsapp'
-                              ? 'border-blue-500 text-blue-700 bg-blue-50'
-                              : contato.tipo === 'visita'
-                                ? 'border-green-500 text-green-700 bg-green-50'
-                                : 'border-purple-500 text-purple-700 bg-purple-50',
+                            contato.tipo === 'visita_presencial'
+                              ? 'border-blue-600 text-blue-700 bg-blue-50'
+                              : contato.tipo === 'telefone'
+                                ? 'border-green-600 text-green-700 bg-green-50'
+                                : contato.tipo === 'whatsapp'
+                                  ? 'border-blue-400 text-blue-600 bg-blue-50'
+                                  : 'border-purple-500 text-purple-700 bg-purple-50',
                           )}
                         >
                           {getTipoIcon(contato.tipo)} {contato.tipo}

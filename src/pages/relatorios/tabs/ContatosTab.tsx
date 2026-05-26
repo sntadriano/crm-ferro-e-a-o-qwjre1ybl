@@ -45,13 +45,11 @@ export function ContatosTab({ filters, refreshKey, usersList }: any) {
 
         f.push("status_validacao != 'rejeitado'") // Ignore rejected
 
-        const res = await pb
-          .collection('contatos')
-          .getFullList({
-            filter: f.join(' && '),
-            expand: 'usuario_id,cliente_id',
-            sort: '-data_contato',
-          })
+        const res = await pb.collection('contatos').getFullList({
+          filter: f.join(' && '),
+          expand: 'usuario_id,cliente_id',
+          sort: '-data_contato',
+        })
         if (isMounted) setData(res)
       } catch (e) {
         if (isMounted) setError(true)
