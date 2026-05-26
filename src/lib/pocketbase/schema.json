@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T14:02:04.523Z",
+  "generatedAt": "2026-05-26T16:30:44.571Z",
   "collections": [
     {
       "name": "users",
@@ -385,7 +385,10 @@
           "collectionRef": "users"
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE INDEX `idx_contatos_status_validacao` ON `contatos` (status_validacao)",
+        "CREATE INDEX `idx_contatos_data_contato` ON `contatos` (data_contato)"
+      ]
     },
     {
       "name": "permissoes",
@@ -582,7 +585,12 @@
           "system": false
         }
       ],
-      "indexes": []
+      "indexes": [
+        "CREATE INDEX `idx_producao_data_producao` ON `producao` (data_producao)",
+        "CREATE INDEX `idx_producao_status` ON `producao` (status)",
+        "CREATE INDEX `idx_producao_created` ON `producao` (created)",
+        "CREATE INDEX `idx_producao_item_id` ON `producao` (item_id)"
+      ]
     },
     {
       "name": "notificacoes",

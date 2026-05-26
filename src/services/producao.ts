@@ -32,19 +32,25 @@ export interface ProducaoRecord {
   }
 }
 
-export const getProducoesRelatorio = async (startDate: string, endDate: string) => {
+export const getProducoesRelatorio = async (
+  startDate: string,
+  endDate: string,
+  fields?: string,
+) => {
   return pb.collection('producao').getFullList<ProducaoRecord>({
     filter: `data_producao >= '${startDate} 00:00:00' && data_producao <= '${endDate} 23:59:59' && ativo = true`,
     sort: '-data_producao',
     expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+    fields,
   })
 }
 
-export const getFullProducoes = async (filter: string) => {
+export const getFullProducoes = async (filter: string, fields?: string) => {
   return pb.collection('producao').getFullList<ProducaoRecord>({
     filter,
     sort: '-data_producao',
     expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+    fields,
   })
 }
 
@@ -53,11 +59,13 @@ export const getProducoes = async (params: {
   perPage?: number
   filter?: string
   sort?: string
+  fields?: string
 }) => {
   return pb.collection('producao').getList<ProducaoRecord>(params.page || 1, params.perPage || 20, {
     sort: params.sort || '-data_producao',
     filter: params.filter || 'ativo = true',
     expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+    fields: params.fields,
   })
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { format, isAfter, setHours, startOfDay, isSameDay, subDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import {
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useRealtime } from '@/hooks/use-realtime'
 import {
@@ -58,6 +59,216 @@ import { ProducaoFormDialog } from '@/components/producao/ProducaoFormDialog'
 import { PhotoGalleryDialog } from '@/components/producao/PhotoGalleryDialog'
 import { cn } from '@/lib/utils'
 
+const ProducaoTableRow = React.memo(
+  ({
+    record,
+    userRole,
+    canConferir,
+    canEditOrDelete,
+    onGallery,
+    onConferir,
+    onEdit,
+    onDelete,
+  }: any) => {
+    return (
+      <TableRow>
+        <TableCell className="font-medium">{record.expand?.item_id?.nome || record.item}</TableCell>
+        <TableCell>
+          {record.quantidade} {record.expand?.item_id?.unidade || ''}
+        </TableCell>
+        <TableCell>{format(new Date(record.data_producao), 'dd/MM/yyyy HH:mm')}</TableCell>
+        <TableCell>{record.expand?.usuario_id?.name || 'Desconhecido'}</TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={record.status === 'conferido' ? 'default' : 'secondary'}
+              className={
+                record.status === 'conferido' ? 'bg-green-500 hover:bg-green-600 text-white' : ''
+              }
+            >
+              {record.status === 'conferido' ? 'Conferido' : 'Registrado'}
+            </Badge>
+            {record.status === 'registrado' &&
+              new Date(record.data_producao) < subDays(new Date(), 2) && (
+                <Badge variant="destructive" className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Revisar
+                </Badge>
+              )}
+          </div>
+        </TableCell>
+        {userRole !== 'vendedor' && (
+          <TableCell>
+            {record.expand?.fotos_producao_via_producao_id &&
+            record.expand.fotos_producao_via_producao_id.length > 0 ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                onClick={() => onGallery(record)}
+                title="Ver fotos"
+              >
+                <Camera className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div
+                className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
+                title="Sem fotos"
+              >
+                <Camera className="h-4 w-4 text-muted-foreground" />
+              </div>
+            )}
+          </TableCell>
+        )}
+        <TableCell className="text-right">
+          <div className="flex items-center justify-end gap-2">
+            {record.status === 'registrado' && canConferir && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                onClick={() => onConferir(record)}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
+                Conferir
+              </Button>
+            )}
+            {canEditOrDelete && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => onEdit(record)}
+                >
+                  <FileEdit className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                  onClick={() => onDelete(record.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </TableCell>
+      </TableRow>
+    )
+  },
+)
+ProducaoTableRow.displayName = 'ProducaoTableRow'
+
+const ProducaoMobileCard = React.memo(
+  ({
+    record,
+    userRole,
+    canConferir,
+    canEditOrDelete,
+    onGallery,
+    onConferir,
+    onEdit,
+    onDelete,
+  }: any) => {
+    return (
+      <Card className="overflow-hidden">
+        <div className="p-4 space-y-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <h4 className="font-semibold">{record.expand?.item_id?.nome || record.item}</h4>
+              <p className="text-sm text-muted-foreground">
+                {record.quantidade} {record.expand?.item_id?.unidade || ''}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <Badge
+                variant={record.status === 'conferido' ? 'default' : 'secondary'}
+                className={record.status === 'conferido' ? 'bg-green-500 text-white' : ''}
+              >
+                {record.status === 'conferido' ? 'Conferido' : 'Registrado'}
+              </Badge>
+              {record.status === 'registrado' &&
+                new Date(record.data_producao) < subDays(new Date(), 2) && (
+                  <Badge variant="destructive" className="flex items-center gap-1 text-[10px]">
+                    <AlertTriangle className="h-3 w-3" /> Revisar
+                  </Badge>
+                )}
+            </div>
+          </div>
+
+          {userRole !== 'vendedor' &&
+            record.expand?.fotos_producao_via_producao_id &&
+            record.expand.fotos_producao_via_producao_id.length > 0 && (
+              <div className="flex items-center gap-2 mt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950"
+                  onClick={() => onGallery(record)}
+                >
+                  <Camera className="h-3 w-3" />
+                  Ver Evidências
+                </Button>
+              </div>
+            )}
+
+          <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2 mt-2">
+            <div>
+              <span className="block font-medium">Data/Hora</span>
+              {format(new Date(record.data_producao), 'dd/MM/yyyy HH:mm')}
+            </div>
+            <div>
+              <span className="block font-medium">Usuário</span>
+              {record.expand?.usuario_id?.name || 'Desconhecido'}
+            </div>
+          </div>
+          {record.observacoes && (
+            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+              <span className="font-medium">Obs:</span> {record.observacoes}
+            </div>
+          )}
+
+          <div className="pt-2 flex justify-end gap-2 border-t border-border/50">
+            {record.status === 'registrado' && canConferir && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-8"
+                onClick={() => onConferir(record)}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
+                Conferir
+              </Button>
+            )}
+            {canEditOrDelete && (
+              <>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={() => onEdit(record)}
+                >
+                  <FileEdit className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-red-500"
+                  onClick={() => onDelete(record.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </Card>
+    )
+  },
+)
+ProducaoMobileCard.displayName = 'ProducaoMobileCard'
+
 export default function ProducaoPage() {
   const { user } = useAuth()
   const [data, setData] = useState<ProducaoRecord[]>([])
@@ -65,6 +276,12 @@ export default function ProducaoPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState<Date>(new Date())
+
+  // Pagination
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const perPage = 20
 
   // Dialogs
   const [formOpen, setFormOpen] = useState(false)
@@ -80,7 +297,7 @@ export default function ProducaoPage() {
 
   const minDate = isGalpao ? subDays(new Date(), 7) : undefined
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const dateStart = startOfDay(dateFilter).toISOString().replace('T', ' ')
@@ -96,21 +313,47 @@ export default function ProducaoPage() {
         filter += ` && item ~ '${search}'`
       }
 
-      const res = await getProducoes({ filter, perPage: 100 })
+      const res = await getProducoes({
+        page,
+        perPage,
+        filter,
+        fields:
+          'id,item,quantidade,data_producao,status,observacoes,ativo,created,updated,expand.item_id.id,expand.item_id.nome,expand.item_id.unidade,expand.usuario_id.id,expand.usuario_id.name,expand.fotos_producao_via_producao_id.id,expand.fotos_producao_via_producao_id.arquivo',
+      })
       setData(res.items)
+      setTotalPages(res.totalPages)
+      setTotalItems(res.totalItems)
     } catch (error) {
       toast.error('Erro ao carregar dados')
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateFilter, statusFilter, search, page])
 
   useEffect(() => {
     loadData()
+  }, [loadData])
+
+  useEffect(() => {
+    setPage(1)
   }, [dateFilter, statusFilter, search])
 
-  useRealtime('producao', () => {
-    loadData()
+  useRealtime('producao', async (e) => {
+    if (e.action === 'update') {
+      try {
+        const updatedRecord = await pb.collection('producao').getOne<ProducaoRecord>(e.record.id, {
+          expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+          fields:
+            'id,item,quantidade,data_producao,status,observacoes,ativo,created,updated,expand.item_id.id,expand.item_id.nome,expand.item_id.unidade,expand.usuario_id.id,expand.usuario_id.name,expand.fotos_producao_via_producao_id.id,expand.fotos_producao_via_producao_id.arquivo',
+        })
+        setData((prev) => prev.map((r) => (r.id === updatedRecord.id ? updatedRecord : r)))
+      } catch (err) {
+        // Fallback to reload
+        loadData()
+      }
+    } else {
+      loadData()
+    }
   })
 
   const handleDelete = async () => {
@@ -131,21 +374,25 @@ export default function ProducaoPage() {
       await updateProducao(conferirRecord.id, { status: 'conferido' })
       toast.success('Produção conferida com sucesso')
       setConferirRecord(null)
-      loadData()
+      // loadData is handled by useRealtime
     } catch (error) {
       toast.error('Erro ao conferir produção')
     }
   }
 
-  const openEdit = (record: ProducaoRecord) => {
+  const openEdit = useCallback((record: ProducaoRecord) => {
     setSelectedRecord(record)
     setFormOpen(true)
-  }
+  }, [])
 
-  const openNew = () => {
+  const openNew = useCallback(() => {
     setSelectedRecord(null)
     setFormOpen(true)
-  }
+  }, [])
+
+  const handleGallery = useCallback((record: ProducaoRecord) => setGalleryRecord(record), [])
+  const handleSetConferir = useCallback((record: ProducaoRecord) => setConferirRecord(record), [])
+  const handleSetDelete = useCallback((id: string) => setDeleteId(id), [])
 
   const isAfter18h = isAfter(new Date(), setHours(startOfDay(new Date()), 18))
   const isToday = isSameDay(dateFilter, new Date())
@@ -249,7 +496,7 @@ export default function ProducaoPage() {
           {canEditOrDelete && <Button onClick={openNew}>Registrar Produção</Button>}
         </Card>
       ) : (
-        <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+        <div className="bg-card rounded-lg border shadow-sm overflow-hidden flex flex-col">
           <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
@@ -265,96 +512,17 @@ export default function ProducaoPage() {
               </TableHeader>
               <TableBody>
                 {data.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell className="font-medium">
-                      {record.expand?.item_id?.nome || record.item}
-                    </TableCell>
-                    <TableCell>
-                      {record.quantidade} {record.expand?.item_id?.unidade || ''}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(record.data_producao), 'dd/MM/yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell>{record.expand?.usuario_id?.name || 'Desconhecido'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant={record.status === 'conferido' ? 'default' : 'secondary'}
-                          className={
-                            record.status === 'conferido'
-                              ? 'bg-green-500 hover:bg-green-600 text-white'
-                              : ''
-                          }
-                        >
-                          {record.status === 'conferido' ? 'Conferido' : 'Registrado'}
-                        </Badge>
-                        {record.status === 'registrado' &&
-                          new Date(record.data_producao) < subDays(new Date(), 2) && (
-                            <Badge variant="destructive" className="flex items-center gap-1">
-                              <AlertTriangle className="h-3 w-3" /> Revisar
-                            </Badge>
-                          )}
-                      </div>
-                    </TableCell>
-                    {user?.role !== 'vendedor' && (
-                      <TableCell>
-                        {record.expand?.fotos_producao_via_producao_id &&
-                        record.expand.fotos_producao_via_producao_id.length > 0 ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                            onClick={() => setGalleryRecord(record)}
-                            title="Ver fotos"
-                          >
-                            <Camera className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <div
-                            className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
-                            title="Sem fotos"
-                          >
-                            <Camera className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {record.status === 'registrado' && canConferir && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8"
-                            onClick={() => setConferirRecord(record)}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
-                            Conferir
-                          </Button>
-                        )}
-                        {canEditOrDelete && (
-                          <>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              onClick={() => openEdit(record)}
-                            >
-                              <FileEdit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                              onClick={() => setDeleteId(record.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <ProducaoTableRow
+                    key={record.id}
+                    record={record}
+                    userRole={user?.role}
+                    canConferir={canConferir}
+                    canEditOrDelete={canEditOrDelete}
+                    onGallery={handleGallery}
+                    onConferir={handleSetConferir}
+                    onEdit={openEdit}
+                    onDelete={handleSetDelete}
+                  />
                 ))}
               </TableBody>
             </Table>
@@ -362,105 +530,46 @@ export default function ProducaoPage() {
 
           <div className="md:hidden flex flex-col gap-3 p-4">
             {data.map((record) => (
-              <Card key={record.id} className="overflow-hidden">
-                <div className="p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold">
-                        {record.expand?.item_id?.nome || record.item}
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        {record.quantidade} {record.expand?.item_id?.unidade || ''}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge
-                        variant={record.status === 'conferido' ? 'default' : 'secondary'}
-                        className={record.status === 'conferido' ? 'bg-green-500 text-white' : ''}
-                      >
-                        {record.status === 'conferido' ? 'Conferido' : 'Registrado'}
-                      </Badge>
-                      {record.status === 'registrado' &&
-                        new Date(record.data_producao) < subDays(new Date(), 2) && (
-                          <Badge
-                            variant="destructive"
-                            className="flex items-center gap-1 text-[10px]"
-                          >
-                            <AlertTriangle className="h-3 w-3" /> Revisar
-                          </Badge>
-                        )}
-                    </div>
-                  </div>
-
-                  {user?.role !== 'vendedor' &&
-                    record.expand?.fotos_producao_via_producao_id &&
-                    record.expand.fotos_producao_via_producao_id.length > 0 && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-xs flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:text-blue-400 dark:hover:bg-blue-950"
-                          onClick={() => setGalleryRecord(record)}
-                        >
-                          <Camera className="h-3 w-3" />
-                          Ver Evidências
-                        </Button>
-                      </div>
-                    )}
-
-                  <div className="text-xs text-muted-foreground grid grid-cols-2 gap-2 mt-2">
-                    <div>
-                      <span className="block font-medium">Data/Hora</span>
-                      {format(new Date(record.data_producao), 'dd/MM/yyyy HH:mm')}
-                    </div>
-                    <div>
-                      <span className="block font-medium">Usuário</span>
-                      {record.expand?.usuario_id?.name || 'Desconhecido'}
-                    </div>
-                  </div>
-                  {record.observacoes && (
-                    <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                      <span className="font-medium">Obs:</span> {record.observacoes}
-                    </div>
-                  )}
-
-                  <div className="pt-2 flex justify-end gap-2 border-t border-border/50">
-                    {record.status === 'registrado' && canConferir && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1 h-8"
-                        onClick={() => setConferirRecord(record)}
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
-                        Conferir
-                      </Button>
-                    )}
-                    {canEditOrDelete && (
-                      <>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => openEdit(record)}
-                        >
-                          <FileEdit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-red-500"
-                          onClick={() => setDeleteId(record.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Card>
+              <ProducaoMobileCard
+                key={record.id}
+                record={record}
+                userRole={user?.role}
+                canConferir={canConferir}
+                canEditOrDelete={canEditOrDelete}
+                onGallery={handleGallery}
+                onConferir={handleSetConferir}
+                onEdit={openEdit}
+                onDelete={handleSetDelete}
+              />
             ))}
           </div>
+
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-border flex items-center justify-between text-sm text-muted-foreground bg-muted/20">
+              <div>
+                Mostrando {(page - 1) * perPage + 1} a {Math.min(page * perPage, totalItems)} de{' '}
+                {totalItems}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  Próximo
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

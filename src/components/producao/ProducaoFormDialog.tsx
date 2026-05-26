@@ -93,26 +93,67 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
     }
   }, [open, record, form])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) return resolve(file)
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let { width, height } = img
+          const maxWidth = 1920
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) return resolve(file)
+          ctx.drawImage(img, 0, 0, width, height)
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) return resolve(file)
+              resolve(
+                new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                }),
+              )
+            },
+            'image/jpeg',
+            0.8,
+          )
+        }
+        img.onerror = () => resolve(file)
+      }
+      reader.onerror = () => resolve(file)
+    })
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return
 
     const files = Array.from(e.target.files)
     const validTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif']
-    const maxSize = 5 * 1024 * 1024 // 5MB
 
     const newValidFiles: File[] = []
 
-    files.forEach((file) => {
+    for (const file of files) {
       if (!validTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.heic')) {
         toast.error(`Formato inválido: ${file.name}. Apenas JPG, PNG e HEIC são permitidos.`)
-        return
+        continue
       }
-      if (file.size > maxSize) {
-        toast.error(`Arquivo muito grande: ${file.name}. Máximo de 5MB.`)
-        return
-      }
-      newValidFiles.push(file)
-    })
+
+      const compressed = await compressImage(file)
+      newValidFiles.push(compressed)
+    }
 
     if (selectedFiles.length + newValidFiles.length > 5) {
       toast.error('Máximo de 5 fotos permitido.')
