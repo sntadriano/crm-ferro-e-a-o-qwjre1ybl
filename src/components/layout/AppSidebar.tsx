@@ -8,7 +8,7 @@ import {
   BarChart,
   PieChart,
   Package,
-  ClipboardList,
+  Factory,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -57,22 +57,10 @@ const items = [
   { title: 'Administração', url: '/admin', icon: Settings, roles: ['admin'] },
   { title: 'Auditoria', url: '/auditoria', icon: History, roles: ['admin', 'julia', 'gerente'] },
   {
-    title: 'Produção Diária',
+    title: 'Produção',
     url: '/producao',
-    icon: ClipboardList,
+    icon: Factory,
     roles: ['admin', 'julia', 'gerente', 'paulo'],
-  },
-  {
-    title: 'Itens de Produção',
-    url: '/producao/itens',
-    icon: Package,
-    roles: ['admin', 'julia', 'gerente', 'paulo'],
-  },
-  {
-    title: 'Histórico de Produção',
-    url: '/producao/historico',
-    icon: History,
-    roles: ['admin', 'julia'],
   },
 ]
 

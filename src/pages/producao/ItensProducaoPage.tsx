@@ -21,7 +21,7 @@ import { ItemProducaoDeleteDialog } from '@/components/producao/ItemProducaoDele
 
 export default function ItensProducaoPage() {
   const { user } = useAuth()
-  const canEdit = user && ['admin', 'gerente', 'paulo'].includes(user.role)
+  const canEdit = user && ['admin'].includes(user.role)
 
   const [items, setItems] = useState<ItemProducao[]>([])
   const [page, setPage] = useState(1)
@@ -78,33 +78,23 @@ export default function ItensProducaoPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Package className="h-6 w-6 text-primary" />
-            Itens de Produção
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Gerencie o catálogo de itens fabricados.
-          </p>
+        <div className="relative max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
         </div>
         {canEdit && (
-          <Button onClick={handleCreate}>
+          <Button onClick={handleCreate} className="shrink-0">
             <Plus className="h-4 w-4 mr-2" />
             Novo Item
           </Button>
         )}
-      </div>
-
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9"
-        />
       </div>
 
       {error ? (

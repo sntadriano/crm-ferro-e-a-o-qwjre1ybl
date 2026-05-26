@@ -73,11 +73,11 @@ export default function ProducaoPage() {
   const [conferirRecord, setConferirRecord] = useState<ProducaoRecord | null>(null)
   const [galleryRecord, setGalleryRecord] = useState<ProducaoRecord | null>(null)
 
-  const isGestorOrAdmin = user?.role === 'admin' || user?.role === 'gerente'
+  const isAdmin = user?.role === 'admin'
+  const isGerente = user?.role === 'gerente'
   const isJulia = user?.role === 'julia'
   const isGalpao = user?.role === 'paulo'
 
-  // Restrict date selection for Galpão to last 7 days
   const minDate = isGalpao ? subDays(new Date(), 7) : undefined
 
   const loadData = async () => {
@@ -151,22 +151,14 @@ export default function ProducaoPage() {
   const isToday = isSameDay(dateFilter, new Date())
   const showNoRecordsAlert = isToday && isAfter18h && data.length === 0 && !loading
 
-  const canEditOrDelete = isGestorOrAdmin || isGalpao
-  const canConferir = isGestorOrAdmin || isJulia
+  const canEditOrDelete = isAdmin || isGerente || isGalpao || isJulia
+  const canConferir = isAdmin || isJulia
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <ClipboardList className="h-6 w-6 text-primary" />
-            Produção Diária
-          </h1>
-          <p className="text-muted-foreground mt-1">Gerencie os registros de produção do galpão.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {(isGestorOrAdmin || isGalpao) && (
+        <div className="flex items-center gap-3 w-full justify-end">
+          {canEditOrDelete && (
             <Button onClick={openNew} className="shrink-0">
               <Plus className="h-4 w-4 mr-2" />
               Registrar Produção
@@ -254,7 +246,7 @@ export default function ProducaoPage() {
           <p className="text-muted-foreground mb-4 max-w-sm">
             Não há registros de produção para os filtros selecionados.
           </p>
-          {(isGestorOrAdmin || isGalpao) && <Button onClick={openNew}>Registrar Produção</Button>}
+          {canEditOrDelete && <Button onClick={openNew}>Registrar Produção</Button>}
         </Card>
       ) : (
         <div className="bg-card rounded-lg border shadow-sm overflow-hidden">

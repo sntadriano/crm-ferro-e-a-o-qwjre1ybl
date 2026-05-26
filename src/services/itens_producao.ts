@@ -27,6 +27,13 @@ export const getItensProducao = async (page = 1, perPage = 20, searchTerm = '') 
   })
 }
 
+export const getActiveItensProducao = async () => {
+  return pb.collection('itens_producao').getFullList<ItemProducao>({
+    filter: 'status = true',
+    sort: 'nome',
+  })
+}
+
 export const createItemProducao = (data: ItemProducaoFormData) =>
   pb.collection('itens_producao').create<ItemProducao>(data)
 

@@ -178,32 +178,26 @@ export default function ProducaoHistoricoPage() {
   }
 
   if (!canViewProducaoHistorico(user?.role, user?.name)) {
-    return <Navigate to="/dashboard" replace />
+    return null
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white">Histórico e Relatórios</h2>
-          <p className="text-white/60">Análise de produção e rastreabilidade detalhada.</p>
-        </div>
-        <div className="flex items-center gap-2 print:hidden">
-          <Button
-            variant="outline"
-            onClick={exportExcel}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-          >
-            <Download className="mr-2 h-4 w-4" /> Exportar Excel
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => window.print()}
-            className="bg-white/5 border-white/10 text-white hover:bg-white/10"
-          >
-            <Printer className="mr-2 h-4 w-4" /> Exportar PDF
-          </Button>
-        </div>
+    <div className="space-y-4">
+      <div className="flex items-center justify-end gap-2 print:hidden mb-4">
+        <Button
+          variant="outline"
+          onClick={exportExcel}
+          className="bg-white/5 border-white/10 text-black dark:text-white hover:bg-white/10"
+        >
+          <Download className="mr-2 h-4 w-4" /> Exportar Excel
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => window.print()}
+          className="bg-white/5 border-white/10 text-black dark:text-white hover:bg-white/10"
+        >
+          <Printer className="mr-2 h-4 w-4" /> Exportar PDF
+        </Button>
       </div>
 
       <Card className="border-white/10 bg-[#1A3A52] text-white print:hidden">

@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
 import { createProducao, updateProducao, ProducaoRecord } from '@/services/producao'
-import { getActiveItensProducao, ItemProducao } from '@/services/itens-producao'
+import { getActiveItensProducao, ItemProducao } from '@/services/itens_producao'
 import { uploadFotosProducao } from '@/services/fotos_producao'
 import { useAuth } from '@/hooks/use-auth'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
