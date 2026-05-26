@@ -201,15 +201,13 @@ export default function ContatoFormPage() {
           {errors.resultado && <p className="text-xs text-red-500">{errors.resultado.message}</p>}
         </div>
 
-        {true && (
-          <div className="space-y-2 animate-fade-in-up">
-            <Label>
-              Observações {resultado === 'Outro' && <span className="text-red-500">*</span>}
-            </Label>
-            <Textarea {...register('descricao')} placeholder="Detalhes do contato..." />
-            {errors.descricao && <p className="text-xs text-red-500">{errors.descricao.message}</p>}
-          </div>
-        )}
+        <div className="space-y-2 animate-fade-in-up">
+          <Label>
+            Observações {resultado === 'Outro' && <span className="text-red-500">*</span>}
+          </Label>
+          <Textarea {...register('descricao')} placeholder="Detalhes do contato..." />
+          {errors.descricao && <p className="text-xs text-red-500">{errors.descricao.message}</p>}
+        </div>
 
         {tipo === 'visita_presencial' && (
           <div className="p-4 border rounded-md bg-gray-50 dark:bg-slate-800/50 space-y-4 animate-fade-in-up">
