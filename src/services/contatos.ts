@@ -39,14 +39,26 @@ export const getContatosVendas = async (startDate: string, endDate: string) => {
 
 export const getContatosPendentes = async () => {
   return pb.collection('contatos').getFullList({
-    filter: `status_aprovacao = 'pendente'`,
+    filter: `status_validacao = 'pendente'`,
     sort: '-data_contato',
     expand: 'cliente_id,usuario_id',
   })
 }
 
-export const aprovarContato = async (id: string) => {
-  return pb.collection('contatos').update(id, { status_aprovacao: 'aprovado' })
+export const aprovarContato = async (id: string, userId: string) => {
+  return pb.collection('contatos').update(id, {
+    status_validacao: 'aprovado',
+    data_validacao: new Date().toISOString(),
+    validado_por: userId,
+  })
+}
+
+export const rejeitarContato = async (id: string, userId: string) => {
+  return pb.collection('contatos').update(id, {
+    status_validacao: 'rejeitado',
+    data_validacao: new Date().toISOString(),
+    validado_por: userId,
+  })
 }
 
 export const getContatosByCliente = (clienteId: string) => {

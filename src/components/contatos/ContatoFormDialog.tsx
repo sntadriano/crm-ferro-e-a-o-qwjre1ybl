@@ -30,6 +30,7 @@ const schema = z.object({
   descricao: z.string().min(1, 'Descrição é obrigatória'),
   resultado: z.string().optional(),
   data_contato: z.string().min(1, 'Data é obrigatória'),
+  hora: z.string().optional(),
 })
 
 interface ContatoFormDialogProps {
@@ -64,17 +65,22 @@ export function ContatoFormDialog({
         descricao: '',
         resultado: '',
         data_contato: new Date().toISOString().split('T')[0],
+        hora: new Date().toTimeString().substring(0, 5),
       })
     }
   }, [open, form])
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
+      const now = new Date()
+      const isPast = new Date(data.data_contato + 'T00:00:00') < new Date(now.setHours(0, 0, 0, 0))
+
       await pb.collection('contatos').create({
         ...data,
         cliente_id: clienteId,
         usuario_id: user?.id,
-        data_contato: new Date(data.data_contato).toISOString(),
+        data_contato: new Date(`${data.data_contato}T${data.hora || '12:00'}:00`).toISOString(),
+        status_validacao: isPast ? 'pendente' : 'aprovado',
       })
       toast.success('Contato registrado com sucesso')
       onOpenChange(false)
@@ -115,19 +121,34 @@ export function ContatoFormDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="data_contato"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <FormField
+                control={form.control}
+                name="data_contato"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hora"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hora</FormLabel>
+                    <FormControl>
+                      <Input type="time" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -153,9 +174,20 @@ export function ContatoFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Resultado (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Qual foi o desfecho?" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="visitado_com_sucesso">Visitado com sucesso</SelectItem>
+                      <SelectItem value="tentou_nao_encontrou">Não encontrou</SelectItem>
+                      <SelectItem value="recusou_atendimento">Recusou</SelectItem>
+                      <SelectItem value="nao_estava">Não estava</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

@@ -19,27 +19,30 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createContato } from '@/services/contatos'
+import { format } from 'date-fns'
 
 const formSchema = z
   .object({
     tipo: z.enum(['visita_presencial', 'telefone']),
     cliente_id: z.string().min(1, 'Selecione um cliente'),
     resultado: z.string().min(1, 'Selecione um resultado'),
+    observacoes_resultado: z.string().optional(),
     descricao: z.string().optional(),
     data_contato: z.string().min(1, 'Data é obrigatória'),
+    hora: z.string().min(1, 'Hora é obrigatória'),
     teve_pedido: z.boolean().default(false),
     valor_pedido: z.number().min(0).optional(),
   })
   .refine(
     (data) => {
-      if (data.resultado === 'Outro' && !data.descricao) {
+      if (data.resultado === 'outro' && !data.observacoes_resultado) {
         return false
       }
       return true
     },
     {
       message: "Observações são obrigatórias quando o resultado for 'Outro'",
-      path: ['descricao'],
+      path: ['observacoes_resultado'],
     },
   )
 
@@ -50,14 +53,19 @@ export default function ContatoFormPage() {
   const [loading, setLoading] = useState(false)
   const [fetchingClients, setFetchingClients] = useState(true)
 
+  const defaultDate = format(new Date(), 'yyyy-MM-dd')
+  const defaultTime = format(new Date(), 'HH:mm')
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       tipo: 'visita_presencial',
       cliente_id: '',
       resultado: '',
+      observacoes_resultado: '',
       descricao: '',
-      data_contato: new Date().toISOString().slice(0, 16),
+      data_contato: defaultDate,
+      hora: defaultTime,
       teve_pedido: false,
       valor_pedido: 0,
     },
@@ -70,6 +78,7 @@ export default function ContatoFormPage() {
     formState: { errors },
     register,
   } = form
+
   const tipo = watch('tipo')
   const resultado = watch('resultado')
   const teve_pedido = watch('teve_pedido')
@@ -79,7 +88,11 @@ export default function ContatoFormPage() {
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        const records = await pb.collection('clientes').getFullList({ sort: 'descricao' })
+        let filter = ''
+        if (user?.role === 'vendedor') {
+          filter = `vendedor = ${user?.codigo}`
+        }
+        const records = await pb.collection('clientes').getFullList({ sort: 'descricao', filter })
         setClientes(records)
       } catch (e) {
         toast.error('Erro ao carregar clientes.')
@@ -88,11 +101,11 @@ export default function ContatoFormPage() {
       }
     }
     fetchClientes()
-  }, [])
+  }, [user])
 
   const isPastDate = () => {
     if (!data_contato) return false
-    const d = new Date(data_contato)
+    const d = new Date(data_contato + 'T00:00:00')
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     return d < today
@@ -102,26 +115,29 @@ export default function ContatoFormPage() {
     setLoading(true)
     try {
       const isPast = isPastDate()
-      const status_aprovacao = isPast ? 'pendente' : 'aprovado'
+      const status_validacao = isPast ? 'pendente' : 'aprovado'
 
       await createContato({
         usuario_id: user?.id,
         cliente_id: values.cliente_id,
         tipo: values.tipo,
         resultado: values.resultado,
+        observacoes_resultado: values.observacoes_resultado,
         descricao: values.descricao,
-        data_contato: new Date(values.data_contato).toISOString().replace('T', ' '),
+        data_contato: new Date(`${values.data_contato}T${values.hora}:00`).toISOString(),
+        hora: values.hora,
         teve_pedido: values.teve_pedido,
         valor_pedido: values.teve_pedido ? values.valor_pedido : 0,
-        status_aprovacao,
+        status_validacao,
       })
 
       toast.success(
         isPast ? 'Registro criado e enviado para aprovação!' : 'Visita registrada com sucesso!',
       )
       navigate('/contatos')
-    } catch (e) {
-      toast.error('Erro ao registrar visita. Tente novamente.')
+    } catch (e: any) {
+      console.error(e)
+      toast.error('Erro ao registrar visita. Verifique os dados.')
     } finally {
       setLoading(false)
     }
@@ -129,11 +145,11 @@ export default function ContatoFormPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto w-full">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Registrar Atividade</h1>
+      <h1 className="text-2xl font-bold mb-6 text-[#1A3A52]">Registrar Interação</h1>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="space-y-6 bg-white dark:bg-slate-900 p-6 rounded-lg shadow-sm border dark:border-slate-800"
+        className="space-y-6 bg-white p-6 rounded-lg shadow-subtle border"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -149,24 +165,32 @@ export default function ContatoFormPage() {
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Data e Hora</Label>
-            <Input type="datetime-local" {...register('data_contato')} />
-            {isPastDate() && (
-              <p className="text-xs text-amber-600 font-medium mt-1">
-                Este registro exigirá aprovação da gerência.
-              </p>
-            )}
-            {errors.data_contato && (
-              <p className="text-xs text-red-500">{errors.data_contato.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Input type="date" {...register('data_contato')} />
+              {errors.data_contato && (
+                <p className="text-xs text-red-500">{errors.data_contato.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Hora</Label>
+              <Input type="time" {...register('hora')} />
+              {errors.hora && <p className="text-xs text-red-500">{errors.hora.message}</p>}
+            </div>
           </div>
         </div>
+
+        {isPastDate() && (
+          <p className="text-xs text-amber-600 font-medium bg-amber-50 p-2 rounded border border-amber-200">
+            Atenção: Este registro tem uma data anterior a hoje e exigirá aprovação da gerência.
+          </p>
+        )}
 
         <div className="space-y-2">
           <Label>Cliente</Label>
           {fetchingClients ? (
-            <div className="h-10 w-full animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md" />
+            <div className="h-10 w-full animate-pulse bg-gray-200 rounded-md" />
           ) : (
             <Select onValueChange={(v) => setValue('cliente_id', v)} value={cliente_id}>
               <SelectTrigger>
@@ -191,26 +215,38 @@ export default function ContatoFormPage() {
               <SelectValue placeholder="Selecione o resultado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Visitado com sucesso">Visitado com sucesso</SelectItem>
-              <SelectItem value="Tentou mas não encontrou">Tentou mas não encontrou</SelectItem>
-              <SelectItem value="Recusou atendimento">Recusou atendimento</SelectItem>
-              <SelectItem value="Não estava">Não estava</SelectItem>
-              <SelectItem value="Outro">Outro</SelectItem>
+              <SelectItem value="visitado_com_sucesso">Visitado / Contatado com sucesso</SelectItem>
+              <SelectItem value="tentou_nao_encontrou">Tentou mas não encontrou</SelectItem>
+              <SelectItem value="recusou_atendimento">Recusou atendimento</SelectItem>
+              <SelectItem value="nao_estava">Não estava / Caixa postal</SelectItem>
+              <SelectItem value="outro">Outro</SelectItem>
             </SelectContent>
           </Select>
           {errors.resultado && <p className="text-xs text-red-500">{errors.resultado.message}</p>}
         </div>
 
-        <div className="space-y-2 animate-fade-in-up">
-          <Label>
-            Observações {resultado === 'Outro' && <span className="text-red-500">*</span>}
-          </Label>
-          <Textarea {...register('descricao')} placeholder="Detalhes do contato..." />
-          {errors.descricao && <p className="text-xs text-red-500">{errors.descricao.message}</p>}
+        {resultado === 'outro' && (
+          <div className="space-y-2 animate-fade-in-up">
+            <Label>
+              Observações do Resultado <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              {...register('observacoes_resultado')}
+              placeholder="Especifique o resultado..."
+            />
+            {errors.observacoes_resultado && (
+              <p className="text-xs text-red-500">{errors.observacoes_resultado.message}</p>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>Descrição Adicional (Opcional)</Label>
+          <Textarea {...register('descricao')} placeholder="Detalhes da conversa..." />
         </div>
 
         {tipo === 'visita_presencial' && (
-          <div className="p-4 border rounded-md bg-gray-50 dark:bg-slate-800/50 space-y-4 animate-fade-in-up">
+          <div className="p-4 border rounded-md bg-[#F5F5F5] space-y-4 animate-fade-in-up">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="teve_pedido"
@@ -218,7 +254,7 @@ export default function ContatoFormPage() {
                 onCheckedChange={(c) => setValue('teve_pedido', c as boolean)}
               />
               <Label htmlFor="teve_pedido" className="cursor-pointer">
-                Teve pedido?
+                Houve fechamento de pedido?
               </Label>
             </div>
 
@@ -238,8 +274,12 @@ export default function ContatoFormPage() {
           </div>
         )}
 
-        <Button type="submit" disabled={loading} className="w-full transition-all">
-          {loading ? 'Registrando...' : 'Registrar'}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full min-h-[44px] bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800] font-bold transition-all"
+        >
+          {loading ? 'Registrando...' : 'Salvar Registro'}
         </Button>
       </form>
     </div>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T10:26:57.748Z",
+  "generatedAt": "2026-05-26T11:36:27.655Z",
   "collections": [
     {
       "name": "users",
@@ -273,11 +273,11 @@
       "name": "contatos",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'julia' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id))",
-        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && cliente_id.vendedor = @request.auth.codigo))",
-        "create": "@request.auth.active = true",
-        "update": "@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex'",
-        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'julia')"
+        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id))",
+        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id))",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || @request.auth.role = 'vendedor')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id))",
+        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex')"
       },
       "fields": [
         {
@@ -351,6 +351,38 @@
           "required": false,
           "system": false,
           "selectValues": ["pendente", "aprovado"]
+        },
+        {
+          "name": "hora",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observacoes_resultado",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status_validacao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente", "aprovado", "rejeitado"]
+        },
+        {
+          "name": "data_validacao",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "validado_por",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
         }
       ],
       "indexes": []

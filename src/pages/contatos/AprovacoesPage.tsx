@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { getContatosPendentes, aprovarContato } from '@/services/contatos'
+import { getContatosPendentes, aprovarContato, rejeitarContato } from '@/services/contatos'
 import { Button } from '@/components/ui/button'
+import { useAuth } from '@/hooks/use-auth'
 import {
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import {
 import { format } from 'date-fns'
 
 export default function AprovacoesPage() {
+  const { user } = useAuth()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [actionId, setActionId] = useState<string | null>(null)
@@ -33,13 +35,29 @@ export default function AprovacoesPage() {
   }
 
   const handleAprovar = async (id: string) => {
+    if (!user) return
     setActionId(id)
     try {
-      await aprovarContato(id)
+      await aprovarContato(id, user.id)
       toast.success('Registro aprovado com sucesso.')
       setData((prev) => prev.filter((d) => d.id !== id))
     } catch (e) {
       toast.error('Erro ao aprovar registro.')
+    } finally {
+      setActionId(null)
+    }
+  }
+
+  const handleRejeitar = async (id: string) => {
+    if (!user) return
+    if (!confirm('Tem certeza que deseja rejeitar este registro?')) return
+    setActionId(id)
+    try {
+      await rejeitarContato(id, user.id)
+      toast.success('Registro rejeitado.')
+      setData((prev) => prev.filter((d) => d.id !== id))
+    } catch (e) {
+      toast.error('Erro ao rejeitar registro.')
     } finally {
       setActionId(null)
     }
@@ -86,10 +104,17 @@ export default function AprovacoesPage() {
                   <TableCell>{d.expand?.cliente_id?.descricao}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-medium text-sm">{d.resultado}</span>
+                      <span className="font-medium text-sm capitalize">
+                        {d.resultado?.replace(/_/g, ' ')}
+                      </span>
                       {d.teve_pedido && (
-                        <span className="text-xs text-emerald-600">
-                          Pedido: R$ {d.valor_pedido.toFixed(2)}
+                        <span className="text-xs text-emerald-600 font-semibold mt-1">
+                          Pedido: R$ {d.valor_pedido?.toFixed(2)}
+                        </span>
+                      )}
+                      {d.observacoes_resultado && (
+                        <span className="text-xs text-slate-600 mt-1">
+                          <span className="font-semibold">Obs:</span> {d.observacoes_resultado}
                         </span>
                       )}
                       {d.descricao && (
@@ -97,7 +122,7 @@ export default function AprovacoesPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2 whitespace-nowrap">
                     <Button
                       size="sm"
                       onClick={() => handleAprovar(d.id)}
@@ -105,6 +130,14 @@ export default function AprovacoesPage() {
                       className="bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
                     >
                       {actionId === d.id ? 'Aprovando...' : 'Aprovar'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleRejeitar(d.id)}
+                      disabled={actionId === d.id}
+                    >
+                      Rejeitar
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -161,9 +161,27 @@ export default function ContatoListPage() {
 
   const getTipoIcon = (tipo: string) => {
     if (tipo === 'whatsapp') return <MessageSquare className="h-4 w-4" />
-    if (tipo === 'visita') return <MapPin className="h-4 w-4" />
+    if (tipo === 'visita' || tipo === 'visita_presencial') return <MapPin className="h-4 w-4" />
     if (tipo === 'email') return <Mail className="h-4 w-4" />
+    if (tipo === 'telefone') return <PhoneCall className="h-4 w-4" />
     return <PhoneCall className="h-4 w-4" />
+  }
+
+  const getStatusColor = (status: string) => {
+    if (status === 'aprovado') return 'bg-green-100 text-green-800 border-green-200'
+    if (status === 'rejeitado') return 'bg-red-100 text-red-800 border-red-200'
+    return 'bg-amber-100 text-amber-800 border-amber-200'
+  }
+
+  const formatResultado = (res: string) => {
+    const map: Record<string, string> = {
+      visitado_com_sucesso: 'Sucesso',
+      tentou_nao_encontrou: 'Não Encontrou',
+      recusou_atendimento: 'Recusou',
+      nao_estava: 'Ausente',
+      outro: 'Outro',
+    }
+    return map[res] || res
   }
 
   return (
@@ -202,6 +220,7 @@ export default function ContatoListPage() {
                 { header: 'Tipo', key: 'tipo' },
                 { header: 'Descrição', key: 'descricao' },
                 { header: 'Resultado', key: 'resultado' },
+                { header: 'Status', key: 'status_validacao' },
                 { header: 'Data Contato', key: 'data_fmt' },
               ]}
               filename="contatos"
@@ -237,10 +256,11 @@ export default function ContatoListPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tipos (Todos)</SelectItem>
+              <SelectItem value="visita_presencial">Visita Presencial</SelectItem>
+              <SelectItem value="telefone">Telefone</SelectItem>
               <SelectItem value="whatsapp">WhatsApp</SelectItem>
-              <SelectItem value="visita">Visita</SelectItem>
               <SelectItem value="email">Email</SelectItem>
-            </SelectContent>
+            </SelectContent>{' '}
           </Select>
           <Select value={resultadoFilter} onValueChange={setResultadoFilter}>
             <SelectTrigger className="min-h-[44px]">
@@ -361,6 +381,7 @@ export default function ContatoListPage() {
                   </TableHead>
                   <TableHead className="text-white font-semibold">Descrição</TableHead>
                   <TableHead className="text-white font-semibold">Resultado</TableHead>
+                  <TableHead className="text-white font-semibold">Status</TableHead>
                   <TableHead className="text-white text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -433,7 +454,17 @@ export default function ContatoListPage() {
                             variant="outline"
                             className="capitalize bg-white text-foreground group-hover:bg-white/20 group-hover:border-white group-hover:text-white"
                           >
-                            {contato.resultado}
+                            {formatResultado(contato.resultado)}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {contato.status_validacao && (
+                          <Badge
+                            variant="outline"
+                            className={cn('capitalize', getStatusColor(contato.status_validacao))}
+                          >
+                            {contato.status_validacao}
                           </Badge>
                         )}
                       </TableCell>
@@ -552,16 +583,27 @@ export default function ContatoListPage() {
                       <p className="text-sm text-foreground/90 line-clamp-2 mt-1">
                         {contato.descricao}
                       </p>
-                      {contato.resultado && (
-                        <div className="mt-1">
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {contato.resultado && (
                           <Badge
                             variant="outline"
                             className="capitalize text-xs bg-white text-foreground border-border"
                           >
-                            Resultado: {contato.resultado}
+                            Resultado: {formatResultado(contato.resultado)}
                           </Badge>
-                        </div>
-                      )}
+                        )}
+                        {contato.status_validacao && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'capitalize text-xs',
+                              getStatusColor(contato.status_validacao),
+                            )}
+                          >
+                            Status: {contato.status_validacao}
+                          </Badge>
+                        )}
+                      </div>
 
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         <Button
