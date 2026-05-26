@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T12:43:37.171Z",
+  "generatedAt": "2026-05-26T12:50:01.662Z",
   "collections": [
     {
       "name": "users",
@@ -509,10 +509,10 @@
       "name": "producao",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')",
-        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')",
-        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')",
-        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')",
+        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
+        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
         "delete": "@request.auth.role = 'admin'"
       },
       "fields": [
@@ -561,6 +561,25 @@
           "required": false,
           "system": false,
           "selectValues": ["registrado", "conferido"]
+        },
+        {
+          "name": "item_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "itens_producao"
+        },
+        {
+          "name": "observacoes",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ativo",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []
