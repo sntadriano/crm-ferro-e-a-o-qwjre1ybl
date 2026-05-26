@@ -68,6 +68,12 @@ const items = [
     icon: Package,
     roles: ['admin', 'julia', 'gerente', 'paulo'],
   },
+  {
+    title: 'Histórico de Produção',
+    url: '/producao/historico',
+    icon: History,
+    roles: ['admin', 'julia'],
+  },
 ]
 
 export function AppSidebar() {
@@ -99,7 +105,10 @@ export function AppSidebar() {
                 let isAllowed = true
                 if (item.roles) {
                   isAllowed = item.roles.includes(user?.role)
-                  if (item.title === 'Aprovações' && user?.name?.toLowerCase().includes('alex')) {
+                  if (
+                    (item.title === 'Aprovações' || item.title === 'Histórico de Produção') &&
+                    user?.name?.toLowerCase().includes('alex')
+                  ) {
                     isAllowed = true
                   }
                 }

@@ -26,6 +26,14 @@ export interface ProducaoRecord {
   }
 }
 
+export const getProducoesRelatorio = async (startDate: string, endDate: string) => {
+  return pb.collection('producao').getFullList<ProducaoRecord>({
+    filter: `data_producao >= '${startDate} 00:00:00' && data_producao <= '${endDate} 23:59:59' && ativo = true`,
+    sort: '-data_producao',
+    expand: 'item_id,usuario_id',
+  })
+}
+
 export const getProducoes = async (params: {
   page?: number
   perPage?: number

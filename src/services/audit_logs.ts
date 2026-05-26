@@ -50,6 +50,13 @@ export const getAuditLogs = async (params?: {
   })
 }
 
+export const getRecordAuditLogs = (registroId: string, tabela: string) => {
+  return pb.collection('audit_logs').getFullList<AuditLog>({
+    filter: `registro_id = '${registroId}' && tabela = '${tabela}'`,
+    sort: '-created',
+  })
+}
+
 export const getLeadAuditLogs = (leadId: string) => {
   return pb.collection('audit_logs').getFullList<AuditLog>({
     filter: `registro_id = '${leadId}' || detalhes ?~ '${leadId}'`,

@@ -21,6 +21,7 @@ import ValidacaoPage from './pages/contatos/ValidacaoPage'
 import VendasReportPage from './pages/relatorios/VendasReportPage'
 import ItensProducaoPage from './pages/producao/ItensProducaoPage'
 import ProducaoPage from './pages/producao/ProducaoPage'
+import ProducaoHistoricoPage from './pages/producao/ProducaoHistoricoPage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth()
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/auditoria" element={<AuditPage />} />
               <Route path="/producao" element={<ProducaoPage />} />
               <Route path="/producao/itens" element={<ItensProducaoPage />} />
+              <Route path="/producao/historico" element={<ProducaoHistoricoPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
