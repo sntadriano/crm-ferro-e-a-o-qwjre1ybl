@@ -34,7 +34,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const RootRedirect = () => {
   const { user } = useAuth()
-  if (['julia', 'paulo', 'gerente'].includes(user?.role)) {
+  if (['julia', 'paulo'].includes(user?.role)) {
     return <Navigate to="/producao" replace />
   }
   return <Navigate to="/dashboard" replace />

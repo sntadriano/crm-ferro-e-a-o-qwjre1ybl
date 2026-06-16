@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-    const { error } = await signIn(values.username, values.password)
+    const { error } = await signIn(values.username.toLowerCase(), values.password)
     setIsLoading(false)
 
     if (error) {
@@ -52,15 +52,13 @@ export default function LoginPage() {
         pb.authStore.clear()
         toast({
           title: 'Acesso Negado',
-          description: 'Sua conta está inativa. Contate o administrador.',
+          description: 'Sua conta está inativa. Entre em contato com o administrador.',
           variant: 'destructive',
         })
         return
       }
 
-      if (user?.role === 'admin') {
-        navigate('/dashboard')
-      } else if (['julia', 'paulo', 'gerente'].includes(user?.role)) {
+      if (['paulo', 'julia'].includes(user?.role)) {
         navigate('/producao')
       } else {
         navigate('/dashboard')
