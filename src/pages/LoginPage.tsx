@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Building2, Lock, Mail } from 'lucide-react'
+import { Building2, Lock, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -19,7 +19,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 
 const formSchema = z.object({
-  email: z.string().min(1, 'Email obrigatório').email('Email inválido'),
+  username: z.string().min(1, 'Usuário obrigatório'),
   password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
 })
 
@@ -31,17 +31,17 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { username: '', password: '' },
   })
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-    const { error } = await signIn(values.email, values.password)
+    const { error } = await signIn(values.username, values.password)
     setIsLoading(false)
     if (error) {
       toast({
         title: 'Erro de Autenticação',
-        description: 'Credenciais inválidas ou usuário inativo.',
+        description: 'Usuário ou senha incorretos.',
         variant: 'destructive',
       })
     } else {
@@ -64,14 +64,14 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Usuário</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="seu@email.com" className="pl-9 h-10" {...field} />
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Digite seu usuário" className="pl-9 h-10" {...field} />
                       </div>
                     </FormControl>
                     <FormMessage />

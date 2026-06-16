@@ -6,7 +6,7 @@ import { toast } from '@/hooks/use-toast'
 interface AuthContextType {
   user: any
   loading: boolean
-  signIn: (e: string, p: string) => Promise<{ error: any }>
+  signIn: (username: string, p: string) => Promise<{ error: any }>
   signOut: () => void
 }
 
@@ -76,9 +76,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, isMobile])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (username: string, password: string) => {
     try {
-      await pb.collection('users').authWithPassword(email, password)
+      await pb.collection('users').authWithPassword(username, password)
       return { error: null }
     } catch (error) {
       return { error }
