@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
+import pb from '@/lib/pocketbase/client'
 
 const formSchema = z.object({
   username: z.string().min(1, 'Usuário obrigatório'),
@@ -38,6 +39,7 @@ export default function LoginPage() {
     setIsLoading(true)
     const { error } = await signIn(values.username, values.password)
     setIsLoading(false)
+
     if (error) {
       toast({
         title: 'Erro de Autenticação',
@@ -45,7 +47,24 @@ export default function LoginPage() {
         variant: 'destructive',
       })
     } else {
-      navigate('/dashboard')
+      const user = pb.authStore.record
+      if (user && user.active === false) {
+        pb.authStore.clear()
+        toast({
+          title: 'Acesso Negado',
+          description: 'Sua conta está inativa. Contate o administrador.',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      if (user?.role === 'admin') {
+        navigate('/dashboard')
+      } else if (['julia', 'paulo', 'gerente'].includes(user?.role)) {
+        navigate('/producao')
+      } else {
+        navigate('/dashboard')
+      }
     }
   }
 

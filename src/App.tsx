@@ -22,10 +22,22 @@ import VendasReportPage from './pages/relatorios/VendasReportPage'
 import ProducaoModulePage from './pages/producao/ProducaoModulePage'
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth()
+  const { user, loading, signOut } = useAuth()
   if (loading) return <div>Carregando...</div>
   if (!user) return <Navigate to="/login" replace />
+  if (user.active === false) {
+    signOut()
+    return <Navigate to="/login" replace />
+  }
   return <>{children}</>
+}
+
+const RootRedirect = () => {
+  const { user } = useAuth()
+  if (['julia', 'paulo', 'gerente'].includes(user?.role)) {
+    return <Navigate to="/producao" replace />
+  }
+  return <Navigate to="/dashboard" replace />
 }
 
 const App = () => (
@@ -44,7 +56,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<RootRedirect />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/clientes" element={<CustomerListPage />} />
               <Route path="/clientes/novo" element={<CustomerFormPage />} />
