@@ -43,7 +43,7 @@ export default function LoginPage() {
     if (error) {
       toast({
         title: 'Erro de Autenticação',
-        description: 'Usuário ou senha incorretos.',
+        description: error?.message || 'Failed to authenticate.',
         variant: 'destructive',
       })
     } else {
