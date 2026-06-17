@@ -41,9 +41,12 @@ export default function LoginPage() {
     setIsLoading(false)
 
     if (error) {
+      const isAuthError = error?.status === 400 || error?.status === 401
       toast({
         title: 'Erro de Autenticação',
-        description: error?.message || 'Failed to authenticate.',
+        description: isAuthError
+          ? 'Usuário ou senha incorretos. Por favor, tente novamente.'
+          : error?.message || 'Falha ao autenticar.',
         variant: 'destructive',
       })
     } else {
