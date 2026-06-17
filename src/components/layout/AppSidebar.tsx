@@ -77,7 +77,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-center bg-white p-2 rounded-lg">
-            <img src={logoUrl} alt="Ferro e Aço Eldorado Logo" className="h-16 object-contain" />
+            <img src={logoUrl} alt="CRM FERRO E AÇO Logo" className="h-16 object-contain" />
           </div>
           <div className="text-sm font-medium text-sidebar-foreground">Olá, {userName}</div>
         </div>

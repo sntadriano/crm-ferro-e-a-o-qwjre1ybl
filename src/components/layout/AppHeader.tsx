@@ -44,7 +44,7 @@ export function AppHeader() {
 
         <div className="hidden md:flex items-center mr-4 pr-4 border-r border-primary-foreground/20">
           <span className="font-bold text-primary-foreground text-lg tracking-tight">
-            Ferro e Aço Eldorado
+            CRM FERRO E AÇO
           </span>
         </div>
 

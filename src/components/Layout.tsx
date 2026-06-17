@@ -14,7 +14,7 @@ export default function Layout() {
             <SidebarTrigger className="-ml-2 h-10 w-10 text-primary-foreground hover:bg-primary/90 [&>span>svg]:h-6 [&>span>svg]:w-6" />
           </div>
           <div className="bg-white rounded-md p-1">
-            <img src={logoUrl} alt="Ferro e Aço Eldorado Logo" className="h-8 object-contain" />
+            <img src={logoUrl} alt="CRM FERRO E AÇO Logo" className="h-8 object-contain" />
           </div>
         </header>
 

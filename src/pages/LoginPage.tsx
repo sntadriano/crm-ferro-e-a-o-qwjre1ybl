@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Building2, Lock, Mail } from 'lucide-react'
+import { Lock, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
+import logoUrl from '@/assets/whatsapp-image-2026-06-17-at-09.00.12-1c7fd.jpeg'
 
 const formSchema = z.object({
   email: z.string().min(1, 'E-mail obrigatório').email('Formato de e-mail inválido'),
@@ -92,11 +93,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-3 items-center text-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-            <Building2 className="w-8 h-8 text-primary" />
+          <div className="flex items-center justify-center mb-2 bg-white p-3 rounded-xl border shadow-sm">
+            <img src={logoUrl} alt="CRM FERRO E AÇO Logo" className="h-16 w-auto object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">Ferro e Aço Eldorado</CardTitle>
-          <CardDescription>Acesse o sistema CRM Plus</CardDescription>
+          <CardTitle className="text-2xl font-bold text-primary">CRM FERRO E AÇO</CardTitle>
+          <CardDescription>Acesse o sistema</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
