@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/AppSidebar'
+import logoUrl from '@/assets/whatsapp-image-2026-06-17-at-09.00.12-1c7fd.jpeg'
 
 export default function Layout() {
   return (
@@ -8,9 +9,13 @@ export default function Layout() {
       <AppSidebar />
       <SidebarInset className="flex w-full flex-col overflow-hidden min-h-screen">
         {/* Header Mobile */}
-        <header className="md:hidden flex h-16 items-center gap-4 border-b bg-card px-4 shrink-0">
-          <SidebarTrigger className="-ml-2 h-10 w-10 [&>span>svg]:h-6 [&>span>svg]:w-6" />
-          <h1 className="text-lg font-bold text-primary">Ferro e Aço Eldorado</h1>
+        <header className="md:hidden flex h-16 items-center justify-between border-b bg-primary px-4 shrink-0">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger className="-ml-2 h-10 w-10 text-primary-foreground hover:bg-primary/90 [&>span>svg]:h-6 [&>span>svg]:w-6" />
+          </div>
+          <div className="bg-white rounded-md p-1">
+            <img src={logoUrl} alt="Ferro e Aço Eldorado Logo" className="h-8 object-contain" />
+          </div>
         </header>
 
         {/* Page Content */}

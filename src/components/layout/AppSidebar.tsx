@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import logoUrl from '@/assets/whatsapp-image-2026-06-17-at-09.00.12-1c7fd.jpeg'
 import {
   Users,
   Settings,
@@ -72,16 +73,13 @@ export function AppSidebar() {
   const userName = user?.name || user?.email || 'Usuário'
 
   return (
-    <Sidebar variant="inset" className="border-r-0 [&>[data-sidebar=sidebar]]:bg-[#1A3A52]">
+    <Sidebar variant="inset" className="border-r-0">
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2 font-bold text-xl text-white line-clamp-1">
-            <div className="bg-[#4A90E2] text-white p-1.5 rounded-md flex items-center justify-center shrink-0">
-              <Users className="h-6 w-6" />
-            </div>
-            <span className="truncate">Ferro e Aço Eldorado</span>
+          <div className="flex items-center justify-center bg-white p-2 rounded-lg">
+            <img src={logoUrl} alt="Ferro e Aço Eldorado Logo" className="h-16 object-contain" />
           </div>
-          <div className="text-sm font-medium text-white/90">Olá, {userName}</div>
+          <div className="text-sm font-medium text-sidebar-foreground">Olá, {userName}</div>
         </div>
       </SidebarHeader>
 
@@ -91,7 +89,9 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1.5">
               {items.map((item) => {
                 let isAllowed = true
-                if (item.roles) {
+                if (['julia', 'paulo'].includes(user?.role)) {
+                  isAllowed = item.title === 'Produção'
+                } else if (item.roles) {
                   isAllowed = item.roles.includes(user?.role)
                   if (
                     (item.title === 'Aprovações' || item.title === 'Histórico de Produção') &&
@@ -112,10 +112,10 @@ export function AppSidebar() {
                       tooltip={item.title}
                       onClick={() => isMobile && setOpenMobile(false)}
                       className={cn(
-                        'h-12 text-[15px] font-medium text-white transition-colors duration-200 ease-in-out',
-                        'hover:text-[#FFC107] hover:bg-transparent',
-                        'data-[active=true]:bg-[#4A90E2] data-[active=true]:text-[#FFC107]',
-                        'data-[active=true]:hover:bg-[#4A90E2] data-[active=true]:hover:text-[#FFC107]',
+                        'h-12 text-[15px] font-medium text-sidebar-foreground transition-colors duration-200 ease-in-out',
+                        'hover:text-sidebar-primary hover:bg-transparent',
+                        'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-primary',
+                        'data-[active=true]:hover:bg-sidebar-accent data-[active=true]:hover:text-sidebar-primary',
                         '[&>svg]:!w-[22px] [&>svg]:!h-[22px] [&>svg]:shrink-0',
                       )}
                     >
@@ -141,8 +141,8 @@ export function AppSidebar() {
                 signOut()
               }}
               className={cn(
-                'h-12 text-[15px] font-medium text-white transition-colors duration-200 ease-in-out',
-                'hover:text-[#FFC107] hover:bg-transparent',
+                'h-12 text-[15px] font-medium text-sidebar-foreground transition-colors duration-200 ease-in-out',
+                'hover:text-sidebar-primary hover:bg-transparent',
                 '[&>svg]:!w-[22px] [&>svg]:!h-[22px] [&>svg]:shrink-0',
               )}
               aria-label="Sair do sistema"

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -40,6 +40,14 @@ const RootRedirect = () => {
   return <Navigate to="/dashboard" replace />
 }
 
+const RestrictedLayout = () => {
+  const { user } = useAuth()
+  if (['julia', 'paulo'].includes(user?.role)) {
+    return <Navigate to="/producao" replace />
+  }
+  return <Outlet />
+}
+
 const App = () => (
   <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
     <AuthProvider>
@@ -57,18 +65,22 @@ const App = () => (
               }
             >
               <Route path="/" element={<RootRedirect />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/clientes" element={<CustomerListPage />} />
-              <Route path="/clientes/novo" element={<CustomerFormPage />} />
-              <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
-              <Route path="/leads" element={<LeadListPage />} />
-              <Route path="/contatos" element={<ContatoListPage />} />
-              <Route path="/contatos/novo" element={<ContatoFormPage />} />
-              <Route path="/validacao" element={<ValidacaoPage />} />
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/relatorios" element={<RelatoriosPage />} />
-              <Route path="/relatorios/vendas" element={<VendasReportPage />} />
-              <Route path="/auditoria" element={<AuditPage />} />
+
+              <Route element={<RestrictedLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/clientes" element={<CustomerListPage />} />
+                <Route path="/clientes/novo" element={<CustomerFormPage />} />
+                <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+                <Route path="/leads" element={<LeadListPage />} />
+                <Route path="/contatos" element={<ContatoListPage />} />
+                <Route path="/contatos/novo" element={<ContatoFormPage />} />
+                <Route path="/validacao" element={<ValidacaoPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+                <Route path="/relatorios" element={<RelatoriosPage />} />
+                <Route path="/relatorios/vendas" element={<VendasReportPage />} />
+                <Route path="/auditoria" element={<AuditPage />} />
+              </Route>
+
               <Route path="/producao" element={<ProducaoModulePage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
