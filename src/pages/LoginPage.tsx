@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +6,7 @@ import * as z from 'zod'
 import { Building2, Lock, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -22,6 +23,7 @@ import pb from '@/lib/pocketbase/client'
 const formSchema = z.object({
   email: z.string().min(1, 'E-mail obrigatório').email('Formato de e-mail inválido'),
   password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
+  rememberMe: z.boolean().default(false),
 })
 
 export default function LoginPage() {
@@ -32,12 +34,26 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: false },
   })
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail')
+    if (savedEmail) {
+      form.setValue('email', savedEmail)
+      form.setValue('rememberMe', true)
+
+      const timer = setTimeout(() => {
+        form.setFocus('password')
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [form])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-    const { error } = await signIn(values.email.trim().toLowerCase(), values.password)
+    const emailToUse = values.email.trim().toLowerCase()
+    const { error } = await signIn(emailToUse, values.password)
     setIsLoading(false)
 
     if (error) {
@@ -47,6 +63,12 @@ export default function LoginPage() {
         variant: 'destructive',
       })
     } else {
+      if (values.rememberMe) {
+        localStorage.setItem('rememberedEmail', emailToUse)
+      } else {
+        localStorage.removeItem('rememberedEmail')
+      }
+
       const user = pb.authStore.record
       if (user && user.active === false) {
         pb.authStore.clear()
@@ -58,7 +80,7 @@ export default function LoginPage() {
         return
       }
 
-      if (['paulo', 'julia'].includes(user?.role)) {
+      if (['paulo', 'julia'].includes(user?.role) || user?.email === 'soaresclaudio@gmail.com') {
         navigate('/producao')
       } else {
         navigate('/dashboard')
@@ -121,6 +143,22 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="text-sm font-medium leading-none cursor-pointer">
+                      Lembrar login
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+
               <Button type="submit" className="w-full h-10 text-base" disabled={isLoading}>
                 {isLoading ? 'Entrando...' : 'Entrar'}
               </Button>

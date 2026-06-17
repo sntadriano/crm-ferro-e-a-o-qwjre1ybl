@@ -89,7 +89,10 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1.5">
               {items.map((item) => {
                 let isAllowed = true
-                if (['julia', 'paulo'].includes(user?.role)) {
+                if (
+                  ['julia', 'paulo'].includes(user?.role) ||
+                  user?.email === 'soaresclaudio@gmail.com'
+                ) {
                   isAllowed = item.title === 'Produção'
                 } else if (item.roles) {
                   isAllowed = item.roles.includes(user?.role)
