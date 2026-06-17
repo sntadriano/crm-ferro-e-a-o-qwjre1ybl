@@ -5,7 +5,7 @@ migrate(
     for (const username of usernames) {
       try {
         const record = app.findFirstRecordByData('users', 'username', username)
-        record.setPassword('091098')
+        record.setPassword('Skip@2026')
         record.set('active', true)
         record.set('username', username.toLowerCase())
         app.save(record)
