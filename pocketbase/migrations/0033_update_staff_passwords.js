@@ -12,21 +12,21 @@ migrate(
     const usersToProvision = [
       {
         email: 'alexsilvasantos23@hotmail.com',
-        password: '230894',
+        password: 'Skip@2026',
         role: 'admin',
         name: 'Alex',
         active: true,
       },
       {
         email: 'soaresclaudio@gmail.com',
-        password: '010365',
+        password: 'Skip@2026',
         role: 'gerente',
         name: 'Claudio',
         active: true,
       },
       {
         email: 'julia.carmona159@gmail.com',
-        password: '110203',
+        password: 'Skip@2026',
         role: 'julia',
         name: 'Julia',
         active: true,
