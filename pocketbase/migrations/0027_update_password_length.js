@@ -15,13 +15,13 @@ migrate(
     // due to the 8-character constraint.
     try {
       const adriano = app.findFirstRecordByData('users', 'username', 'adriano')
-      adriano.setPassword('091098')
+      adriano.setPassword('Skip@2026')
       app.save(adriano)
     } catch (_) {
       try {
         // Fallback: match by name if username field isn't used
         const adrianoByName = app.findFirstRecordByData('users', 'name', 'adriano')
-        adrianoByName.setPassword('091098')
+        adrianoByName.setPassword('Skip@2026')
         app.save(adrianoByName)
       } catch (_) {}
     }
