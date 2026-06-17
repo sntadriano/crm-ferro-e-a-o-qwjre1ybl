@@ -1,12 +1,22 @@
 migrate(
   (app) => {
-    const users = app.findRecordsByFilter(
-      '_pb_users_auth_',
-      "email = 'adriano_santos_09@hotmail.com' || username = 'adriano' || name ~ 'adriano'",
-      'created',
-      100,
-      0,
-    )
+    const allUsers = app.findRecordsByFilter('_pb_users_auth_', '', 'created', 1000, 0)
+
+    const users = []
+    for (let i = 0; i < allUsers.length; i++) {
+      const u = allUsers[i]
+      const email = u.getString('email') || ''
+      const username = u.getString('username') || ''
+      const name = (u.getString('name') || '').toLowerCase()
+
+      if (
+        email === 'adriano_santos_09@hotmail.com' ||
+        username === 'adriano' ||
+        name.includes('adriano')
+      ) {
+        users.push(u)
+      }
+    }
 
     let target = null
 
@@ -16,10 +26,9 @@ migrate(
       // Remove duplicates to ensure no unique constraint errors on email or username
       for (let i = 1; i < users.length; i++) {
         const u = users[i]
-        if (
-          u.getString('email') === 'adriano_santos_09@hotmail.com' ||
-          u.getString('username') === 'adriano'
-        ) {
+        const email = u.getString('email') || ''
+        const username = u.getString('username') || ''
+        if (email === 'adriano_santos_09@hotmail.com' || username === 'adriano') {
           try {
             app.delete(u)
           } catch (_) {}
