@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Building2, Lock, User } from 'lucide-react'
+import { Building2, Lock, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 
 const formSchema = z.object({
-  username: z.string().min(1, 'Usuário obrigatório'),
+  email: z.string().min(1, 'E-mail obrigatório').email('Formato de e-mail inválido'),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
 })
 
@@ -32,21 +32,18 @@ export default function LoginPage() {
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { username: '', password: '' },
+    defaultValues: { email: '', password: '' },
   })
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-    const { error } = await signIn(values.username.trim().toLowerCase(), values.password)
+    const { error } = await signIn(values.email.trim().toLowerCase(), values.password)
     setIsLoading(false)
 
     if (error) {
-      const isAuthError = error?.status === 400 || error?.status === 401
       toast({
         title: 'Erro de Autenticação',
-        description: isAuthError
-          ? 'Usuário ou senha incorretos. Por favor, tente novamente.'
-          : error?.message || 'Falha ao autenticar.',
+        description: 'Falha na autenticação. Verifique seu e-mail e senha.',
         variant: 'destructive',
       })
     } else {
@@ -84,14 +81,19 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Usuário</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Digite seu usuário" className="pl-9 h-10" {...field} />
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="exemplo@email.com"
+                          className="pl-9 h-10"
+                          {...field}
+                        />
                       </div>
                     </FormControl>
                     <FormMessage />
