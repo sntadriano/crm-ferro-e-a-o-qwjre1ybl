@@ -21,7 +21,7 @@ import pb from '@/lib/pocketbase/client'
 
 const formSchema = z.object({
   username: z.string().min(1, 'Usuário obrigatório'),
-  password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
 })
 
 export default function LoginPage() {
