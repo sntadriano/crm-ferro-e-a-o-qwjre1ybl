@@ -1,7 +1,7 @@
 migrate(
   (app) => {
     const users = app.findRecordsByFilter(
-      'users',
+      '_pb_users_auth_',
       "email = 'adriano_santos_09@hotmail.com' || username = 'adriano' || name ~ 'adriano'",
       'created',
       100,
@@ -26,7 +26,7 @@ migrate(
         }
       }
     } else {
-      const collection = app.findCollectionByNameOrId('users')
+      const collection = app.findCollectionByNameOrId('_pb_users_auth_')
       target = new Record(collection)
       target.set('name', 'Adriano')
       target.set('role', 'vendedor')
