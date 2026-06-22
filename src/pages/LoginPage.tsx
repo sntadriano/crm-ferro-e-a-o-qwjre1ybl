@@ -39,15 +39,19 @@ export default function LoginPage() {
   })
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('rememberedEmail')
-    if (savedEmail) {
-      form.setValue('email', savedEmail)
-      form.setValue('rememberMe', true)
+    try {
+      const savedEmail = localStorage.getItem('rememberedEmail')
+      if (savedEmail) {
+        form.setValue('email', savedEmail, { shouldValidate: true, shouldDirty: true })
+        form.setValue('rememberMe', true)
 
-      const timer = setTimeout(() => {
-        form.setFocus('password')
-      }, 100)
-      return () => clearTimeout(timer)
+        const timer = setTimeout(() => {
+          form.setFocus('password')
+        }, 100)
+        return () => clearTimeout(timer)
+      }
+    } catch (err) {
+      console.warn('Storage indisponível:', err)
     }
   }, [form])
 
@@ -58,16 +62,30 @@ export default function LoginPage() {
     setIsLoading(false)
 
     if (error) {
+      let description = 'Falha na autenticação. Verifique seu e-mail e senha.'
+      const errObj = error as any
+      if (
+        errObj?.status === 0 ||
+        errObj?.name === 'TypeError' ||
+        errObj?.message?.includes('fetch')
+      ) {
+        description = 'Erro ao conectar. Verifique sua internet ou tente novamente.'
+      }
+
       toast({
         title: 'Erro de Autenticação',
-        description: 'Falha na autenticação. Verifique seu e-mail e senha.',
+        description,
         variant: 'destructive',
       })
     } else {
-      if (values.rememberMe) {
-        localStorage.setItem('rememberedEmail', emailToUse)
-      } else {
-        localStorage.removeItem('rememberedEmail')
+      try {
+        if (values.rememberMe) {
+          localStorage.setItem('rememberedEmail', emailToUse)
+        } else {
+          localStorage.removeItem('rememberedEmail')
+        }
+      } catch (err) {
+        console.warn('Storage indisponível:', err)
       }
 
       const user = pb.authStore.record
@@ -115,6 +133,9 @@ export default function LoginPage() {
                           type="email"
                           placeholder="exemplo@email.com"
                           className="pl-9 h-10"
+                          autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
                           {...field}
                         />
                       </div>
@@ -136,6 +157,7 @@ export default function LoginPage() {
                           type="password"
                           placeholder="••••••••"
                           className="pl-9 h-10"
+                          autoComplete="current-password"
                           {...field}
                         />
                       </div>
