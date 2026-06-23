@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await pb.collection('users').authWithPassword(email, password)
       return { error: null }
     } catch (error) {
+      console.warn('[Login Debug] authWithPassword failed:', error)
       return { error }
     }
   }

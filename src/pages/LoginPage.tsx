@@ -27,6 +27,34 @@ const formSchema = z.object({
   rememberMe: z.boolean().default(false),
 })
 
+const memoryStorage: Record<string, string> = {}
+const safeStorage = {
+  getItem: (key: string) => {
+    try {
+      return localStorage.getItem(key)
+    } catch (e) {
+      console.warn('[Storage] localStorage indisponível:', e)
+      return memoryStorage[key] || null
+    }
+  },
+  setItem: (key: string, val: string) => {
+    try {
+      localStorage.setItem(key, val)
+    } catch (e) {
+      console.warn('[Storage] localStorage indisponível:', e)
+      memoryStorage[key] = val
+    }
+  },
+  removeItem: (key: string) => {
+    try {
+      localStorage.removeItem(key)
+    } catch (e) {
+      console.warn('[Storage] localStorage indisponível:', e)
+      delete memoryStorage[key]
+    }
+  },
+}
+
 export default function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
@@ -40,7 +68,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     try {
-      const savedEmail = localStorage.getItem('rememberedEmail')
+      const savedEmail = safeStorage.getItem('rememberedEmail')
       if (savedEmail) {
         form.setValue('email', savedEmail, { shouldValidate: true, shouldDirty: true })
         form.setValue('rememberMe', true)
@@ -51,19 +79,27 @@ export default function LoginPage() {
         return () => clearTimeout(timer)
       }
     } catch (err) {
-      console.warn('Storage indisponível:', err)
+      console.warn('Storage fallback failed:', err)
     }
   }, [form])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
     const emailToUse = values.email.trim().toLowerCase()
-    const { error } = await signIn(emailToUse, values.password)
+
+    // Ensure string values are primitive strings (fixes issues with legacy Android WebViews mangling objects)
+    const safeEmail = String(emailToUse)
+    const safePassword = String(values.password)
+
+    const { error } = await signIn(safeEmail, safePassword)
     setIsLoading(false)
 
     if (error) {
-      let description = 'Falha na autenticação. Verifique seu e-mail e senha.'
+      let description = 'Erro na autenticação. Verifique seu e-mail e senha.'
       const errObj = error as any
+
+      console.warn('[Login Error] Autenticação falhou:', errObj)
+
       if (
         errObj?.status === 0 ||
         errObj?.name === 'TypeError' ||
@@ -80,12 +116,12 @@ export default function LoginPage() {
     } else {
       try {
         if (values.rememberMe) {
-          localStorage.setItem('rememberedEmail', emailToUse)
+          safeStorage.setItem('rememberedEmail', safeEmail)
         } else {
-          localStorage.removeItem('rememberedEmail')
+          safeStorage.removeItem('rememberedEmail')
         }
       } catch (err) {
-        console.warn('Storage indisponível:', err)
+        console.warn('Storage fallback failed:', err)
       }
 
       const user = pb.authStore.record
@@ -100,9 +136,9 @@ export default function LoginPage() {
       }
 
       if (['paulo', 'julia'].includes(user?.role) || user?.email === 'soaresclaudio@gmail.com') {
-        navigate('/producao')
+        navigate('/producao', { replace: true })
       } else {
-        navigate('/dashboard')
+        navigate('/dashboard', { replace: true })
       }
     }
   }
@@ -136,7 +172,11 @@ export default function LoginPage() {
                           autoComplete="email"
                           autoCapitalize="none"
                           autoCorrect="off"
-                          {...field}
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </div>
                     </FormControl>
@@ -158,7 +198,11 @@ export default function LoginPage() {
                           placeholder="••••••••"
                           className="pl-9 h-10"
                           autoComplete="current-password"
-                          {...field}
+                          value={field.value || ''}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </div>
                     </FormControl>
@@ -173,7 +217,13 @@ export default function LoginPage() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        name={field.name}
+                        ref={field.ref}
+                        onBlur={field.onBlur}
+                      />
                     </FormControl>
                     <FormLabel className="text-sm font-medium leading-none cursor-pointer">
                       Lembrar login
@@ -183,7 +233,7 @@ export default function LoginPage() {
               />
 
               <Button type="submit" className="w-full h-10 text-base" disabled={isLoading}>
-                {isLoading ? 'Entrando...' : 'Entrar'}
+                {isLoading ? 'Carregando...' : 'Entrar'}
               </Button>
             </form>
           </Form>
