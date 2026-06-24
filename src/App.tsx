@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
@@ -5,21 +6,31 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { CustomerProvider } from '@/hooks/use-customers'
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import Layout from './components/Layout'
-import NotFound from './pages/NotFound'
-import DashboardPage from './pages/DashboardPage'
-import CustomerListPage from './pages/customers/CustomerListPage'
-import CustomerFormPage from './pages/customers/CustomerFormPage'
-import CustomerDetailsPage from './pages/customers/CustomerDetailsPage'
-import LeadListPage from './pages/leads/LeadListPage'
-import ContatoListPage from './pages/contatos/ContatoListPage'
-import LoginPage from './pages/LoginPage'
-import AdminPage from './pages/admin/AdminPage'
-import RelatoriosPage from './pages/relatorios/RelatoriosPage'
-import AuditPage from './pages/admin/AuditPage'
-import ContatoFormPage from './pages/contatos/ContatoFormPage'
-import ValidacaoPage from './pages/contatos/ValidacaoPage'
-import VendasReportPage from './pages/relatorios/VendasReportPage'
-import ProducaoModulePage from './pages/producao/ProducaoModulePage'
+
+const NotFound = lazy(() => import('./pages/NotFound'))
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const CustomerListPage = lazy(() => import('./pages/customers/CustomerListPage'))
+const CustomerFormPage = lazy(() => import('./pages/customers/CustomerFormPage'))
+const CustomerDetailsPage = lazy(() => import('./pages/customers/CustomerDetailsPage'))
+const LeadListPage = lazy(() => import('./pages/leads/LeadListPage'))
+const ContatoListPage = lazy(() => import('./pages/contatos/ContatoListPage'))
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const AdminPage = lazy(() => import('./pages/admin/AdminPage'))
+const RelatoriosPage = lazy(() => import('./pages/relatorios/RelatoriosPage'))
+const AuditPage = lazy(() => import('./pages/admin/AuditPage'))
+const ContatoFormPage = lazy(() => import('./pages/contatos/ContatoFormPage'))
+const ValidacaoPage = lazy(() => import('./pages/contatos/ValidacaoPage'))
+const VendasReportPage = lazy(() => import('./pages/relatorios/VendasReportPage'))
+const ProducaoModulePage = lazy(() => import('./pages/producao/ProducaoModulePage'))
+
+const LoadingFallback = () => (
+  <div className="flex h-screen w-screen items-center justify-center bg-background">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <p className="text-sm text-muted-foreground font-medium">Carregando...</p>
+    </div>
+  </div>
+)
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, signOut } = useAuth()
@@ -55,36 +66,38 @@ const App = () => (
         <CustomerProvider>
           <Toaster />
           <Sonner richColors closeButton />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/" element={<RootRedirect />} />
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/" element={<RootRedirect />} />
 
-              <Route element={<RestrictedLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/clientes" element={<CustomerListPage />} />
-                <Route path="/clientes/novo" element={<CustomerFormPage />} />
-                <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
-                <Route path="/leads" element={<LeadListPage />} />
-                <Route path="/contatos" element={<ContatoListPage />} />
-                <Route path="/contatos/novo" element={<ContatoFormPage />} />
-                <Route path="/validacao" element={<ValidacaoPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/relatorios" element={<RelatoriosPage />} />
-                <Route path="/relatorios/vendas" element={<VendasReportPage />} />
-                <Route path="/auditoria" element={<AuditPage />} />
+                <Route element={<RestrictedLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/clientes" element={<CustomerListPage />} />
+                  <Route path="/clientes/novo" element={<CustomerFormPage />} />
+                  <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+                  <Route path="/leads" element={<LeadListPage />} />
+                  <Route path="/contatos" element={<ContatoListPage />} />
+                  <Route path="/contatos/novo" element={<ContatoFormPage />} />
+                  <Route path="/validacao" element={<ValidacaoPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/relatorios" element={<RelatoriosPage />} />
+                  <Route path="/relatorios/vendas" element={<VendasReportPage />} />
+                  <Route path="/auditoria" element={<AuditPage />} />
+                </Route>
+
+                <Route path="/producao" element={<ProducaoModulePage />} />
               </Route>
-
-              <Route path="/producao" element={<ProducaoModulePage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </CustomerProvider>
       </TooltipProvider>
     </AuthProvider>

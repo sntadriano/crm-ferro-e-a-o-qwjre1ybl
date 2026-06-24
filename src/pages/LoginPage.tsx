@@ -64,6 +64,7 @@ export default function LoginPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { email: '', password: '', rememberMe: false },
+    mode: 'onSubmit',
   })
 
   useEffect(() => {
@@ -85,31 +86,44 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-    const emailToUse = values.email.trim().toLowerCase()
 
-    // Ensure string values are primitive strings (fixes issues with legacy Android WebViews mangling objects)
-    const safeEmail = String(emailToUse)
-    const safePassword = String(values.password)
+    // Sanitize input to remove invisible characters or formatting issues
+    const safeEmail = String(values.email)
+      .trim()
+      .toLowerCase()
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    const safePassword = String(values.password).trim()
+
+    // Clear potentially corrupted session data before a new login attempt
+    try {
+      pb.authStore.clear()
+      safeStorage.removeItem('pocketbase_auth')
+    } catch (e) {
+      console.warn('[Login] Erro ao limpar sessão anterior', e)
+    }
 
     const { error } = await signIn(safeEmail, safePassword)
     setIsLoading(false)
 
     if (error) {
-      let description = 'Erro na autenticação. Verifique seu e-mail e senha.'
+      let description = 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.'
       const errObj = error as any
 
       console.warn('[Login Error] Autenticação falhou:', errObj)
 
-      if (
+      if (errObj?.message === 'A conexão demorou muito para responder. Verifique sua internet.') {
+        description = errObj.message
+      } else if (
         errObj?.status === 0 ||
         errObj?.name === 'TypeError' ||
         errObj?.message?.includes('fetch')
       ) {
-        description = 'Erro ao conectar. Verifique sua internet ou tente novamente.'
+        description =
+          'Não foi possível conectar ao servidor. Verifique sua conexão de internet e tente novamente.'
       }
 
       toast({
-        title: 'Erro de Autenticação',
+        title: 'Falha no Acesso',
         description,
         variant: 'destructive',
       })
@@ -148,7 +162,15 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="space-y-3 items-center text-center">
           <div className="flex items-center justify-center mb-2 bg-white p-3 rounded-xl border shadow-sm">
-            <img src={logoUrl} alt="CRM FERRO E AÇO Logo" className="h-16 w-auto object-contain" />
+            <img
+              src={logoUrl}
+              alt="CRM FERRO E AÇO Logo"
+              className="h-16 w-auto object-contain"
+              loading="lazy"
+              decoding="async"
+              width={160}
+              height={64}
+            />
           </div>
           <CardTitle className="text-2xl font-bold text-primary">CRM FERRO E AÇO</CardTitle>
           <CardDescription>Acesse o sistema</CardDescription>

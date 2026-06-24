@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Search,
   Plus,
@@ -186,6 +186,179 @@ export default function ContatoListPage() {
     }
     return map[res] || res
   }
+
+  const ContatoRow = React.memo(({ contato, i, onOpenDetails, onEdit, onDelete }: any) => (
+    <TableRow
+      className={cn(
+        i % 2 === 0 ? 'bg-white' : 'bg-[#F5F5F5]',
+        'hover:bg-[#4A90E2] hover:text-white transition-colors group',
+      )}
+    >
+      <TableCell className="font-medium">
+        {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
+      </TableCell>
+      <TableCell>{contato.expand?.usuario_id?.name || 'Sistema'}</TableCell>
+      <TableCell>
+        <Badge
+          variant="outline"
+          className={cn(
+            'capitalize flex items-center gap-1.5 w-fit bg-white group-hover:bg-white/20 group-hover:border-white group-hover:text-white',
+            contato.tipo === 'visita_presencial'
+              ? 'border-blue-600 text-blue-700'
+              : contato.tipo === 'telefone'
+                ? 'border-green-600 text-green-700'
+                : contato.tipo === 'whatsapp'
+                  ? 'border-blue-400 text-blue-600'
+                  : 'border-purple-500 text-purple-700',
+          )}
+        >
+          {getTipoIcon(contato.tipo)} {contato.tipo}
+        </Badge>
+      </TableCell>
+      <TableCell>{format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}</TableCell>
+      <TableCell className="max-w-[300px]">
+        <p
+          className="truncate text-muted-foreground group-hover:text-white"
+          title={contato.descricao}
+        >
+          {contato.descricao}
+        </p>
+      </TableCell>
+      <TableCell>
+        {contato.resultado && (
+          <Badge
+            variant="outline"
+            className="capitalize bg-white text-foreground group-hover:bg-white/20 group-hover:border-white group-hover:text-white"
+          >
+            {formatResultado(contato.resultado)}
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        {contato.status_validacao && (
+          <Badge
+            variant="outline"
+            className={cn('capitalize', getStatusColor(contato.status_validacao))}
+          >
+            {contato.status_validacao}
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0 group-hover:text-white group-hover:hover:bg-white/20"
+              aria-label="Ações"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onOpenDetails(contato)}>Visualizar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(contato)}>Editar</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDelete(contato.id)} className="text-destructive">
+              Deletar Contato
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  ))
+  ContatoRow.displayName = 'ContatoRow'
+
+  const ContatoCard = React.memo(({ contato, onOpenDetails, onEdit, onDelete }: any) => (
+    <Card className="shadow-subtle hover:border-[#4A90E2] border-border/60 transition-colors overflow-hidden">
+      <CardContent className="p-0">
+        <div className="p-4 flex flex-col gap-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="font-bold text-[#1A3A52] line-clamp-1 text-base">
+                {contato.expand?.cliente_id?.descricao}
+              </div>
+              <div className="text-sm text-muted-foreground font-medium mt-1">
+                Usuário: {contato.expand?.usuario_id?.name || 'Sistema'}
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 shrink-0 min-h-[44px] min-w-[44px]">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onOpenDetails(contato)}>
+                  Visualizar
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onEdit(contato)}>Editar</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onDelete(contato.id)} className="text-destructive">
+                  Deletar Contato
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm mt-1">
+            <Badge
+              variant="outline"
+              className={cn(
+                'capitalize flex items-center gap-1.5 w-fit',
+                contato.tipo === 'visita_presencial'
+                  ? 'border-blue-600 text-blue-700 bg-blue-50'
+                  : contato.tipo === 'telefone'
+                    ? 'border-green-600 text-green-700 bg-green-50'
+                    : contato.tipo === 'whatsapp'
+                      ? 'border-blue-400 text-blue-600 bg-blue-50'
+                      : 'border-purple-500 text-purple-700 bg-purple-50',
+              )}
+            >
+              {getTipoIcon(contato.tipo)} {contato.tipo}
+            </Badge>
+            <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/50 px-2 py-1 rounded-md font-medium">
+              <CalendarIcon className="h-3.5 w-3.5" />{' '}
+              {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
+            </div>
+          </div>
+          <p className="text-sm text-foreground/90 line-clamp-2 mt-1">{contato.descricao}</p>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {contato.resultado && (
+              <Badge
+                variant="outline"
+                className="capitalize text-xs bg-white text-foreground border-border"
+              >
+                Resultado: {formatResultado(contato.resultado)}
+              </Badge>
+            )}
+            {contato.status_validacao && (
+              <Badge
+                variant="outline"
+                className={cn('capitalize text-xs', getStatusColor(contato.status_validacao))}
+              >
+                Status: {contato.status_validacao}
+              </Badge>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <Button
+              variant="outline"
+              className="w-full min-h-[44px] text-xs font-semibold border-border hover:bg-muted/50"
+              onClick={() => onOpenDetails(contato)}
+            >
+              Visualizar
+            </Button>
+            <Button
+              className="w-full min-h-[44px] text-xs font-semibold bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800]"
+              onClick={() => onEdit(contato)}
+            >
+              Editar
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ))
+  ContatoCard.displayName = 'ContatoCard'
 
   return (
     <div className="space-y-6">
@@ -414,93 +587,14 @@ export default function ContatoListPage() {
                   </TableRow>
                 ) : (
                   contatos.map((contato, i) => (
-                    <TableRow
+                    <ContatoRow
                       key={contato.id}
-                      className={cn(
-                        i % 2 === 0 ? 'bg-white' : 'bg-[#F5F5F5]',
-                        'hover:bg-[#4A90E2] hover:text-white transition-colors group',
-                      )}
-                    >
-                      <TableCell className="font-medium">
-                        {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
-                      </TableCell>
-                      <TableCell>{contato.expand?.usuario_id?.name || 'Sistema'}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'capitalize flex items-center gap-1.5 w-fit bg-white group-hover:bg-white/20 group-hover:border-white group-hover:text-white',
-                            contato.tipo === 'visita_presencial'
-                              ? 'border-blue-600 text-blue-700'
-                              : contato.tipo === 'telefone'
-                                ? 'border-green-600 text-green-700'
-                                : contato.tipo === 'whatsapp'
-                                  ? 'border-blue-400 text-blue-600'
-                                  : 'border-purple-500 text-purple-700',
-                          )}
-                        >
-                          {getTipoIcon(contato.tipo)} {contato.tipo}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
-                      </TableCell>
-                      <TableCell className="max-w-[300px]">
-                        <p
-                          className="truncate text-muted-foreground group-hover:text-white"
-                          title={contato.descricao}
-                        >
-                          {contato.descricao}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        {contato.resultado && (
-                          <Badge
-                            variant="outline"
-                            className="capitalize bg-white text-foreground group-hover:bg-white/20 group-hover:border-white group-hover:text-white"
-                          >
-                            {formatResultado(contato.resultado)}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {contato.status_validacao && (
-                          <Badge
-                            variant="outline"
-                            className={cn('capitalize', getStatusColor(contato.status_validacao))}
-                          >
-                            {contato.status_validacao}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0 group-hover:text-white group-hover:hover:bg-white/20"
-                              aria-label="Ações"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenDetails(contato)}>
-                              Visualizar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(contato)}>
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(contato.id)}
-                              className="text-destructive"
-                            >
-                              Deletar Contato
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                      contato={contato}
+                      i={i}
+                      onOpenDetails={handleOpenDetails}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
                   ))
                 )}
               </TableBody>
@@ -526,110 +620,13 @@ export default function ContatoListPage() {
               </div>
             ) : (
               contatos.map((contato) => (
-                <Card
+                <ContatoCard
                   key={contato.id}
-                  className="shadow-subtle hover:border-[#4A90E2] border-border/60 transition-colors overflow-hidden"
-                >
-                  <CardContent className="p-0">
-                    <div className="p-4 flex flex-col gap-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-bold text-[#1A3A52] line-clamp-1 text-base">
-                            {contato.expand?.cliente_id?.descricao}
-                          </div>
-                          <div className="text-sm text-muted-foreground font-medium mt-1">
-                            Usuário: {contato.expand?.usuario_id?.name || 'Sistema'}
-                          </div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0 shrink-0 min-h-[44px] min-w-[44px]"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleOpenDetails(contato)}>
-                              Visualizar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(contato)}>
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(contato.id)}
-                              className="text-destructive"
-                            >
-                              Deletar Contato
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <div className="flex flex-wrap gap-3 text-sm mt-1">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'capitalize flex items-center gap-1.5 w-fit',
-                            contato.tipo === 'visita_presencial'
-                              ? 'border-blue-600 text-blue-700 bg-blue-50'
-                              : contato.tipo === 'telefone'
-                                ? 'border-green-600 text-green-700 bg-green-50'
-                                : contato.tipo === 'whatsapp'
-                                  ? 'border-blue-400 text-blue-600 bg-blue-50'
-                                  : 'border-purple-500 text-purple-700 bg-purple-50',
-                          )}
-                        >
-                          {getTipoIcon(contato.tipo)} {contato.tipo}
-                        </Badge>
-                        <div className="flex items-center gap-1.5 text-muted-foreground bg-muted/50 px-2 py-1 rounded-md font-medium">
-                          <CalendarIcon className="h-3.5 w-3.5" />{' '}
-                          {format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm')}
-                        </div>
-                      </div>
-                      <p className="text-sm text-foreground/90 line-clamp-2 mt-1">
-                        {contato.descricao}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {contato.resultado && (
-                          <Badge
-                            variant="outline"
-                            className="capitalize text-xs bg-white text-foreground border-border"
-                          >
-                            Resultado: {formatResultado(contato.resultado)}
-                          </Badge>
-                        )}
-                        {contato.status_validacao && (
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'capitalize text-xs',
-                              getStatusColor(contato.status_validacao),
-                            )}
-                          >
-                            Status: {contato.status_validacao}
-                          </Badge>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          className="w-full min-h-[44px] text-xs font-semibold border-border hover:bg-muted/50"
-                          onClick={() => handleOpenDetails(contato)}
-                        >
-                          Visualizar
-                        </Button>
-                        <Button
-                          className="w-full min-h-[44px] text-xs font-semibold bg-[#FFC107] text-[#1A3A52] hover:bg-[#e0a800]"
-                          onClick={() => handleEdit(contato)}
-                        >
-                          Editar
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                  contato={contato}
+                  onOpenDetails={handleOpenDetails}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
               ))
             )}
           </div>

@@ -53,7 +53,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const inactiveFor = Date.now() - lastActivityRef.current
 
       if (inactiveFor > INACTIVITY_LIMIT) {
-        pb.authStore.clear()
+        try {
+          pb.authStore.clear()
+          localStorage.removeItem('pocketbase_auth')
+        } catch {
+          /* intentionally ignored */
+        }
         toast({
           title: 'Sessão expirada',
           description: 'Você foi desconectado por inatividade.',
@@ -78,16 +83,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      await pb.collection('users').authWithPassword(email, password)
+      await pb.collection('users').authWithPassword(email, password, {
+        fetch: async (url: RequestInfo | URL, config?: RequestInit) => {
+          const controller = new AbortController()
+          const id = setTimeout(() => controller.abort(), 30000) // 30 seconds timeout
+          try {
+            const res = await fetch(url, { ...config, signal: controller.signal })
+            return res
+          } finally {
+            clearTimeout(id)
+          }
+        },
+      })
       return { error: null }
-    } catch (error) {
+    } catch (error: any) {
       console.warn('[Login Debug] authWithPassword failed:', error)
+      if (error.name === 'AbortError') {
+        return {
+          error: { message: 'A conexão demorou muito para responder. Verifique sua internet.' },
+        }
+      }
       return { error }
     }
   }
 
   const signOut = () => {
-    pb.authStore.clear()
+    try {
+      pb.authStore.clear()
+      localStorage.removeItem('pocketbase_auth')
+    } catch (e) {
+      console.warn('[Auth] Erro ao limpar sessão:', e)
+    }
   }
 
   return (

@@ -46,6 +46,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import React from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { BellRing, Clock, CheckCircle } from 'lucide-react'
 
@@ -190,6 +191,176 @@ export default function LeadListPage() {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
+
+  // Memoized card for performance on low-end devices
+  const LeadCard = React.memo(
+    ({ lead, onSelect }: { lead: RecordModel; onSelect: (lead: RecordModel) => void }) => (
+      <Card
+        className="overflow-hidden cursor-pointer shadow-md border-[#E5E5E5] hover:shadow-lg transition-shadow bg-white rounded-xl"
+        onClick={() => onSelect(lead)}
+        role="button"
+        aria-label={`Ver detalhes do lead de ${lead.expand?.cliente_id?.descricao || 'Sem Cliente'}`}
+      >
+        <CardContent className="p-5">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-bold text-primary text-lg line-clamp-1 pr-2">
+              {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
+            </h3>
+            <Badge
+              variant="outline"
+              className={`whitespace-nowrap font-semibold ${statusColors[lead.status]}`}
+            >
+              {statusLabels[lead.status] || lead.status}
+            </Badge>
+          </div>
+          <div className="text-sm text-muted-foreground mb-4 bg-[#F5F5F5] px-2 py-1 rounded inline-block">
+            CNPJ/CPF: {lead.expand?.cliente_id?.cnpj_cpf || '-'}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm border-t border-[#E5E5E5] pt-3">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                Valor
+              </p>
+              <p className="font-bold text-primary">{formatCurrency(lead.valor_estimado)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+                Follow-up
+              </p>
+              <div className="flex flex-col gap-1 mt-1">
+                <span className="font-medium text-foreground text-sm">
+                  {lead.proximo_followup
+                    ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                    : '-'}
+                </span>
+                {lead.status !== 'fechado' && lead.status !== 'perdido' && (
+                  <Badge
+                    variant="outline"
+                    className={`w-fit text-[10px] ${getFollowupStatus(lead.proximo_followup).color}`}
+                  >
+                    {getFollowupStatus(lead.proximo_followup).label}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    ),
+  )
+  LeadCard.displayName = 'LeadCard'
+
+  const LeadRow = React.memo(
+    ({
+      lead,
+      index,
+      onSelect,
+      onDelete,
+    }: {
+      lead: RecordModel
+      index: number
+      onSelect: (lead: RecordModel) => void
+      onDelete: (id: string) => void
+    }) => (
+      <TableRow
+        className={`cursor-pointer transition-colors hover:bg-accent hover:text-white group ${index % 2 === 0 ? 'bg-white' : 'bg-[#F5F5F5]'}`}
+        onClick={() => onSelect(lead)}
+      >
+        <TableCell className="py-4">
+          <div className="font-bold text-primary group-hover:text-white">
+            {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
+          </div>
+          <div className="text-xs text-muted-foreground group-hover:text-white/80 mt-1">
+            {lead.expand?.cliente_id?.cnpj_cpf}
+          </div>
+        </TableCell>
+        <TableCell className="py-4">
+          <Badge
+            variant="outline"
+            className={`font-semibold bg-white ${statusColors[lead.status]}`}
+          >
+            {statusLabels[lead.status] || lead.status}
+          </Badge>
+        </TableCell>
+        <TableCell className="font-bold py-4">{formatCurrency(lead.valor_estimado)}</TableCell>
+        <TableCell className="py-4 font-medium text-muted-foreground group-hover:text-white/90">
+          {format(new Date(lead.created), 'dd/MM/yyyy')}
+        </TableCell>
+        <TableCell className="py-4 font-medium">
+          <div className="flex flex-col gap-1 items-start">
+            <span className="text-sm">
+              {lead.proximo_followup ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy') : '-'}
+            </span>
+            {lead.status !== 'fechado' && lead.status !== 'perdido' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-semibold flex gap-1 items-center px-1.5 py-0 ${getFollowupStatus(lead.proximo_followup).color}`}
+                    >
+                      {getFollowupStatus(lead.proximo_followup).icon &&
+                        (() => {
+                          const Icon = getFollowupStatus(lead.proximo_followup).icon!
+                          return <Icon className="h-3 w-3" />
+                        })()}
+                      {getFollowupStatus(lead.proximo_followup).label}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {lead.proximo_followup
+                        ? `Vence em: ${format(new Date(lead.proximo_followup), "dd/MM/yyyy 'às' HH:mm")}`
+                        : 'Nenhum follow-up agendado'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </TableCell>
+        <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-10 w-10 p-0 hover:bg-white/20 rounded-full"
+                aria-label="Ações do lead"
+              >
+                <MoreHorizontal className="h-5 w-5 text-primary group-hover:text-white" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 shadow-lg rounded-xl">
+              <DropdownMenuItem onClick={() => onSelect(lead)} className="cursor-pointer py-2.5">
+                <FileText className="mr-2 h-4 w-4 text-accent" />
+                <span className="font-medium">Detalhes</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedLead(lead)
+                  setFormOpen(true)
+                }}
+                className="cursor-pointer py-2.5"
+              >
+                <Edit className="mr-2 h-4 w-4 text-accent" />
+                <span className="font-medium">Editar</span>
+              </DropdownMenuItem>
+              {(user?.role === 'admin' || user?.role === 'gerente') && (
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-red-50 focus:text-destructive cursor-pointer py-2.5"
+                  onClick={() => onDelete(lead.id)}
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  <span className="font-medium">Excluir</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    ),
+  )
+  LeadRow.displayName = 'LeadRow'
 
   if (user?.role === 'paulo' || user?.role === 'gerente') {
     return (
@@ -480,61 +651,14 @@ export default function LeadListPage() {
       ) : isMobile ? (
         <div className="space-y-4">
           {leads.map((lead) => (
-            <Card
+            <LeadCard
               key={lead.id}
-              className="overflow-hidden cursor-pointer shadow-md border-[#E5E5E5] hover:shadow-lg transition-shadow bg-white rounded-xl"
-              onClick={() => {
-                setSelectedLead(lead)
+              lead={lead}
+              onSelect={(l) => {
+                setSelectedLead(l)
                 setDetailsOpen(true)
               }}
-              role="button"
-              aria-label={`Ver detalhes do lead de ${lead.expand?.cliente_id?.descricao || 'Sem Cliente'}`}
-            >
-              <CardContent className="p-5">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-bold text-primary text-lg line-clamp-1 pr-2">
-                    {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
-                  </h3>
-                  <Badge
-                    variant="outline"
-                    className={`whitespace-nowrap font-semibold ${statusColors[lead.status]}`}
-                  >
-                    {statusLabels[lead.status] || lead.status}
-                  </Badge>
-                </div>
-                <div className="text-sm text-muted-foreground mb-4 bg-[#F5F5F5] px-2 py-1 rounded inline-block">
-                  CNPJ/CPF: {lead.expand?.cliente_id?.cnpj_cpf || '-'}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm border-t border-[#E5E5E5] pt-3">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                      Valor
-                    </p>
-                    <p className="font-bold text-primary">{formatCurrency(lead.valor_estimado)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
-                      Follow-up
-                    </p>
-                    <div className="flex flex-col gap-1 mt-1">
-                      <span className="font-medium text-foreground text-sm">
-                        {lead.proximo_followup
-                          ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
-                          : '-'}
-                      </span>
-                      {lead.status !== 'fechado' && lead.status !== 'perdido' && (
-                        <Badge
-                          variant="outline"
-                          className={`w-fit text-[10px] ${getFollowupStatus(lead.proximo_followup).color}`}
-                        >
-                          {getFollowupStatus(lead.proximo_followup).label}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            />
           ))}
         </div>
       ) : (
@@ -553,116 +677,16 @@ export default function LeadListPage() {
               </TableHeader>
               <TableBody>
                 {leads.map((lead, index) => (
-                  <TableRow
+                  <LeadRow
                     key={lead.id}
-                    className={`cursor-pointer transition-colors hover:bg-accent hover:text-white group ${index % 2 === 0 ? 'bg-white' : 'bg-[#F5F5F5]'}`}
-                    onClick={() => {
-                      setSelectedLead(lead)
+                    lead={lead}
+                    index={index}
+                    onSelect={(l) => {
+                      setSelectedLead(l)
                       setDetailsOpen(true)
                     }}
-                  >
-                    <TableCell className="py-4">
-                      <div className="font-bold text-primary group-hover:text-white">
-                        {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
-                      </div>
-                      <div className="text-xs text-muted-foreground group-hover:text-white/80 mt-1">
-                        {lead.expand?.cliente_id?.cnpj_cpf}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <Badge
-                        variant="outline"
-                        className={`font-semibold bg-white ${statusColors[lead.status]}`}
-                      >
-                        {statusLabels[lead.status] || lead.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-bold py-4">
-                      {formatCurrency(lead.valor_estimado)}
-                    </TableCell>
-                    <TableCell className="py-4 font-medium text-muted-foreground group-hover:text-white/90">
-                      {format(new Date(lead.created), 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell className="py-4 font-medium">
-                      <div className="flex flex-col gap-1 items-start">
-                        <span className="text-sm">
-                          {lead.proximo_followup
-                            ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
-                            : '-'}
-                        </span>
-                        {lead.status !== 'fechado' && lead.status !== 'perdido' && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-[10px] font-semibold flex gap-1 items-center px-1.5 py-0 ${getFollowupStatus(lead.proximo_followup).color}`}
-                                >
-                                  {getFollowupStatus(lead.proximo_followup).icon &&
-                                    (() => {
-                                      const Icon = getFollowupStatus(lead.proximo_followup).icon!
-                                      return <Icon className="h-3 w-3" />
-                                    })()}
-                                  {getFollowupStatus(lead.proximo_followup).label}
-                                </Badge>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {lead.proximo_followup
-                                    ? `Vence em: ${format(new Date(lead.proximo_followup), "dd/MM/yyyy 'às' HH:mm")}`
-                                    : 'Nenhum follow-up agendado'}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-10 w-10 p-0 hover:bg-white/20 rounded-full"
-                            aria-label="Ações do lead"
-                          >
-                            <MoreHorizontal className="h-5 w-5 text-primary group-hover:text-white" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 shadow-lg rounded-xl">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedLead(lead)
-                              setDetailsOpen(true)
-                            }}
-                            className="cursor-pointer py-2.5"
-                          >
-                            <FileText className="mr-2 h-4 w-4 text-accent" />
-                            <span className="font-medium">Detalhes</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedLead(lead)
-                              setFormOpen(true)
-                            }}
-                            className="cursor-pointer py-2.5"
-                          >
-                            <Edit className="mr-2 h-4 w-4 text-accent" />
-                            <span className="font-medium">Editar</span>
-                          </DropdownMenuItem>
-                          {(user?.role === 'admin' || user?.role === 'gerente') && (
-                            <DropdownMenuItem
-                              className="text-destructive focus:bg-red-50 focus:text-destructive cursor-pointer py-2.5"
-                              onClick={() => handleDelete(lead.id)}
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              <span className="font-medium">Excluir</span>
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                    onDelete={handleDelete}
+                  />
                 ))}
               </TableBody>
             </Table>
