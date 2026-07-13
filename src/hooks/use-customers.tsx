@@ -26,7 +26,10 @@ export const CustomerProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true)
     setHasError(false)
     try {
-      const records = await pb.collection('clientes').getFullList({ sort: '-created' })
+      const records = await pb.collection('clientes').getFullList({
+        sort: '-created',
+        filter: '',
+      })
       setCustomers(
         records.map((r) => ({
           id: r.id,

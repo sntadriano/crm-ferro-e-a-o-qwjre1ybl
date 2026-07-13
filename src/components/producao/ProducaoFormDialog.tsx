@@ -39,7 +39,7 @@ import { X, ImagePlus, Check, ChevronsUpDown } from 'lucide-react'
 const schema = z.object({
   item_id: z.string().min(1, 'Selecione um item'),
   quantidade: z.coerce.number().min(0.01, 'Quantidade deve ser maior que 0'),
-  data_producao: z.string().min(1, 'Data/Hora é obrigatória'),
+  data_producao: z.string(),
   observacoes: z.string().optional(),
 })
 
@@ -185,8 +185,10 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
     setLoading(true)
     try {
       const selectedItem = items.find((i) => i.id === values.item_id)
+      const rawDate = values.data_producao || format(new Date(), "yyyy-MM-dd'T'HH:mm")
       const data = {
         ...values,
+        data_producao: rawDate.replace('T', ' ').concat(':00'),
         item: selectedItem?.nome || '',
         usuario_id: record ? record.usuario_id : user?.id,
         status: record ? record.status : 'registrado',
