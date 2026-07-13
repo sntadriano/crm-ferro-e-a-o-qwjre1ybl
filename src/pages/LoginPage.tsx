@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { Lock, Mail } from 'lucide-react'
+import { Lock, Mail, AlertTriangle, KeyRound, Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -16,6 +16,14 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
@@ -55,11 +63,24 @@ const safeStorage = {
   },
 }
 
+const sanitizePassword = (raw: string): string =>
+  String(raw)
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .normalize('NFKC')
+    .trim()
+
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, requestPasswordReset } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [capsLockOn, setCapsLockOn] = useState(false)
+  const [autofillDetected, setAutofillDetected] = useState(false)
+  const [forgotOpen, setForgotOpen] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+
+  const passwordInputRef = useRef<HTMLInputElement | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,17 +105,32 @@ export default function LoginPage() {
     }
   }, [form])
 
+  const checkCapsLock = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    try {
+      const state = e.getModifierState && e.getModifierState('CapsLock')
+      setCapsLockOn(!!state)
+    } catch {
+      /* noop */
+    }
+  }, [])
+
+  const handleAutofillAnimation = useCallback((e: React.AnimationEvent<HTMLInputElement>) => {
+    if (e.animationName.includes('onAutofillStart') || e.animationName === 'onAutoFillStart') {
+      setAutofillDetected(true)
+    } else if (e.animationName.includes('onAutofillCancel')) {
+      setAutofillDetected(false)
+    }
+  }, [])
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
 
-    // Sanitize input to remove invisible characters or formatting issues
     const safeEmail = String(values.email)
       .trim()
       .toLowerCase()
       .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    const safePassword = String(values.password).trim()
+    const safePassword = sanitizePassword(values.password)
 
-    // Clear potentially corrupted session data before a new login attempt
     try {
       pb.authStore.clear()
       safeStorage.removeItem('pocketbase_auth')
@@ -109,9 +145,15 @@ export default function LoginPage() {
       let description = 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.'
       const errObj = error as any
 
-      console.warn('[Login Error] Autenticação falhou:', errObj)
-
-      if (errObj?.message === 'A conexão demorou muito para responder. Verifique sua internet.') {
+      if (errObj?.status === 400) {
+        console.warn('[Login Error] Credenciais inválidas (400):', {
+          status: errObj.status,
+          data: errObj?.response?.data ?? errObj?.data ?? null,
+        })
+        description = 'E-mail ou senha incorretos.'
+      } else if (
+        errObj?.message === 'A conexão demorou muito para responder. Verifique sua internet.'
+      ) {
         description = errObj.message
       } else if (
         errObj?.status === 0 ||
@@ -120,6 +162,11 @@ export default function LoginPage() {
       ) {
         description =
           'Não foi possível conectar ao servidor. Verifique sua conexão de internet e tente novamente.'
+      } else {
+        console.warn('[Login Error] Autenticação falhou:', {
+          status: errObj?.status,
+          data: errObj?.response?.data ?? errObj?.data ?? null,
+        })
       }
 
       toast({
@@ -155,6 +202,38 @@ export default function LoginPage() {
         navigate('/dashboard', { replace: true })
       }
     }
+  }
+
+  const openForgot = () => {
+    setForgotEmail(form.getValues('email') || '')
+    setForgotOpen(true)
+  }
+
+  const handleForgotSubmit = async () => {
+    const email = forgotEmail.trim().toLowerCase()
+    if (!email) {
+      toast({
+        title: 'E-mail obrigatório',
+        description: 'Informe o e-mail cadastrado para receber o link de recuperação.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setForgotLoading(true)
+    const { error } = await requestPasswordReset(email)
+    setForgotLoading(false)
+    if (error) {
+      console.warn('[Forgot Password] Falha na solicitação:', {
+        status: (error as any)?.status,
+        data: (error as any)?.response?.data ?? (error as any)?.data ?? null,
+      })
+    }
+    setForgotOpen(false)
+    toast({
+      title: 'Solicitação enviada',
+      description:
+        'Se a conta existir, você receberá um e-mail com o link para redefinir sua senha.',
+    })
   }
 
   return (
@@ -220,14 +299,43 @@ export default function LoginPage() {
                           placeholder="••••••••"
                           className="pl-9 h-10"
                           autoComplete="current-password"
+                          autoCapitalize="none"
+                          autoCorrect="off"
                           value={field.value || ''}
-                          onChange={field.onChange}
-                          onBlur={field.onBlur}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            if (autofillDetected) setAutofillDetected(false)
+                          }}
+                          onKeyUp={(e) => {
+                            checkCapsLock(e)
+                            field.onBlur
+                          }}
+                          onKeyUpCapture={checkCapsLock}
+                          onBlur={(e) => {
+                            setCapsLockOn(false)
+                            field.onBlur(e)
+                          }}
+                          onAnimationStart={handleAutofillAnimation}
                           name={field.name}
-                          ref={field.ref}
+                          ref={(el) => {
+                            field.ref(el)
+                            passwordInputRef.current = el
+                          }}
                         />
                       </div>
                     </FormControl>
+                    {capsLockOn && (
+                      <div className="flex items-center gap-1.5 mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        <span>Caps Lock ativado</span>
+                      </div>
+                    )}
+                    {autofillDetected && !capsLockOn && (
+                      <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
+                        <Info className="h-3.5 w-3.5" />
+                        <span>Senha preenchida automaticamente — confirme se ainda é a atual</span>
+                      </div>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -257,10 +365,62 @@ export default function LoginPage() {
               <Button type="submit" className="w-full h-10 text-base" disabled={isLoading}>
                 {isLoading ? 'Carregando...' : 'Entrar'}
               </Button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={openForgot}
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                >
+                  <KeyRound className="h-3.5 w-3.5" />
+                  Esqueci minha senha
+                </button>
+              </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-primary" />
+              Recuperar senha
+            </DialogTitle>
+            <DialogDescription>
+              Informe o seu e-mail cadastrado. Se a conta existir, enviaremos um link para redefinir
+              sua senha.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <label htmlFor="forgot-email" className="text-sm font-medium">
+              E-mail
+            </label>
+            <Input
+              id="forgot-email"
+              type="email"
+              placeholder="exemplo@email.com"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleForgotSubmit()
+              }}
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
+              Cancelar
+            </Button>
+            <Button onClick={handleForgotSubmit} disabled={forgotLoading}>
+              {forgotLoading ? 'Enviando...' : 'Enviar link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

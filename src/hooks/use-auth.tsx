@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, p: string) => Promise<{ error: any }>
   signOut: () => void
+  requestPasswordReset: (email: string) => Promise<{ error: any }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -116,8 +117,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const requestPasswordReset = async (email: string) => {
+    try {
+      await pb.collection('users').requestPasswordReset(email)
+      return { error: null }
+    } catch (error: any) {
+      console.warn('[Auth] requestPasswordReset failed:', error)
+      return { error }
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signOut, requestPasswordReset, loading }}>
       {children}
     </AuthContext.Provider>
   )
