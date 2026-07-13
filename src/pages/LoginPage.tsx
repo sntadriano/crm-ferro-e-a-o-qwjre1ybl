@@ -308,7 +308,6 @@ export default function LoginPage() {
                           }}
                           onKeyUp={(e) => {
                             checkCapsLock(e)
-                            field.onBlur
                           }}
                           onKeyUpCapture={checkCapsLock}
                           onBlur={(e) => {
