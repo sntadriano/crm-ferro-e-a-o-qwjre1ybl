@@ -38,7 +38,7 @@ export const getProducoesRelatorio = async (
   fields?: string,
 ) => {
   return pb.collection('producao').getFullList<ProducaoRecord>({
-    filter: `data_producao >= '${startDate} 00:00:00' && data_producao <= '${endDate} 23:59:59' && ativo = true`,
+    filter: `data_producao >= '${new Date(startDate + 'T00:00:00').toISOString()}' && data_producao <= '${new Date(endDate + 'T23:59:59').toISOString()}' && ativo = true`,
     sort: '-data_producao',
     expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
     fields,

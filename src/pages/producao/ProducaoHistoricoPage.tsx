@@ -75,8 +75,8 @@ export default function ProducaoHistoricoPage() {
     try {
       setLoading(true)
       setError(false)
-      const start = format(startOfDay(parseISO(startDate)), 'yyyy-MM-dd HH:mm:ss')
-      const end = format(endOfDay(parseISO(endDate)), 'yyyy-MM-dd HH:mm:ss')
+      const start = startOfDay(parseISO(startDate)).toISOString()
+      const end = endOfDay(parseISO(endDate)).toISOString()
 
       const res = await getFullProducoes(
         `data_producao >= '${start}' && data_producao <= '${end}' && ativo = true`,

@@ -60,11 +60,11 @@ const buildFilter = (filters: ClienteFilters = {}): string => {
   }
 
   if (filters.date_start) {
-    parts.push(`cadastro >= "${filters.date_start} 00:00:00"`)
+    parts.push(`cadastro >= "${new Date(filters.date_start + 'T00:00:00').toISOString()}"`)
   }
 
   if (filters.date_end) {
-    parts.push(`cadastro <= "${filters.date_end} 23:59:59"`)
+    parts.push(`cadastro <= "${new Date(filters.date_end + 'T23:59:59').toISOString()}"`)
   }
 
   return parts.length > 0 ? parts.join(' && ') : ''

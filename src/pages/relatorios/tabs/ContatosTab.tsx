@@ -39,8 +39,10 @@ export function ContatosTab({ filters, refreshKey, usersList }: any) {
       setError(false)
       try {
         let f = []
-        if (filters.dateStart) f.push(`data_contato >= '${filters.dateStart} 00:00:00'`)
-        if (filters.dateEnd) f.push(`data_contato <= '${filters.dateEnd} 23:59:59'`)
+        if (filters.dateStart)
+          f.push(`data_contato >= '${new Date(filters.dateStart + 'T00:00:00').toISOString()}'`)
+        if (filters.dateEnd)
+          f.push(`data_contato <= '${new Date(filters.dateEnd + 'T23:59:59').toISOString()}'`)
         if (filters.vendedorId) f.push(`usuario_id = '${filters.vendedorId}'`)
 
         f.push("status_validacao != 'rejeitado'") // Ignore rejected

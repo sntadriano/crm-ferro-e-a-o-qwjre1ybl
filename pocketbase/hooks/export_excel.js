@@ -21,12 +21,31 @@ routerAdd(
     const headers = columns.map((c) => c.header)
     const keys = columns.map((c) => c.key)
 
+    function formatDateCell(val) {
+      if (typeof val !== 'string') return val
+      if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/.test(val)) {
+        try {
+          var parsed = new Date(val)
+          if (!isNaN(parsed.getTime())) {
+            var day = String(parsed.getUTCDate()).padStart(2, '0')
+            var month = String(parsed.getUTCMonth() + 1).padStart(2, '0')
+            var year = parsed.getUTCFullYear()
+            var hours = String(parsed.getUTCHours()).padStart(2, '0')
+            var minutes = String(parsed.getUTCMinutes()).padStart(2, '0')
+            return day + '/' + month + '/' + year + ' ' + hours + ':' + minutes
+          }
+        } catch (e) {}
+      }
+      return val
+    }
+
     const rows = [headers]
     data.forEach((d) => {
       rows.push(
         keys.map((k) => {
           const val = d[k]
-          return val === null || val === undefined ? '' : String(val)
+          if (val === null || val === undefined) return ''
+          return formatDateCell(String(val))
         }),
       )
     })

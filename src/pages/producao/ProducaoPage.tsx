@@ -297,10 +297,8 @@ export default function ProducaoPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
-      const dateStart = startOfDay(dateFilter).toISOString().replace('T', ' ')
-      const dateEnd = new Date(startOfDay(dateFilter).getTime() + 86400000)
-        .toISOString()
-        .replace('T', ' ')
+      const dateStart = startOfDay(dateFilter).toISOString()
+      const dateEnd = new Date(startOfDay(dateFilter).getTime() + 86400000).toISOString()
 
       let filter = `data_producao >= "${dateStart}" && data_producao < "${dateEnd}"`
       if (statusFilter !== 'all') {

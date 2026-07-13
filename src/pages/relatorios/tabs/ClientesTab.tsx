@@ -48,8 +48,10 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
       setError(false)
       try {
         let f = []
-        if (filters.dateStart) f.push(`created >= '${filters.dateStart} 00:00:00'`)
-        if (filters.dateEnd) f.push(`created <= '${filters.dateEnd} 23:59:59'`)
+        if (filters.dateStart)
+          f.push(`created >= '${new Date(filters.dateStart + 'T00:00:00').toISOString()}'`)
+        if (filters.dateEnd)
+          f.push(`created <= '${new Date(filters.dateEnd + 'T23:59:59').toISOString()}'`)
         if (filters.vendedorCodigo) f.push(`vendedor = ${filters.vendedorCodigo}`)
 
         const res = await pb.collection('clientes').getFullList({ filter: f.join(' && ') })

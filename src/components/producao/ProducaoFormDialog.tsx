@@ -188,7 +188,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
       const rawDate = values.data_producao || format(new Date(), "yyyy-MM-dd'T'HH:mm")
       const data = {
         ...values,
-        data_producao: rawDate.replace('T', ' ').concat(':00'),
+        data_producao: new Date(rawDate).toISOString(),
         item: selectedItem?.nome || '',
         usuario_id: record ? record.usuario_id : user?.id,
         status: record ? record.status : 'registrado',
