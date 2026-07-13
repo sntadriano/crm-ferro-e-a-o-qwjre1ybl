@@ -14,13 +14,15 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -31,7 +33,8 @@ import { getActiveItensProducao, ItemProducao } from '@/services/itens_producao'
 import { uploadFotosProducao } from '@/services/fotos_producao'
 import { useAuth } from '@/hooks/use-auth'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
-import { X, ImagePlus } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { X, ImagePlus, Check, ChevronsUpDown } from 'lucide-react'
 
 const schema = z.object({
   item_id: z.string().min(1, 'Selecione um item'),
@@ -234,26 +237,55 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
               control={form.control}
               name="item_id"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Item Produzido</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um item..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {items.map((item) => (
-                        <SelectItem key={item.id} value={item.id}>
-                          {item.nome} ({item.unidade})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            'w-full justify-between font-normal',
+                            !field.value && 'text-muted-foreground',
+                          )}
+                        >
+                          {field.value
+                            ? items.find((i) => i.id === field.value)?.nome || 'Item selecionado'
+                            : 'Selecione ou busque um item...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar item..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {items.map((item) => (
+                              <CommandItem
+                                key={item.id}
+                                value={item.nome}
+                                onSelect={() => {
+                                  form.setValue('item_id', item.id, { shouldValidate: true })
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    item.id === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                                {item.nome} ({item.unidade})
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
