@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Users, Activity, Plus, Mail } from 'lucide-react'
+import { Users, Activity, Plus, Mail, Save } from 'lucide-react'
 import pb from '@/lib/pocketbase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import {
   Table,
@@ -16,17 +17,33 @@ import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import { Navigate } from 'react-router-dom'
 
+type UserRow = {
+  id: string
+  name: string
+  email: string
+  role: string
+  active: boolean
+  codigo?: number | null
+}
+
 export default function AdminPage() {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [users, setUsers] = useState<any[]>([])
+  const [users, setUsers] = useState<UserRow[]>([])
   const [logs, setLogs] = useState<any[]>([])
   const [emailConfigs, setEmailConfigs] = useState<any[]>([])
+  const [codigoDrafts, setCodigoDrafts] = useState<Record<string, string>>({})
+  const [savingCodigo, setSavingCodigo] = useState<Record<string, boolean>>({})
 
   const loadData = async () => {
     try {
       const usersData = await pb.collection('users').getFullList({ sort: '-created' })
-      setUsers(usersData)
+      setUsers(usersData as UserRow[])
+      const drafts: Record<string, string> = {}
+      for (const u of usersData as UserRow[]) {
+        drafts[u.id] = u.codigo != null ? String(u.codigo) : ''
+      }
+      setCodigoDrafts(drafts)
       const logsData = await pb.collection('audit_logs').getList(1, 20, { sort: '-timestamp' })
       setLogs(logsData.items)
       const emailData = await pb.collection('email_config').getList(1, 5)
@@ -42,13 +59,41 @@ export default function AdminPage() {
     }
   }, [user?.role])
 
-  const toggleStatus = async (targetUser: any) => {
+  const toggleStatus = async (targetUser: UserRow) => {
     try {
       await pb.collection('users').update(targetUser.id, { active: !targetUser.active })
       toast({ title: 'Usuário atualizado com sucesso' })
       loadData()
     } catch {
       toast({ title: 'Erro ao atualizar', variant: 'destructive' })
+    }
+  }
+
+  const handleCodigoChange = (userId: string, value: string) => {
+    setCodigoDrafts((prev) => ({ ...prev, [userId]: value }))
+  }
+
+  const saveCodigo = async (targetUser: UserRow) => {
+    const raw = codigoDrafts[targetUser.id] ?? ''
+    const trimmed = raw.trim()
+    const parsed = trimmed === '' ? null : Number(trimmed)
+    if (trimmed !== '' && (!Number.isFinite(parsed) || !Number.isInteger(parsed))) {
+      toast({
+        title: 'Código inválido',
+        description: 'Informe um número inteiro.',
+        variant: 'destructive',
+      })
+      return
+    }
+    setSavingCodigo((prev) => ({ ...prev, [targetUser.id]: true }))
+    try {
+      await pb.collection('users').update(targetUser.id, { codigo: parsed })
+      toast({ title: 'Código atualizado com sucesso' })
+      setUsers((prev) => prev.map((u) => (u.id === targetUser.id ? { ...u, codigo: parsed } : u)))
+    } catch {
+      toast({ title: 'Erro ao atualizar código', variant: 'destructive' })
+    } finally {
+      setSavingCodigo((prev) => ({ ...prev, [targetUser.id]: false }))
     }
   }
 
@@ -81,6 +126,7 @@ export default function AdminPage() {
                 <TableRow>
                   <TableHead>Nome / Email</TableHead>
                   <TableHead>Perfil</TableHead>
+                  <TableHead>Código</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ação</TableHead>
                 </TableRow>
@@ -94,6 +140,29 @@ export default function AdminPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{u.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          inputMode="numeric"
+                          step="1"
+                          className="h-8 w-24"
+                          value={codigoDrafts[u.id] ?? ''}
+                          onChange={(e) => handleCodigoChange(u.id, e.target.value)}
+                          placeholder="—"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 h-8"
+                          disabled={savingCodigo[u.id]}
+                          onClick={() => saveCodigo(u)}
+                        >
+                          <Save className="h-3.5 w-3.5" />
+                          Salvar
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={u.active ? 'default' : 'destructive'}>
