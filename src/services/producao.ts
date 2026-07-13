@@ -47,11 +47,28 @@ export const getProducoesRelatorio = async (
 
 export const getFullProducoes = async (filter: string, fields?: string) => {
   return pb.collection('producao').getFullList<ProducaoRecord>({
-    filter,
+    filter: buildProducaoFilter(filter),
     sort: '-data_producao',
     expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
     fields,
   })
+}
+
+const buildProducaoFilter = (extra?: string): string => {
+  const user = pb.authStore.record as any
+  const role = user?.role || ''
+  const parts: string[] = ['ativo = true']
+
+  // Admins and authorised roles (gerente, paulo, julia) see every
+  // production record — never append a usuario_id filter for them.
+  // Any other authenticated user only sees their own records.
+  if (role !== 'admin' && role !== 'gerente' && role !== 'paulo' && role !== 'julia') {
+    parts.push(`usuario_id = "${user?.id ?? ''}"`)
+  }
+
+  if (extra) parts.push(`(${extra})`)
+
+  return parts.join(' && ')
 }
 
 export const getProducoes = async (params: {
@@ -63,7 +80,7 @@ export const getProducoes = async (params: {
 }) => {
   return pb.collection('producao').getList<ProducaoRecord>(params.page || 1, params.perPage || 20, {
     sort: params.sort || '-data_producao',
-    filter: params.filter || 'ativo = true',
+    filter: buildProducaoFilter(params.filter),
     expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
     fields: params.fields,
   })
