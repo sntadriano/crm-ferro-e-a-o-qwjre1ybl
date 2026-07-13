@@ -55,19 +55,11 @@ export const getFullProducoes = async (filter: string, fields?: string) => {
 }
 
 const buildProducaoFilter = (extra?: string): string => {
-  const user = pb.authStore.record as any
-  const role = user?.role || ''
+  // Shared visibility: any authenticated active user can see ALL
+  // production records (enforced by the backend listRule/viewRule).
+  // Do NOT append a per-user `usuario_id` filter client-side.
   const parts: string[] = ['ativo = true']
-
-  // Admins and authorised roles (gerente, paulo, julia) see every
-  // production record — never append a usuario_id filter for them.
-  // Any other authenticated user only sees their own records.
-  if (role !== 'admin' && role !== 'gerente' && role !== 'paulo' && role !== 'julia') {
-    parts.push(`usuario_id = "${user?.id ?? ''}"`)
-  }
-
   if (extra) parts.push(`(${extra})`)
-
   return parts.join(' && ')
 }
 
