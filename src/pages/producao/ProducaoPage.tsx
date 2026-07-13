@@ -18,12 +18,7 @@ import { toast } from 'sonner'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useRealtime } from '@/hooks/use-realtime'
-import {
-  getProducoes,
-  softDeleteProducao,
-  updateProducao,
-  ProducaoRecord,
-} from '@/services/producao'
+import { getProducoes, deleteProducao, updateProducao, ProducaoRecord } from '@/services/producao'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -65,6 +60,7 @@ const ProducaoTableRow = React.memo(
     userRole,
     canConferir,
     canEditOrDelete,
+    canDelete,
     onGallery,
     onConferir,
     onEdit,
@@ -133,24 +129,24 @@ const ProducaoTableRow = React.memo(
               </Button>
             )}
             {canEditOrDelete && (
-              <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={() => onEdit(record)}
-                >
-                  <FileEdit className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                  onClick={() => onDelete(record.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => onEdit(record)}
+              >
+                <FileEdit className="h-4 w-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                onClick={() => onDelete(record.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </TableCell>
@@ -166,6 +162,7 @@ const ProducaoMobileCard = React.memo(
     userRole,
     canConferir,
     canEditOrDelete,
+    canDelete,
     onGallery,
     onConferir,
     onEdit,
@@ -242,24 +239,24 @@ const ProducaoMobileCard = React.memo(
               </Button>
             )}
             {canEditOrDelete && (
-              <>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={() => onEdit(record)}
-                >
-                  <FileEdit className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-red-500"
-                  onClick={() => onDelete(record.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                onClick={() => onEdit(record)}
+              >
+                <FileEdit className="h-4 w-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8 text-red-500"
+                onClick={() => onDelete(record.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
             )}
           </div>
         </div>
@@ -359,12 +356,14 @@ export default function ProducaoPage() {
   const handleDelete = async () => {
     if (!deleteId) return
     try {
-      await softDeleteProducao(deleteId)
-      toast.success('Registro excluído')
+      await deleteProducao(deleteId)
+      toast.success('Registro excluído com sucesso')
       setDeleteId(null)
       loadData()
     } catch (error) {
-      toast.error('Erro ao excluir registro')
+      toast.error(
+        'Não foi possível excluir o registro. Verifique suas permissões e tente novamente.',
+      )
     }
   }
 
@@ -399,6 +398,7 @@ export default function ProducaoPage() {
   const showNoRecordsAlert = isToday && isAfter18h && data.length === 0 && !loading
 
   const canEditOrDelete = isAdmin || isGerente || isGalpao || isJulia
+  const canDelete = isAdmin || isGerente
   const canConferir = isAdmin || isJulia
 
   return (
@@ -518,6 +518,7 @@ export default function ProducaoPage() {
                     userRole={user?.role}
                     canConferir={canConferir}
                     canEditOrDelete={canEditOrDelete}
+                    canDelete={canDelete}
                     onGallery={handleGallery}
                     onConferir={handleSetConferir}
                     onEdit={openEdit}
@@ -536,6 +537,7 @@ export default function ProducaoPage() {
                 userRole={user?.role}
                 canConferir={canConferir}
                 canEditOrDelete={canEditOrDelete}
+                canDelete={canDelete}
                 onGallery={handleGallery}
                 onConferir={handleSetConferir}
                 onEdit={openEdit}
@@ -582,8 +584,8 @@ export default function ProducaoPage() {
           <DialogHeader>
             <DialogTitle>Excluir Registro</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir este registro de produção? Esta ação removerá o item da
-              lista ativa.
+              Tem certeza que deseja excluir este registro de produção? Esta ação não pode ser
+              desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -591,7 +593,7 @@ export default function ProducaoPage() {
               Cancelar
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Excluir
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>

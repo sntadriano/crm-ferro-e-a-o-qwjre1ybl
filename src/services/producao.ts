@@ -77,3 +77,5 @@ export const updateProducao = async (id: string, data: Partial<ProducaoRecord>) 
 
 export const softDeleteProducao = async (id: string) =>
   pb.collection('producao').update(id, { ativo: false })
+
+export const deleteProducao = async (id: string) => pb.collection('producao').delete(id)
