@@ -259,35 +259,51 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="quantidade"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantidade</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="quantidade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantidade</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="data_producao"
-                render={({ field }) => (
+            <FormField
+              control={form.control}
+              name="data_producao"
+              render={({ field }) => {
+                const [datePart, timePart] = (field.value || '').split('T')
+                const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const newDate = e.target.value
+                  const currentTime = timePart || '00:00'
+                  field.onChange(newDate ? `${newDate}T${currentTime}` : '')
+                }
+                const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const newTime = e.target.value
+                  const currentDate = datePart || format(new Date(), 'yyyy-MM-dd')
+                  field.onChange(`${currentDate}T${newTime}`)
+                }
+                return (
                   <FormItem>
                     <FormLabel>Data/Hora</FormLabel>
-                    <FormControl>
-                      <Input type="datetime-local" {...field} />
-                    </FormControl>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormControl>
+                        <Input type="date" value={datePart || ''} onChange={handleDateChange} />
+                      </FormControl>
+                      <FormControl>
+                        <Input type="time" value={timePart || ''} onChange={handleTimeChange} />
+                      </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-            </div>
+                )
+              }}
+            />
 
             <FormField
               control={form.control}
