@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { format, isAfter, setHours, startOfDay, isSameDay, subDays } from 'date-fns'
+import { toDateFilterStart, toDateFilterEnd } from '@/lib/date-utils'
 import { ptBR } from 'date-fns/locale'
 import {
   Plus,
@@ -317,10 +318,15 @@ export default function ProducaoPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
-      const dateStart = startOfDay(dateFilter).toISOString()
-      const dateEnd = new Date(startOfDay(dateFilter).getTime() + 86400000).toISOString()
+      // Normalize the selected calendar date to the user's local timezone
+      // before converting to UTC. PocketBase stores `data_producao` as a UTC
+      // ISO string, so the filter window must span from local midnight to
+      // local end-of-day to avoid a 1-day offset around midnight.
+      const dateStr = format(dateFilter, 'yyyy-MM-dd')
+      const dateStart = toDateFilterStart(dateStr)
+      const dateEnd = toDateFilterEnd(dateStr)
 
-      let filter = `data_producao >= "${dateStart}" && data_producao < "${dateEnd}"`
+      let filter = `data_producao >= "${dateStart}" && data_producao <= "${dateEnd}"`
       if (statusFilter !== 'all') {
         filter += ` && status = '${statusFilter}'`
       }
