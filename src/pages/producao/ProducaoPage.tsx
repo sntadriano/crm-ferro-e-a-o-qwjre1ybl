@@ -419,9 +419,12 @@ export default function ProducaoPage() {
   const isToday = isSameDay(dateFilter, new Date())
   const showNoRecordsAlert = isToday && isAfter18h && data.length === 0 && !loading
 
-  const canEditOrDelete = isAdmin || isGerente || isGalpao || isJulia
-  const canDelete = isAdmin || isGerente
-  const canConferir = isAdmin || isJulia
+  // Full CRUD on producao is available to every authenticated, active user.
+  // The server enforces `@request.auth.active = true` on all rules, and
+  // ProtectedRoute signs out inactive users, so any logged-in user qualifies.
+  const canEditOrDelete = true
+  const canDelete = true
+  const canConferir = true
 
   return (
     <div className="space-y-6">

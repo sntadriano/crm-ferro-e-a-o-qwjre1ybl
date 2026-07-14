@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T18:31:24.633Z",
+  "generatedAt": "2026-07-14T19:27:24.085Z",
   "collections": [
     {
       "name": "users",
@@ -514,9 +514,9 @@
       "apiRules": {
         "list": "@request.auth.id != '' && @request.auth.active = true",
         "view": "@request.auth.id != '' && @request.auth.active = true",
-        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
-        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
-        "delete": "@request.auth.active = true && @request.auth.role = 'admin'"
+        "create": "@request.auth.id != '' && @request.auth.active = true",
+        "update": "@request.auth.id != '' && @request.auth.active = true",
+        "delete": "@request.auth.id != '' && @request.auth.active = true"
       },
       "fields": [
         {
@@ -821,9 +821,9 @@
       "apiRules": {
         "list": "@request.auth.id != '' && @request.auth.active = true",
         "view": "@request.auth.id != '' && @request.auth.active = true",
-        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
-        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
-        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')"
+        "create": "@request.auth.id != '' && @request.auth.active = true",
+        "update": "@request.auth.id != '' && @request.auth.active = true",
+        "delete": "@request.auth.id != '' && @request.auth.active = true"
       },
       "fields": [
         {

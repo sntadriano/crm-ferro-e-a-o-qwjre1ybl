@@ -521,20 +521,18 @@ export default function ProducaoHistoricoPage() {
                                     <Eye className="h-4 w-4 mr-1" />
                                     Detalhes
                                   </Button>
-                                  {user?.role === 'admin' && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setDeleteRecord(r)
-                                      }}
-                                      className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
-                                      title="Excluir"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setDeleteRecord(r)
+                                    }}
+                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
+                                    title="Excluir"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </TableCell>
                             </TableRow>

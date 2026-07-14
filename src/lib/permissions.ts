@@ -23,9 +23,9 @@ export function canUseFilters(role?: string, module?: string, email?: string): b
 }
 
 export function canViewProducaoHistorico(role?: string, email?: string): boolean {
+  // Production history is available to every authenticated, active user.
+  // Active status is enforced server-side via the collection API rules
+  // (`@request.auth.active = true`) and by the auth guard on the client.
   if (!role) return false
-  if (role === 'admin' || email === 'Alex' || email?.toLowerCase().includes('alex')) return true
-  if (role === 'julia') return true
-  if (role === 'gerente') return true
-  return false
+  return true
 }
