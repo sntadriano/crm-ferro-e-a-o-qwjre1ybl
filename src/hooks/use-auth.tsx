@@ -20,7 +20,10 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<any>(pb.authStore.record)
+  // authStore.record survives JWT expiry — gate on authStore.isValid so
+  // stale credentials in localStorage don't let expired sessions
+  // through and cause 401s on the first authenticated fetch.
+  const [user, setUser] = useState<any>(pb.authStore.isValid ? pb.authStore.record : null)
   const [loading, setLoading] = useState(true)
   const isMobile = useIsMobile()
   const lastActivityRef = useRef(Date.now())
@@ -28,9 +31,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
-      setUser(record)
+      setUser(pb.authStore.isValid ? record : null)
     })
-    setLoading(false)
+
+    // Refresh on boot; clear on failure (revoked/expired server-side).
+    // Without this, a user whose JWT expired while the tab was closed
+    // keeps a truthy `record` in localStorage and every authenticated
+    // request fails with 401 — surfacing as empty lists / blank state.
+    if (pb.authStore.isValid) {
+      pb.collection('users')
+        .authRefresh()
+        .then(() => {
+          setUser(pb.authStore.record)
+        })
+        .catch(() => {
+          pb.authStore.clear()
+          try {
+            localStorage.removeItem('pocketbase_auth')
+          } catch {
+            /* intentionally ignored */
+          }
+          setUser(null)
+        })
+        .finally(() => setLoading(false))
+    } else {
+      if (pb.authStore.record) {
+        pb.authStore.clear()
+        try {
+          localStorage.removeItem('pocketbase_auth')
+        } catch {
+          /* intentionally ignored */
+        }
+      }
+      setUser(null)
+      setLoading(false)
+    }
+
     return () => {
       unsubscribe()
     }
