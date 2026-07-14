@@ -44,6 +44,19 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { PhotoGalleryDialog } from '@/components/producao/PhotoGalleryDialog'
+import { useRealtime } from '@/hooks/use-realtime'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Trash2 } from 'lucide-react'
+import { deleteProducao } from '@/services/producao'
 
 export default function ProducaoHistoricoPage() {
   const { user } = useAuth()
@@ -66,6 +79,8 @@ export default function ProducaoHistoricoPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [loadingAudit, setLoadingAudit] = useState(false)
   const [galleryRecord, setGalleryRecord] = useState<ProducaoRecord | null>(null)
+  const [deleteRecord, setDeleteRecord] = useState<ProducaoRecord | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const [page, setPage] = useState(1)
   const perPage = 20
@@ -103,6 +118,26 @@ export default function ProducaoHistoricoPage() {
   useEffect(() => {
     fetchData()
   }, [startDate, endDate])
+
+  useRealtime('producao', () => {
+    fetchData()
+  })
+
+  const handleDelete = async () => {
+    if (!deleteRecord) return
+    setDeleting(true)
+    try {
+      await deleteProducao(deleteRecord.id)
+      toast.success('Produção excluída com sucesso')
+      setDeleteRecord(null)
+      setSelectedRecord(null)
+    } catch (err) {
+      console.error(err)
+      toast.error('Erro ao excluir produção')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const filteredData = useMemo(() => {
     return records.filter((r) => {
@@ -473,18 +508,34 @@ export default function ProducaoHistoricoPage() {
                                 </TableCell>
                               )}
                               <TableCell className="text-right">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    openRecord(r)
-                                  }}
-                                  className="text-white hover:text-[#4A90E2] hover:bg-white/5"
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  Detalhes
-                                </Button>
+                                <div className="flex items-center justify-end gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openRecord(r)
+                                    }}
+                                    className="text-white hover:text-[#4A90E2] hover:bg-white/5"
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    Detalhes
+                                  </Button>
+                                  {user?.role === 'admin' && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setDeleteRecord(r)
+                                      }}
+                                      className="text-red-400 hover:text-red-300 hover:bg-red-900/50"
+                                      title="Excluir"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -648,6 +699,36 @@ export default function ProducaoHistoricoPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteRecord} onOpenChange={(o) => !o && setDeleteRecord(null)}>
+        <AlertDialogContent className="bg-[#1A3A52] border-white/10 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              Tem certeza que deseja excluir este lançamento de produção? Esta ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleting}
+              className="bg-white/5 border-white/10 text-white hover:bg-white/10"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deleting ? 'Excluindo...' : 'Confirmar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <PhotoGalleryDialog
         open={!!galleryRecord}
