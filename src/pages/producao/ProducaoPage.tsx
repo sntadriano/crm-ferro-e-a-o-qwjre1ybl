@@ -12,6 +12,7 @@ import {
   ClipboardList,
   AlertTriangle,
   Camera,
+  Eye,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -52,6 +53,7 @@ import {
 } from '@/components/ui/select'
 import { ProducaoFormDialog } from '@/components/producao/ProducaoFormDialog'
 import { PhotoGalleryDialog } from '@/components/producao/PhotoGalleryDialog'
+import { ProducaoDetailsDialog } from '@/components/producao/ProducaoDetailsDialog'
 import { cn } from '@/lib/utils'
 
 const ProducaoTableRow = React.memo(
@@ -65,6 +67,7 @@ const ProducaoTableRow = React.memo(
     onConferir,
     onEdit,
     onDelete,
+    onDetails,
   }: any) => {
     return (
       <TableRow>
@@ -117,6 +120,15 @@ const ProducaoTableRow = React.memo(
         )}
         <TableCell className="text-right">
           <div className="flex items-center justify-end gap-2">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => onDetails(record)}
+              title="Ver Detalhes"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             {record.status === 'registrado' && canConferir && (
               <Button
                 size="sm"
@@ -167,6 +179,7 @@ const ProducaoMobileCard = React.memo(
     onConferir,
     onEdit,
     onDelete,
+    onDetails,
   }: any) => {
     return (
       <Card className="overflow-hidden">
@@ -227,6 +240,15 @@ const ProducaoMobileCard = React.memo(
           )}
 
           <div className="pt-2 flex justify-end gap-2 border-t border-border/50">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8"
+              onClick={() => onDetails(record)}
+              title="Ver Detalhes"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             {record.status === 'registrado' && canConferir && (
               <Button
                 size="sm"
@@ -286,6 +308,7 @@ export default function ProducaoPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [conferirRecord, setConferirRecord] = useState<ProducaoRecord | null>(null)
   const [galleryRecord, setGalleryRecord] = useState<ProducaoRecord | null>(null)
+  const [detailsRecord, setDetailsRecord] = useState<ProducaoRecord | null>(null)
 
   const isAdmin = user?.role === 'admin'
   const isGerente = user?.role === 'gerente'
@@ -390,6 +413,7 @@ export default function ProducaoPage() {
   const handleGallery = useCallback((record: ProducaoRecord) => setGalleryRecord(record), [])
   const handleSetConferir = useCallback((record: ProducaoRecord) => setConferirRecord(record), [])
   const handleSetDelete = useCallback((id: string) => setDeleteId(id), [])
+  const handleDetails = useCallback((record: ProducaoRecord) => setDetailsRecord(record), [])
 
   const isAfter18h = isAfter(new Date(), setHours(startOfDay(new Date()), 18))
   const isToday = isSameDay(dateFilter, new Date())
@@ -521,6 +545,7 @@ export default function ProducaoPage() {
                     onConferir={handleSetConferir}
                     onEdit={openEdit}
                     onDelete={handleSetDelete}
+                    onDetails={handleDetails}
                   />
                 ))}
               </TableBody>
@@ -540,6 +565,7 @@ export default function ProducaoPage() {
                 onConferir={handleSetConferir}
                 onEdit={openEdit}
                 onDelete={handleSetDelete}
+                onDetails={handleDetails}
               />
             ))}
           </div>
@@ -649,6 +675,12 @@ export default function ProducaoPage() {
         open={!!galleryRecord}
         onOpenChange={(o) => !o && setGalleryRecord(null)}
         fotosRecords={galleryRecord?.expand?.fotos_producao_via_producao_id}
+      />
+
+      <ProducaoDetailsDialog
+        open={!!detailsRecord}
+        onOpenChange={(o) => !o && setDetailsRecord(null)}
+        record={detailsRecord}
       />
     </div>
   )

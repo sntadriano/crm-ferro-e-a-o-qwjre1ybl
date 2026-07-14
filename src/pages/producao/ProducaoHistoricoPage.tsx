@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
 import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns'
-import { Download, Search, Printer, History, AlertCircle, Camera } from 'lucide-react'
+import { Download, Search, Printer, History, AlertCircle, Camera, Eye } from 'lucide-react'
 import {
   Bar,
   BarChart,
@@ -472,6 +472,7 @@ export default function ProducaoHistoricoPage() {
                                   onClick={() => openRecord(r)}
                                   className="text-white hover:text-[#4A90E2] hover:bg-white/5"
                                 >
+                                  <Eye className="h-4 w-4 mr-1" />
                                   Detalhes
                                 </Button>
                               </TableCell>

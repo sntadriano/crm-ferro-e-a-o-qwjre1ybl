@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13T17:12:23.411Z",
+  "generatedAt": "2026-07-14T11:15:33.396Z",
   "collections": [
     {
       "name": "users",
@@ -512,8 +512,8 @@
       "name": "producao",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || @request.auth.active = true",
-        "view": "@request.auth.role = 'admin' || @request.auth.active = true",
+        "list": "@request.auth.id != '' && @request.auth.active = true",
+        "view": "@request.auth.id != '' && @request.auth.active = true",
         "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
         "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
         "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')"
@@ -819,8 +819,8 @@
       "name": "fotos_producao",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || @request.auth.active = true",
-        "view": "@request.auth.role = 'admin' || @request.auth.active = true",
+        "list": "@request.auth.id != '' && @request.auth.active = true",
+        "view": "@request.auth.id != '' && @request.auth.active = true",
         "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
         "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
         "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')"
