@@ -35,6 +35,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import { cn } from '@/lib/utils'
 import { X, ImagePlus, Check, ChevronsUpDown } from 'lucide-react'
+import './producao-combobox.css'
+import './producao-combobox.css'
 
 const schema = z.object({
   item_id: z.string().min(1, 'Selecione um item'),
@@ -261,26 +263,36 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Buscar item..." />
-                        <CommandList>
+                      <Command className="rounded-lg">
+                        <CommandInput placeholder="Buscar item por nome ou tipo..." />
+                        <CommandList className="max-h-[280px] overflow-y-auto">
                           <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
                           <CommandGroup>
                             {items.map((item) => (
                               <CommandItem
                                 key={item.id}
-                                value={item.nome}
+                                value={`${item.nome} ${item.tipo}`}
                                 onSelect={() => {
                                   form.setValue('item_id', item.id, { shouldValidate: true })
+                                  form.setValue('item_id' as any, item.id, { shouldValidate: true })
                                 }}
+                                className={cn(
+                                  'flex items-start gap-2 py-2',
+                                  item.id === field.value && 'bg-accent',
+                                )}
                               >
                                 <Check
                                   className={cn(
-                                    'mr-2 h-4 w-4',
+                                    'mt-0.5 h-4 w-4 shrink-0',
                                     item.id === field.value ? 'opacity-100' : 'opacity-0',
                                   )}
                                 />
-                                {item.nome} ({item.unidade})
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{item.nome}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {item.tipo} · {item.unidade}
+                                  </span>
+                                </div>
                               </CommandItem>
                             ))}
                           </CommandGroup>
