@@ -95,29 +95,27 @@ const ProducaoTableRow = React.memo(
               )}
           </div>
         </TableCell>
-        {userRole !== 'vendedor' && (
-          <TableCell>
-            {record.expand?.fotos_producao_via_producao_id &&
-            record.expand.fotos_producao_via_producao_id.length > 0 ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                onClick={() => onGallery(record)}
-                title="Ver fotos"
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            ) : (
-              <div
-                className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
-                title="Sem fotos"
-              >
-                <Camera className="h-4 w-4 text-muted-foreground" />
-              </div>
-            )}
-          </TableCell>
-        )}
+        <TableCell>
+          {record.expand?.fotos_producao_via_producao_id &&
+          record.expand.fotos_producao_via_producao_id.length > 0 ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+              onClick={() => onGallery(record)}
+              title="Ver fotos"
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
+          ) : (
+            <div
+              className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
+              title="Sem fotos"
+            >
+              <Camera className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+        </TableCell>
         <TableCell className="text-right">
           <div className="flex items-center justify-end gap-2">
             <Button
@@ -207,8 +205,7 @@ const ProducaoMobileCard = React.memo(
             </div>
           </div>
 
-          {userRole !== 'vendedor' &&
-            record.expand?.fotos_producao_via_producao_id &&
+          {record.expand?.fotos_producao_via_producao_id &&
             record.expand.fotos_producao_via_producao_id.length > 0 && (
               <div className="flex items-center gap-2 mt-1">
                 <Button
@@ -424,7 +421,9 @@ export default function ProducaoPage() {
   // ProtectedRoute signs out inactive users, so any logged-in user qualifies.
   const canEditOrDelete = true
   const canDelete = true
-  const canConferir = true
+  // "Conferir" (validation) remains restricted to admin and julia roles
+  // to ensure process control.
+  const canConferir = ['admin', 'julia'].includes(user?.role || '')
 
   return (
     <div className="space-y-6">
@@ -531,7 +530,7 @@ export default function ProducaoPage() {
                   <TableHead>Data/Hora</TableHead>
                   <TableHead>Usuário</TableHead>
                   <TableHead>Status</TableHead>
-                  {user?.role !== 'vendedor' && <TableHead className="w-[80px]">Fotos</TableHead>}
+                  <TableHead className="w-[80px]">Fotos</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>

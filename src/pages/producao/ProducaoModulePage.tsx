@@ -8,7 +8,7 @@ import { Factory } from 'lucide-react'
 
 export default function ProducaoModulePage() {
   const { user } = useAuth()
-  const canViewHistory = canViewProducaoHistorico(user?.role, user?.name)
+  const canViewHistory = canViewProducaoHistorico(user?.role, user?.email)
   const canViewItems = ['admin', 'gerente', 'julia', 'paulo'].includes(user?.role || '')
 
   return (

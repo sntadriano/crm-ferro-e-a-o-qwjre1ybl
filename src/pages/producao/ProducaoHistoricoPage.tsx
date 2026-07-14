@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Navigate } from 'react-router-dom'
 import { format, subDays, startOfDay, endOfDay, parseISO } from 'date-fns'
 import { Download, Search, Printer, History, AlertCircle, Camera, Eye } from 'lucide-react'
 import {
@@ -13,8 +12,6 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-import { useAuth } from '@/hooks/use-auth'
-import { canViewProducaoHistorico } from '@/lib/permissions'
 import { getFullProducoes, ProducaoRecord } from '@/services/producao'
 import { getProducaoAuditLogs, AuditLog } from '@/services/audit_logs'
 
@@ -59,8 +56,6 @@ import { Trash2 } from 'lucide-react'
 import { deleteProducao } from '@/services/producao'
 
 export default function ProducaoHistoricoPage() {
-  const { user } = useAuth()
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [records, setRecords] = useState<ProducaoRecord[]>([])
@@ -86,7 +81,6 @@ export default function ProducaoHistoricoPage() {
   const perPage = 20
 
   const fetchData = async () => {
-    if (!canViewProducaoHistorico(user?.role, user?.name)) return
     try {
       setLoading(true)
       setError(false)
@@ -210,10 +204,6 @@ export default function ProducaoHistoricoPage() {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-  }
-
-  if (!canViewProducaoHistorico(user?.role, user?.name)) {
-    return null
   }
 
   return (
@@ -444,9 +434,7 @@ export default function ProducaoHistoricoPage() {
                             <TableHead className="text-white">Data/Hora</TableHead>
                             <TableHead className="text-white">Usuário</TableHead>
                             <TableHead className="text-white">Status</TableHead>
-                            {user?.role !== 'vendedor' && (
-                              <TableHead className="text-white w-[80px]">Fotos</TableHead>
-                            )}
+                            <TableHead className="text-white w-[80px]">Fotos</TableHead>
                             <TableHead className="text-white text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -481,32 +469,30 @@ export default function ProducaoHistoricoPage() {
                                   {r.status === 'conferido' ? 'Conferido' : 'Registrado'}
                                 </Badge>
                               </TableCell>
-                              {user?.role !== 'vendedor' && (
-                                <TableCell>
-                                  {r.expand?.fotos_producao_via_producao_id &&
-                                  r.expand.fotos_producao_via_producao_id.length > 0 ? (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setGalleryRecord(r)
-                                      }}
-                                      title="Ver fotos"
-                                    >
-                                      <Camera className="h-4 w-4" />
-                                    </Button>
-                                  ) : (
-                                    <div
-                                      className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
-                                      title="Sem fotos"
-                                    >
-                                      <Camera className="h-4 w-4 text-white/30" />
-                                    </div>
-                                  )}
-                                </TableCell>
-                              )}
+                              <TableCell>
+                                {r.expand?.fotos_producao_via_producao_id &&
+                                r.expand.fotos_producao_via_producao_id.length > 0 ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setGalleryRecord(r)
+                                    }}
+                                    title="Ver fotos"
+                                  >
+                                    <Camera className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <div
+                                    className="h-8 w-8 flex items-center justify-center opacity-30 cursor-not-allowed"
+                                    title="Sem fotos"
+                                  >
+                                    <Camera className="h-4 w-4 text-white/30" />
+                                  </div>
+                                )}
+                              </TableCell>
                               <TableCell className="text-right">
                                 <div className="flex items-center justify-end gap-1">
                                   <Button
@@ -630,8 +616,7 @@ export default function ProducaoHistoricoPage() {
                   </p>
                 </div>
               )}
-              {user?.role !== 'vendedor' &&
-                selectedRecord.expand?.fotos_producao_via_producao_id &&
+              {selectedRecord.expand?.fotos_producao_via_producao_id &&
                 selectedRecord.expand.fotos_producao_via_producao_id.length > 0 && (
                   <div className="pt-2 border-t border-white/10">
                     <Button

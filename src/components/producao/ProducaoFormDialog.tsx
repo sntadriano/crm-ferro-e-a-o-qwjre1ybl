@@ -98,9 +98,20 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
     }
   }, [open, record, form])
 
-  const compressImage = (file: File): Promise<File> => {
+  const isHeicFile = (file: File): boolean => {
+    const name = file.name.toLowerCase()
+    return (
+      file.type === 'image/heic' ||
+      file.type === 'image/heif' ||
+      name.endsWith('.heic') ||
+      name.endsWith('.heif')
+    )
+  }
+
+  const compressImage = (file: File): Promise<File | null> => {
     return new Promise((resolve) => {
-      if (!file.type.startsWith('image/')) return resolve(file)
+      const heic = isHeicFile(file)
+      if (!file.type.startsWith('image/') && !heic) return resolve(file)
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = (event) => {
@@ -119,14 +130,32 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
           canvas.width = width
           canvas.height = height
           const ctx = canvas.getContext('2d')
-          if (!ctx) return resolve(file)
+          if (!ctx) {
+            if (heic) {
+              toast.error(`Não foi possível converter ${file.name} para JPEG.`)
+              return resolve(null)
+            }
+            return resolve(file)
+          }
+
+          if (heic) {
+            ctx.fillStyle = '#FFFFFF'
+            ctx.fillRect(0, 0, width, height)
+          }
+
           ctx.drawImage(img, 0, 0, width, height)
 
           canvas.toBlob(
             (blob) => {
-              if (!blob) return resolve(file)
+              if (!blob) {
+                if (heic) {
+                  toast.error(`Não foi possível converter ${file.name} para JPEG.`)
+                }
+                return resolve(heic ? null : file)
+              }
+              const outputName = file.name.replace(/\.[^/.]+$/, '.jpg')
               resolve(
-                new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), {
+                new File([blob], outputName, {
                   type: 'image/jpeg',
                   lastModified: Date.now(),
                 }),
@@ -136,9 +165,14 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
             0.8,
           )
         }
-        img.onerror = () => resolve(file)
+        img.onerror = () => {
+          if (heic) {
+            toast.error(`Não foi possível decodificar ${file.name}. Tente enviar em formato JPG.`)
+          }
+          resolve(heic ? null : file)
+        }
       }
-      reader.onerror = () => resolve(file)
+      reader.onerror = () => resolve(heic ? null : file)
     })
   }
 
@@ -147,16 +181,19 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
 
     const files = Array.from(e.target.files)
     const validTypes = ['image/jpeg', 'image/png', 'image/heic', 'image/heif']
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.heic', '.heif']
 
     const newValidFiles: File[] = []
 
     for (const file of files) {
-      if (!validTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.heic')) {
-        toast.error(`Formato inválido: ${file.name}. Apenas JPG, PNG e HEIC são permitidos.`)
+      const ext = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] || ''
+      if (!validTypes.includes(file.type) && !validExtensions.includes(ext)) {
+        toast.error(`Formato inválido: ${file.name}. Apenas JPG, PNG, HEIC e HEIF são permitidos.`)
         continue
       }
 
       const compressed = await compressImage(file)
+      if (!compressed) continue
       newValidFiles.push(compressed)
     }
 
@@ -386,7 +423,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
                         type="file"
                         className="hidden"
                         multiple
-                        accept=".jpg,.jpeg,.png,.heic"
+                        accept=".jpg,.jpeg,.png,.heic,.heif"
                         onChange={handleFileChange}
                       />
                     </label>
