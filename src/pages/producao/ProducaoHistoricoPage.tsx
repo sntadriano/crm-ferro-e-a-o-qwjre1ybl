@@ -417,7 +417,11 @@ export default function ProducaoHistoricoPage() {
                         </TableHeader>
                         <TableBody>
                           {paginatedData.map((r) => (
-                            <TableRow key={r.id} className="border-white/10 hover:bg-white/5">
+                            <TableRow
+                              key={r.id}
+                              className="border-white/10 hover:bg-white/5 cursor-pointer"
+                              onClick={() => openRecord(r)}
+                            >
                               <TableCell className="text-white">
                                 {r.expand?.item_id?.nome || r.item}
                               </TableCell>
@@ -450,7 +454,10 @@ export default function ProducaoHistoricoPage() {
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/50"
-                                      onClick={() => setGalleryRecord(r)}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setGalleryRecord(r)
+                                      }}
                                       title="Ver fotos"
                                     >
                                       <Camera className="h-4 w-4" />
@@ -469,7 +476,10 @@ export default function ProducaoHistoricoPage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => openRecord(r)}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openRecord(r)
+                                  }}
                                   className="text-white hover:text-[#4A90E2] hover:bg-white/5"
                                 >
                                   <Eye className="h-4 w-4 mr-1" />
@@ -528,6 +538,10 @@ export default function ProducaoHistoricoPage() {
                   <p className="font-medium">
                     {selectedRecord.expand?.item_id?.nome || selectedRecord.item}
                   </p>
+                </div>
+                <div>
+                  <p className="text-white/50 mb-1">Categoria</p>
+                  <p className="font-medium">{selectedRecord.expand?.item_id?.tipo || '-'}</p>
                 </div>
                 <div>
                   <p className="text-white/50 mb-1">Quantidade</p>

@@ -42,6 +42,11 @@ export function ProducaoDetailsDialog({ open, onOpenChange, record }: Props) {
                   <Package className="h-4 w-4" /> Item
                 </p>
                 <p className="font-medium">{itemName}</p>
+                {record.expand?.item_id?.tipo && (
+                  <Badge variant="secondary" className="mt-1 text-xs">
+                    {record.expand.item_id.tipo}
+                  </Badge>
+                )}
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground flex items-center gap-1">

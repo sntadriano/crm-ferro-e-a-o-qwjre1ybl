@@ -17,6 +17,7 @@ export interface ProducaoRecord {
       id: string
       nome: string
       unidade: string
+      tipo: string
     }
     usuario_id?: {
       id: string
