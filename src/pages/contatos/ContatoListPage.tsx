@@ -372,6 +372,7 @@ export default function ContatoListPage() {
         <div className="flex w-full sm:w-auto items-center gap-3">
           {canExport(user?.role, 'contatos', user?.email) && (
             <ExportDropdown
+              loading={loading}
               getData={async () => {
                 let filterExp = []
                 if (tipoFilter !== 'all') filterExp.push(`tipo = '${tipoFilter}'`)

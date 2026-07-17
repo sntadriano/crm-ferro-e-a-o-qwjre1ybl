@@ -233,6 +233,7 @@ export default function CustomerListPage() {
         <div className="flex w-full sm:w-auto items-center gap-3">
           {canExport(user?.role, 'clientes', user?.email) && (
             <ExportDropdown
+              loading={isLoading}
               getData={async () => {
                 const res = await getClientes(1, 10000, filters)
                 return res.items.map((r) => ({

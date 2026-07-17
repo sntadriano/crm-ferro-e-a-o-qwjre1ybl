@@ -19,10 +19,11 @@ interface ExportDropdownProps {
   title: string
   filename?: string
   columns: ExportColumn[]
-  data?: Record<string, unknown>[]
-  getData?: () => Promise<Record<string, unknown>[]>
+  data?: Record<string, unknown>[] | null
+  getData?: () => Promise<Record<string, unknown>[] | null | undefined>
   summary?: ExportSummary
   disabled?: boolean
+  loading?: boolean
 }
 
 export function ExportDropdown({
@@ -33,16 +34,27 @@ export function ExportDropdown({
   getData,
   summary,
   disabled,
+  loading = false,
 }: ExportDropdownProps) {
   const [isExporting, setIsExporting] = useState(false)
 
+  const safeData: Record<string, unknown>[] = Array.isArray(data) ? data : []
+
   const resolveData = async (): Promise<Record<string, unknown>[]> => {
     if (getData) {
-      const result = await getData()
-      return Array.isArray(result) ? result : []
+      try {
+        const result = await getData()
+        return Array.isArray(result) ? result : []
+      } catch (err) {
+        console.error('ExportDropdown getData failed:', err)
+        return []
+      }
     }
-    return Array.isArray(data) ? data : []
+    return safeData
   }
+
+  const isDisabled = disabled || isExporting || loading
+  const dataCount = Array.isArray(data) ? data.length : 0
 
   const buildSummary = (records: Record<string, unknown>[]): ExportSummary => {
     const now = new Date()
@@ -56,11 +68,11 @@ export function ExportDropdown({
   }
 
   const handleExcel = async () => {
-    if (disabled || isExporting) return
+    if (isDisabled) return
     setIsExporting(true)
     try {
       const records = await resolveData()
-      if (records.length === 0) {
+      if (!Array.isArray(records) || records.length === 0) {
         toast.warning('Não há dados para exportar.')
         return
       }
@@ -75,7 +87,7 @@ export function ExportDropdown({
   }
 
   const handlePDF = async () => {
-    if (disabled || isExporting) return
+    if (isDisabled) return
     setIsExporting(true)
     try {
       const records = await resolveData()
@@ -96,8 +108,13 @@ export function ExportDropdown({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={disabled || isExporting}>
-          {isExporting ? (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isDisabled}
+          aria-busy={isExporting || loading}
+        >
+          {isExporting || loading ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (
             <Download className="h-4 w-4 mr-2" />
@@ -106,11 +123,11 @@ export function ExportDropdown({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleExcel} disabled={isExporting}>
+        <DropdownMenuItem onClick={handleExcel} disabled={isDisabled}>
           <FileSpreadsheet className="h-4 w-4 mr-2" />
           Exportar Excel
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handlePDF} disabled={isExporting}>
+        <DropdownMenuItem onClick={handlePDF} disabled={isDisabled}>
           <FileText className="h-4 w-4 mr-2" />
           Exportar PDF
         </DropdownMenuItem>
