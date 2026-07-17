@@ -27,6 +27,7 @@ import {
 } from 'recharts'
 import pb from '@/lib/pocketbase/client'
 import { StateDisplay } from '../components/StateDisplay'
+import { countActiveClients } from '@/lib/client-metrics'
 
 const COLORS = [
   'hsl(var(--chart-1))',
@@ -81,6 +82,9 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
   )
 
   const pieData = Object.entries(statusCounts).map(([name, value]) => ({ name, value }))
+
+  const activeCount = countActiveClients(data)
+  const inactiveCount = total - activeCount
 
   // Vendedor Distribution
   const vendedorCounts = data.reduce(
@@ -143,9 +147,9 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
             <UserCheck className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts['Ativo'] || 0}</div>
+            <div className="text-2xl font-bold">{activeCount}</div>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? (((statusCounts['Ativo'] || 0) / total) * 100).toFixed(1) : 0}% do total
+              {total > 0 ? ((activeCount / total) * 100).toFixed(1) : 0}% do total
             </p>
           </CardContent>
         </Card>
@@ -155,10 +159,9 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
             <UserX className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts['Inativo'] || 0}</div>
+            <div className="text-2xl font-bold">{inactiveCount}</div>
             <p className="text-xs text-muted-foreground">
-              {total > 0 ? (((statusCounts['Inativo'] || 0) / total) * 100).toFixed(1) : 0}% do
-              total
+              {total > 0 ? ((inactiveCount / total) * 100).toFixed(1) : 0}% do total
             </p>
           </CardContent>
         </Card>

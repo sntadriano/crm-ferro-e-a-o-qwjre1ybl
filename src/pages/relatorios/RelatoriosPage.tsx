@@ -23,6 +23,12 @@ import { LeadsTab } from './tabs/LeadsTab'
 import { ContatosTab } from './tabs/ContatosTab'
 import { ProducaoTab } from './tabs/ProducaoTab'
 
+const formatUserLabel = (u: any, allUsers: any[]) => {
+  const name = u.name || u.email
+  const dups = allUsers.filter((x) => (x.name || x.email) === name)
+  return dups.length > 1 ? `${name} (${u.email})` : name
+}
+
 export default function RelatoriosPage() {
   const { user } = useAuth()
   const [dateStart, setDateStart] = useState<string>('')
@@ -40,7 +46,7 @@ export default function RelatoriosPage() {
         setUsersList(res)
         const map: Record<number, string> = {}
         res.forEach((u) => {
-          if (u.codigo) map[u.codigo] = u.name || u.email
+          if (u.codigo) map[u.codigo] = formatUserLabel(u, res)
         })
         setUsersMap(map)
       })
@@ -151,7 +157,7 @@ export default function RelatoriosPage() {
               <SelectItem value="todos">Todos</SelectItem>
               {usersList.map((u) => (
                 <SelectItem key={u.id} value={u.id}>
-                  {u.name || u.email}
+                  {formatUserLabel(u, usersList)}
                 </SelectItem>
               ))}
             </SelectContent>

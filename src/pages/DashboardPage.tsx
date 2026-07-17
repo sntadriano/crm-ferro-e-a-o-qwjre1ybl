@@ -15,6 +15,7 @@ import {
   BellRing,
 } from 'lucide-react'
 import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
+import { ACTIVE_CLIENT_FILTER, INACTIVE_CLIENT_FILTER } from '@/lib/client-metrics'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -37,7 +38,14 @@ import pb from '@/lib/pocketbase/client'
 
 type DashboardData = {
   clients: { total: number; active: number; inactive: number }
-  leads: { total: number; novo: number; proposta: number; fechado: number; perdido: number }
+  leads: {
+    total: number
+    novo: number
+    proposta: number
+    fechado: number
+    perdido: number
+    expirado: number
+  }
   contacts: { recent: any[]; last24h: number; last7d: number; last30d: number }
   pendingFollowups: any[]
 }
@@ -68,10 +76,10 @@ export default function DashboardPage() {
       const clientsAll = await pb.collection('clientes').getList(1, 1)
       const clientsActive = await pb
         .collection('clientes')
-        .getList(1, 1, { filter: "status ~ 'ativo'" })
+        .getList(1, 1, { filter: ACTIVE_CLIENT_FILTER })
       const clientsInactive = await pb
         .collection('clientes')
-        .getList(1, 1, { filter: "status ~ 'inativo'" })
+        .getList(1, 1, { filter: INACTIVE_CLIENT_FILTER })
 
       // Leads Summary
       const leadsAll = await pb.collection('leads').getList(1, 1)
@@ -81,6 +89,7 @@ export default function DashboardPage() {
         .getList(1, 1, { filter: "status = 'proposta_enviada'" })
       const leadsFech = await pb.collection('leads').getList(1, 1, { filter: "status = 'fechado'" })
       const leadsPerd = await pb.collection('leads').getList(1, 1, { filter: "status = 'perdido'" })
+      const leadsExp = await pb.collection('leads').getList(1, 1, { filter: "status = 'expirado'" })
 
       const now = new Date()
       const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ')
@@ -147,6 +156,7 @@ export default function DashboardPage() {
           proposta: leadsProp.totalItems,
           fechado: leadsFech.totalItems,
           perdido: leadsPerd.totalItems,
+          expirado: leadsExp.totalItems,
         },
         contacts: { recent: contatos, last24h: c24, last7d: c7, last30d: c30 },
         pendingFollowups: pendingFollowupsRes.items,
@@ -326,8 +336,9 @@ export default function DashboardPage() {
               <Target className="h-4 w-4 text-[#FFC107]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{data.leads.total}</div>
+              <div className="text-2xl font-bold">{data.leads.total - data.leads.expirado}</div>
               <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-2">
+                {' '}
                 <span className="text-[#FFC107] font-semibold">N: {data.leads.novo}</span>
                 <span className="text-blue-500 font-semibold">P: {data.leads.proposta}</span>
                 <span className="text-green-500 font-semibold">F: {data.leads.fechado}</span>

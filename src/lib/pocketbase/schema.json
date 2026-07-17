@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-17T17:55:53.277Z",
+  "generatedAt": "2026-07-17T18:03:49.320Z",
   "collections": [
     {
       "name": "users",
@@ -226,7 +226,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["novo", "proposta_enviada", "fechado", "perdido"]
+          "selectValues": ["novo", "proposta_enviada", "fechado", "perdido", "expirado"]
         },
         {
           "name": "valor_estimado",
