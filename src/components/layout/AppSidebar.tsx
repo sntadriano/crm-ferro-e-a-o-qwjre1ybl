@@ -10,6 +10,8 @@ import {
   PieChart,
   Package,
   Factory,
+  ShieldCheck,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -45,13 +47,13 @@ const items = [
   {
     title: 'Validação',
     url: '/validacao',
-    icon: History,
+    icon: ShieldCheck,
     roles: ['admin', 'julia', 'gerente'],
   },
   {
     title: 'Relatório de Vendas',
     url: '/relatorios/vendas',
-    icon: PieChart,
+    icon: TrendingUp,
     roles: ['admin', 'julia', 'vendedor', 'gerente'],
   },
   { title: 'Leads', url: '/leads', icon: Target, roles: ['admin', 'julia', 'vendedor'] },
@@ -106,7 +108,12 @@ export function AppSidebar() {
 
                 if (!isAllowed) return null
 
-                const isActive = location.pathname.startsWith(item.url)
+                const hasChildItem = items.some(
+                  (other) => other.url !== item.url && other.url.startsWith(item.url + '/'),
+                )
+                const isActive = hasChildItem
+                  ? location.pathname === item.url
+                  : location.pathname === item.url || location.pathname.startsWith(item.url + '/')
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton

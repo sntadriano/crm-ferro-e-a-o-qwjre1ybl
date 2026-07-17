@@ -35,6 +35,8 @@ export default function RelatoriosPage() {
   const [dateEnd, setDateEnd] = useState<string>('')
   const [vendedorId, setVendedorId] = useState<string>('todos')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [startOpen, setStartOpen] = useState(false)
+  const [endOpen, setEndOpen] = useState(false)
   const [usersList, setUsersList] = useState<any[]>([])
 
   const [usersMap, setUsersMap] = useState<Record<number, string>>({})
@@ -89,7 +91,13 @@ export default function RelatoriosPage() {
       <div className="flex flex-col md:flex-row gap-4 items-end md:items-center bg-card p-4 rounded-lg border shadow-sm">
         <div className="space-y-1">
           <Label>Data Inicial</Label>
-          <Popover>
+          <Popover
+            open={startOpen}
+            onOpenChange={(open) => {
+              setStartOpen(open)
+              if (open) setEndOpen(false)
+            }}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -106,11 +114,14 @@ export default function RelatoriosPage() {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0 bg-popover z-[100] shadow-lg">
               <Calendar
                 mode="single"
                 selected={dateStart ? new Date(dateStart + 'T00:00:00') : undefined}
-                onSelect={(d) => setDateStart(d ? format(d, 'yyyy-MM-dd') : '')}
+                onSelect={(d) => {
+                  setDateStart(d ? format(d, 'yyyy-MM-dd') : '')
+                  setStartOpen(false)
+                }}
                 initialFocus
               />
             </PopoverContent>
@@ -119,7 +130,13 @@ export default function RelatoriosPage() {
 
         <div className="space-y-1">
           <Label>Data Final</Label>
-          <Popover>
+          <Popover
+            open={endOpen}
+            onOpenChange={(open) => {
+              setEndOpen(open)
+              if (open) setStartOpen(false)
+            }}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -136,11 +153,14 @@ export default function RelatoriosPage() {
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0 bg-popover z-[100] shadow-lg">
               <Calendar
                 mode="single"
                 selected={dateEnd ? new Date(dateEnd + 'T00:00:00') : undefined}
-                onSelect={(d) => setDateEnd(d ? format(d, 'yyyy-MM-dd') : '')}
+                onSelect={(d) => {
+                  setDateEnd(d ? format(d, 'yyyy-MM-dd') : '')
+                  setEndOpen(false)
+                }}
                 initialFocus
               />
             </PopoverContent>
