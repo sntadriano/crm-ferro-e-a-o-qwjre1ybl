@@ -3,6 +3,7 @@ import { Building2, User as UserIcon, ChevronRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Customer } from '@/types/customer'
 import { StatusBadge } from './StatusBadge'
+import { formatClientDisplayName } from '@/lib/entity-labels'
 
 interface CustomerCardListProps {
   customers: Customer[]
@@ -30,7 +31,7 @@ export function CustomerCardList({ customers }: CustomerCardListProps) {
                 </div>
                 <div>
                   <h3 className="font-semibold text-base line-clamp-1">
-                    {customer.tradeName || customer.name}
+                    {formatClientDisplayName(customer, customers)}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-0.5 font-medium">
                     {customer.document}

@@ -22,12 +22,7 @@ import { ClientesTab } from './tabs/ClientesTab'
 import { LeadsTab } from './tabs/LeadsTab'
 import { ContatosTab } from './tabs/ContatosTab'
 import { ProducaoTab } from './tabs/ProducaoTab'
-
-const formatUserLabel = (u: any, allUsers: any[]) => {
-  const name = u.name || u.email
-  const dups = allUsers.filter((x) => (x.name || x.email) === name)
-  return dups.length > 1 ? `${name} (${u.email})` : name
-}
+import { formatUserLabel } from '@/lib/entity-labels'
 
 export default function RelatoriosPage() {
   const { user } = useAuth()

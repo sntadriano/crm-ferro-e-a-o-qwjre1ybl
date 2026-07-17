@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Customer } from '@/types/customer'
 import { StatusBadge } from './StatusBadge'
+import { formatClientDisplayName } from '@/lib/entity-labels'
 
 interface CustomerTableProps {
   customers: Customer[]
@@ -60,7 +61,7 @@ export function CustomerTable({ customers, isLoading }: CustomerTableProps) {
             >
               <TableCell className="font-medium text-muted-foreground">{customer.code}</TableCell>
               <TableCell>
-                <div className="font-medium">{customer.tradeName || customer.name}</div>
+                <div className="font-medium">{formatClientDisplayName(customer, customers)}</div>
                 {customer.tradeName && (
                   <div className="text-xs text-muted-foreground">{customer.name}</div>
                 )}

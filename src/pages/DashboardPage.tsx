@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
 import { ACTIVE_CLIENT_FILTER, INACTIVE_CLIENT_FILTER } from '@/lib/client-metrics'
+import { useCustomers } from '@/hooks/use-customers'
+import { formatClientDisplayName } from '@/lib/entity-labels'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -60,6 +62,7 @@ const chartConfig = {
 export default function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { customers } = useCustomers()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -432,7 +435,7 @@ export default function DashboardPage() {
                     return (
                       <TableRow key={lead.id}>
                         <TableCell className="font-medium text-[#1A3A52]">
-                          {lead.expand?.cliente_id?.descricao || 'Desconhecido'}
+                          {formatClientDisplayName(lead.expand?.cliente_id, customers)}
                         </TableCell>
                         <TableCell>
                           {new Intl.NumberFormat('pt-BR', {
@@ -512,7 +515,7 @@ export default function DashboardPage() {
                         onClick={() => navigate(`/clientes/${c.cliente_id}`)}
                       >
                         <TableCell className="font-medium text-[#1A3A52]">
-                          {c.expand?.cliente_id?.descricao || 'Desconhecido'}
+                          {formatClientDisplayName(c.expand?.cliente_id, customers)}
                         </TableCell>
                         <TableCell>
                           <Badge

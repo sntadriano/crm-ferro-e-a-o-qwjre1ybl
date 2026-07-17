@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Target, TrendingUp, DollarSign } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -56,6 +56,8 @@ export function LeadsTab({ filters, refreshKey }: any) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [sortField, setSortField] = useState<'date' | 'status'>('date')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     let isMounted = true
@@ -132,6 +134,25 @@ export function LeadsTab({ filters, refreshKey }: any) {
       return '-'
     }
   }
+
+  const sortedData = useMemo(() => {
+    if (!data.length) return []
+    const sorted = [...data]
+    if (sortField === 'date') {
+      sorted.sort((a, b) => {
+        const da = new Date(a.data_criacao || a.created).getTime()
+        const db = new Date(b.data_criacao || b.created).getTime()
+        return sortDirection === 'asc' ? da - db : db - da
+      })
+    } else {
+      sorted.sort((a, b) => {
+        const sa = a.status || ''
+        const sb = b.status || ''
+        return sortDirection === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa)
+      })
+    }
+    return sorted
+  }, [data, sortField, sortDirection])
 
   return (
     <StateDisplay
@@ -314,20 +335,54 @@ export function LeadsTab({ filters, refreshKey }: any) {
             <TableHeader>
               <TableRow>
                 <TableHead>Cliente</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>
+                  <button
+                    className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+                    onClick={() => {
+                      if (sortField === 'status') {
+                        setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+                      } else {
+                        setSortField('status')
+                        setSortDirection('asc')
+                      }
+                    }}
+                  >
+                    Status
+                    {sortField === 'status' && (
+                      <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead className="text-right">Valor Estimado</TableHead>
-                <TableHead>Data de Criação</TableHead>
+                <TableHead>
+                  <button
+                    className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+                    onClick={() => {
+                      if (sortField === 'date') {
+                        setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+                      } else {
+                        setSortField('date')
+                        setSortDirection('desc')
+                      }
+                    }}
+                  >
+                    Data de Criação
+                    {sortField === 'date' && (
+                      <span className="text-xs">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </button>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.length === 0 ? (
+              {sortedData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
                     Nenhum lead encontrado no período.
                   </TableCell>
                 </TableRow>
               ) : (
-                data.map((lead) => (
+                sortedData.map((lead) => (
                   <TableRow key={lead.id} className="transition-colors hover:bg-slate-50">
                     <TableCell
                       className="font-medium max-w-[250px] truncate"
