@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createContato } from '@/services/contatos'
+import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
+import { RecordModel } from 'pocketbase'
 import { format } from 'date-fns'
 
 const formSchema = z
@@ -49,7 +51,7 @@ const formSchema = z
 export default function ContatoFormPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [clientes, setClientes] = useState<any[]>([])
+  const [clientes, setClientes] = useState<RecordModel[]>([])
   const [loading, setLoading] = useState(false)
   const [fetchingClients, setFetchingClients] = useState(true)
 
@@ -192,18 +194,15 @@ export default function ContatoFormPage() {
           {fetchingClients ? (
             <div className="h-10 w-full animate-pulse bg-gray-200 rounded-md" />
           ) : (
-            <Select onValueChange={(v) => setValue('cliente_id', v)} value={cliente_id}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                {clientes.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.descricao} - {c.cnpj_cpf}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <ClienteCombobox
+              clientes={clientes}
+              value={cliente_id}
+              onChange={(v) => setValue('cliente_id', v, { shouldValidate: true })}
+              loading={fetchingClients}
+              onClienteCreated={(cliente) => {
+                setClientes((prev) => [...prev, cliente])
+              }}
+            />
           )}
           {errors.cliente_id && <p className="text-xs text-red-500">{errors.cliente_id.message}</p>}
         </div>
