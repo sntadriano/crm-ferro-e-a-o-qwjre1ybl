@@ -430,6 +430,7 @@ export default function ProducaoHistoricoPage() {
                         <TableHeader className="bg-black/20 border-b border-white/10">
                           <TableRow className="hover:bg-transparent border-white/10">
                             <TableHead className="text-white">Item</TableHead>
+                            <TableHead className="text-white">Máquina/Processo</TableHead>
                             <TableHead className="text-white">Qtd</TableHead>
                             <TableHead className="text-white">Data/Hora</TableHead>
                             <TableHead className="text-white">Usuário</TableHead>
@@ -447,6 +448,9 @@ export default function ProducaoHistoricoPage() {
                             >
                               <TableCell className="text-white">
                                 {r.expand?.item_id?.nome || r.item}
+                              </TableCell>
+                              <TableCell className="text-white">
+                                {r.expand?.maquina_id?.nome || '-'}
                               </TableCell>
                               <TableCell className="text-white font-medium">
                                 {r.quantidade}
@@ -577,6 +581,10 @@ export default function ProducaoHistoricoPage() {
                 <div>
                   <p className="text-white/50 mb-1">Categoria</p>
                   <p className="font-medium">{selectedRecord.expand?.item_id?.tipo || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-white/50 mb-1">Máquina/Processo</p>
+                  <p className="font-medium">{selectedRecord.expand?.maquina_id?.nome || '-'}</p>
                 </div>
                 <div>
                   <p className="text-white/50 mb-1">Quantidade</p>

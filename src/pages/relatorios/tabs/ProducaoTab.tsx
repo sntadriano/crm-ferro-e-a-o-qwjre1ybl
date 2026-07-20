@@ -63,12 +63,14 @@ export function ProducaoTab({ filters, refreshKey }: any) {
         if (itemSearch) f.push(`item ~ '${itemSearch.replace(/'/g, "\\'")}'`)
         if (statusFilter !== 'all') f.push(`status = '${statusFilter}'`)
 
-        const fullRes = await pb.collection('producao').getFullList({ filter: f.join(' && ') })
+        const fullRes = await pb
+          .collection('producao')
+          .getFullList({ filter: f.join(' && '), expand: 'maquina_id,item_id' })
         if (isMounted) setData(fullRes)
 
         const pagedRes = await pb
           .collection('producao')
-          .getList(page, 20, { filter: f.join(' && ') })
+          .getList(page, 20, { filter: f.join(' && '), expand: 'maquina_id,item_id' })
         if (isMounted) {
           setPagedData(pagedRes.items)
           setTotalPages(pagedRes.totalPages)
@@ -284,6 +286,7 @@ export function ProducaoTab({ filters, refreshKey }: any) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item</TableHead>
+                    <TableHead>Máquina/Processo</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Data Produção</TableHead>
                     <TableHead className="text-right">Quantidade</TableHead>
@@ -293,6 +296,7 @@ export function ProducaoTab({ filters, refreshKey }: any) {
                   {pagedData.map((row) => (
                     <TableRow key={row.id}>
                       <TableCell className="font-medium">{row.item}</TableCell>
+                      <TableCell>{row.expand?.maquina_id?.nome || '-'}</TableCell>
                       <TableCell className="capitalize">{row.status || 'Registrado'}</TableCell>
                       <TableCell>{format(new Date(row.data_producao), 'dd/MM/yyyy')}</TableCell>
                       <TableCell className="text-right">{row.quantidade}</TableCell>

@@ -79,6 +79,10 @@ export function ProducaoDetailsDialog({ open, onOpenChange, record }: Props) {
                   {record.status === 'conferido' ? 'Conferido' : 'Registrado'}
                 </Badge>
               </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Máquina/Processo</p>
+                <p className="font-medium">{record.expand?.maquina_id?.nome || '-'}</p>
+              </div>
             </div>
 
             {record.observacoes && (

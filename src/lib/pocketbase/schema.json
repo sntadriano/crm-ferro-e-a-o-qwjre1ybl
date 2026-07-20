@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T15:06:30.335Z",
+  "generatedAt": "2026-07-20T17:43:45.411Z",
   "collections": [
     {
       "name": "users",
@@ -583,6 +583,13 @@
           "type": "bool",
           "required": false,
           "system": false
+        },
+        {
+          "name": "maquina_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "maquinas"
         }
       ],
       "indexes": [
@@ -855,6 +862,52 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_fotos_producao_producao_id ON fotos_producao (producao_id)"]
+    },
+    {
+      "name": "maquinas",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
+        "view": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo' || @request.auth.role = 'julia')",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao')",
+        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao')"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo_categoria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_maquinas_nome ON maquinas (nome)"]
     }
   ]
 }

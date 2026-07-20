@@ -4,6 +4,7 @@ export interface ProducaoRecord {
   id: string
   item: string
   item_id?: string
+  maquina_id?: string
   quantidade: number
   data_producao: string
   usuario_id: string
@@ -18,6 +19,11 @@ export interface ProducaoRecord {
       nome: string
       unidade: string
       tipo: string
+    }
+    maquina_id?: {
+      id: string
+      nome: string
+      tipo_categoria?: string
     }
     usuario_id?: {
       id: string
@@ -41,7 +47,7 @@ export const getProducoesRelatorio = async (
   return pb.collection('producao').getFullList<ProducaoRecord>({
     filter: `data_producao >= '${new Date(startDate + 'T00:00:00').toISOString()}' && data_producao <= '${new Date(endDate + 'T23:59:59').toISOString()}' && ativo = true`,
     sort: '-data_producao',
-    expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+    expand: 'item_id,usuario_id,fotos_producao_via_producao_id,maquina_id',
     fields,
   })
 }
@@ -50,7 +56,7 @@ export const getFullProducoes = async (filter: string, fields?: string) => {
   return pb.collection('producao').getFullList<ProducaoRecord>({
     filter: buildProducaoFilter(filter),
     sort: '-data_producao',
-    expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+    expand: 'item_id,usuario_id,fotos_producao_via_producao_id,maquina_id',
     fields,
   })
 }
@@ -74,7 +80,7 @@ export const getProducoes = async (params: {
   return pb.collection('producao').getList<ProducaoRecord>(params.page || 1, params.perPage || 20, {
     sort: params.sort || '-data_producao',
     filter: buildProducaoFilter(params.filter),
-    expand: 'item_id,usuario_id,fotos_producao_via_producao_id',
+    expand: 'item_id,usuario_id,fotos_producao_via_producao_id,maquina_id',
     fields: params.fields,
   })
 }

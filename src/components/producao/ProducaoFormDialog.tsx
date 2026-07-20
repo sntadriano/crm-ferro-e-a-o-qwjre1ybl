@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 
 import { createProducao, updateProducao, ProducaoRecord } from '@/services/producao'
 import { getActiveItensProducao, ItemProducao } from '@/services/itens_producao'
+import { getActiveMaquinas, type Maquina } from '@/services/maquinas'
 import { uploadFotosProducao } from '@/services/fotos_producao'
 import { useAuth } from '@/hooks/use-auth'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
@@ -40,6 +41,7 @@ import './producao-combobox.css'
 
 const schema = z.object({
   item_id: z.string().min(1, 'Selecione um item'),
+  maquina_id: z.string().min(1, 'Selecione uma máquina/processo'),
   quantidade: z.coerce.number().min(0.01, 'Quantidade deve ser maior que 0'),
   data_producao: z.string(),
   observacoes: z.string().optional(),
@@ -56,6 +58,7 @@ interface Props {
 export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
   const { user } = useAuth()
   const [items, setItems] = useState<ItemProducao[]>([])
+  const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
@@ -64,6 +67,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
     resolver: zodResolver(schema),
     defaultValues: {
       item_id: '',
+      maquina_id: '',
       quantidade: 0,
       data_producao: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       observacoes: '',
@@ -80,9 +84,13 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
       getActiveItensProducao()
         .then(setItems)
         .catch(() => toast.error('Erro ao carregar itens'))
+      getActiveMaquinas()
+        .then(setMaquinas)
+        .catch(() => toast.error('Erro ao carregar máquinas'))
       if (record) {
         form.reset({
           item_id: record.item_id || '',
+          maquina_id: record.maquina_id || '',
           quantidade: record.quantidade,
           data_producao: format(new Date(record.data_producao), "yyyy-MM-dd'T'HH:mm"),
           observacoes: record.observacoes || '',
@@ -90,6 +98,7 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
       } else {
         form.reset({
           item_id: '',
+          maquina_id: '',
           quantidade: 0,
           data_producao: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
           observacoes: '',
@@ -329,6 +338,76 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
                                   <span className="text-xs text-muted-foreground">
                                     {item.tipo} · {item.unidade}
                                   </span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="maquina_id"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Máquina/Processo</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            'w-full justify-between font-normal',
+                            !field.value && 'text-muted-foreground',
+                          )}
+                        >
+                          {field.value
+                            ? maquinas.find((m) => m.id === field.value)?.nome ||
+                              'Máquina selecionada'
+                            : 'Selecione ou busque uma máquina...'}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <Command className="rounded-lg">
+                        <CommandInput placeholder="Buscar máquina..." />
+                        <CommandList className="max-h-[280px] overflow-y-auto">
+                          <CommandEmpty>Nenhuma máquina encontrada.</CommandEmpty>
+                          <CommandGroup>
+                            {maquinas.map((maquina) => (
+                              <CommandItem
+                                key={maquina.id}
+                                value={`${maquina.nome} ${maquina.tipo_categoria || ''}`}
+                                onSelect={() => {
+                                  form.setValue('maquina_id', maquina.id, { shouldValidate: true })
+                                }}
+                                className={cn(
+                                  'flex items-start gap-2 py-2',
+                                  maquina.id === field.value && 'bg-accent',
+                                )}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mt-0.5 h-4 w-4 shrink-0',
+                                    maquina.id === field.value ? 'opacity-100' : 'opacity-0',
+                                  )}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{maquina.nome}</span>
+                                  {maquina.tipo_categoria && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {maquina.tipo_categoria}
+                                    </span>
+                                  )}
                                 </div>
                               </CommandItem>
                             ))}

@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ProducaoPage from './ProducaoPage'
 import ItensProducaoPage from './ItensProducaoPage'
 import ProducaoHistoricoPage from './ProducaoHistoricoPage'
+import MaquinasPage from './MaquinasPage'
 import { useAuth } from '@/hooks/use-auth'
 import { canViewProducaoHistorico } from '@/lib/permissions'
 import { Factory } from 'lucide-react'
@@ -11,6 +12,9 @@ export default function ProducaoModulePage() {
   const canViewHistory =
     canViewProducaoHistorico(user?.role, user?.email) || user?.role === 'gerente_producao'
   const canViewItems = ['admin', 'gerente', 'julia', 'paulo', 'gerente_producao'].includes(
+    user?.role || '',
+  )
+  const canViewMaquinas = ['admin', 'gerente', 'julia', 'paulo', 'gerente_producao'].includes(
     user?.role || '',
   )
 
@@ -41,6 +45,11 @@ export default function ProducaoModulePage() {
               Histórico
             </TabsTrigger>
           )}
+          {canViewMaquinas && (
+            <TabsTrigger value="maquinas" className="py-2.5 px-4 text-sm font-medium">
+              Máquinas/Processos
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="lancamento" className="mt-6 border-0 p-0 focus-visible:outline-none">
@@ -56,6 +65,12 @@ export default function ProducaoModulePage() {
         {canViewHistory && (
           <TabsContent value="historico" className="mt-6 border-0 p-0 focus-visible:outline-none">
             <ProducaoHistoricoPage />
+          </TabsContent>
+        )}
+
+        {canViewMaquinas && (
+          <TabsContent value="maquinas" className="mt-6 border-0 p-0 focus-visible:outline-none">
+            <MaquinasPage />
           </TabsContent>
         )}
       </Tabs>
