@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T14:23:39.914Z",
+  "generatedAt": "2026-07-20T14:25:50.240Z",
   "collections": [
     {
       "name": "users",
@@ -29,32 +29,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "role",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "admin",
-            "julia",
-            "vendedor",
-            "paulo",
-            "gerente"
-          ]
+          "selectValues": ["admin", "julia", "vendedor", "paulo", "gerente"]
         },
         {
           "name": "active",
@@ -192,19 +181,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -242,13 +226,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "novo",
-            "proposta_enviada",
-            "fechado",
-            "perdido",
-            "expirado"
-          ]
+          "selectValues": ["novo", "proposta_enviada", "fechado", "perdido", "expirado"]
         },
         {
           "name": "valor_estimado",
@@ -273,19 +251,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "notificacao_enviada",
@@ -326,13 +299,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "whatsapp",
-            "visita",
-            "email",
-            "visita_presencial",
-            "telefone"
-          ]
+          "selectValues": ["whatsapp", "visita", "email", "visita_presencial", "telefone"]
         },
         {
           "name": "descricao",
@@ -357,19 +324,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "teve_pedido",
@@ -388,10 +350,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "pendente",
-            "aprovado"
-          ]
+          "selectValues": ["pendente", "aprovado"]
         },
         {
           "name": "hora",
@@ -410,11 +369,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "pendente",
-            "aprovado",
-            "rejeitado"
-          ]
+          "selectValues": ["pendente", "aprovado", "rejeitado"]
         },
         {
           "name": "data_validacao",
@@ -470,19 +425,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": []
@@ -527,28 +477,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "tabela",
@@ -606,29 +549,21 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         },
         {
           "name": "status",
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": [
-            "registrado",
-            "conferido"
-          ]
+          "selectValues": ["registrado", "conferido"]
         },
         {
           "name": "item_id",
@@ -687,21 +622,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "1h_antes",
-            "24h_antes",
-            "atrasado"
-          ]
+          "selectValues": ["1h_antes", "24h_antes", "atrasado"]
         },
         {
           "name": "status",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "nao_lida",
-            "lida"
-          ]
+          "selectValues": ["nao_lida", "lida"]
         },
         {
           "name": "data_leitura",
@@ -714,19 +642,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": []
@@ -771,19 +694,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": []
@@ -822,19 +740,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": []
@@ -861,25 +774,14 @@
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "Armações",
-            "Arame 1kg",
-            "Corte e dobra",
-            "Barras 6m",
-            "Barras 12m"
-          ]
+          "selectValues": ["Armações", "Arame 1kg", "Corte e dobra", "Barras 6m", "Barras 12m"]
         },
         {
           "name": "unidade",
           "type": "select",
           "required": true,
           "system": false,
-          "selectValues": [
-            "Unidades",
-            "Rolos",
-            "Kg",
-            "Barras"
-          ]
+          "selectValues": ["Unidades", "Rolos", "Kg", "Barras"]
         },
         {
           "name": "status",
@@ -898,19 +800,14 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
       "indexes": [
@@ -947,24 +844,17 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate"
-          ]
+          "autodateTriggers": ["onCreate"]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": [
-            "onCreate",
-            "onUpdate"
-          ]
+          "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": [
-        "CREATE INDEX idx_fotos_producao_producao_id ON fotos_producao (producao_id)"
-      ]
+      "indexes": ["CREATE INDEX idx_fotos_producao_producao_id ON fotos_producao (producao_id)"]
     }
   ]
 }
