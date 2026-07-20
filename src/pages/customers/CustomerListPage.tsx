@@ -155,6 +155,7 @@ export default function CustomerListPage() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="Ativo">Ativo</SelectItem>
             <SelectItem value="Inativo">Inativo</SelectItem>
+            <SelectItem value="Prospecção">Prospecção</SelectItem>
           </SelectContent>
         </Select>
       </div>

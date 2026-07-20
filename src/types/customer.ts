@@ -1,5 +1,5 @@
 export type CustomerType = 'PF' | 'PJ'
-export type CustomerStatus = 'Ativo' | 'Inativo'
+export type CustomerStatus = 'Ativo' | 'Inativo' | 'Prospecção'
 
 export interface CustomerAddress {
   street: string

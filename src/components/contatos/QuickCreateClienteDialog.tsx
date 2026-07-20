@@ -17,12 +17,14 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { createCliente } from '@/services/clientes'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
+import { useAuth } from '@/hooks/use-auth'
 
 const schema = z.object({
   fantasia: z.string().min(1, 'Nome Fantasia é obrigatório'),
   descricao: z.string().optional(),
   cnpj_cpf: z.string().optional(),
   fone: z.string().optional(),
+  endereco: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -41,6 +43,7 @@ export function QuickCreateClienteDialog({
   onCreated,
 }: QuickCreateClienteDialogProps) {
   const [submitting, setSubmitting] = useState(false)
+  const { user } = useAuth()
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -49,6 +52,7 @@ export function QuickCreateClienteDialog({
       descricao: '',
       cnpj_cpf: '',
       fone: '',
+      endereco: '',
     },
   })
 
@@ -59,6 +63,7 @@ export function QuickCreateClienteDialog({
         descricao: '',
         cnpj_cpf: '',
         fone: '',
+        endereco: '',
       })
     }
   }, [open, initialName, form])
@@ -71,12 +76,14 @@ export function QuickCreateClienteDialog({
         descricao: values.descricao || values.fantasia,
         cnpj_cpf: values.cnpj_cpf || '',
         fone: values.fone || '',
+        endereco: values.endereco || '',
         tipo: 'PJ',
-        status: 'Ativo',
+        status: 'Prospecção',
+        vendedor: user?.codigo ?? 0,
         cadastro: new Date().toISOString(),
       }
       const created = await createCliente(payload)
-      toast.success('Cliente cadastrado com sucesso!')
+      toast.success('Cliente potencial cadastrado com sucesso!')
       onCreated(created)
     } catch (err) {
       const errors = extractFieldErrors(err)
@@ -96,7 +103,7 @@ export function QuickCreateClienteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Cadastrar Novo Cliente</DialogTitle>
+          <DialogTitle>Registrar Cliente Potencial</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -152,6 +159,20 @@ export function QuickCreateClienteDialog({
                   <FormLabel>Telefone (opcional)</FormLabel>
                   <FormControl>
                     <Input placeholder="(00) 0000-0000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="endereco"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Endereço (opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Endereço do cliente" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

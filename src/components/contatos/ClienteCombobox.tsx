@@ -97,7 +97,7 @@ export function ClienteCombobox({
                       className="text-primary font-medium"
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Cadastrar novo cliente
+                      Registrar cliente potencial
                     </CommandItem>
                   </CommandGroup>
                 </>
@@ -134,7 +134,7 @@ export function ClienteCombobox({
                     className="text-primary font-medium"
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    Cadastrar novo cliente
+                    Registrar cliente potencial
                   </CommandItem>
                 </CommandGroup>
               )}
