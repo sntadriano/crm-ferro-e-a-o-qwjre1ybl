@@ -31,7 +31,7 @@ export function NotificationCenter() {
   }
 
   useEffect(() => {
-    if (user?.role !== 'gerente') {
+    if (user?.role !== 'gerente' && user?.role !== 'gerente_producao') {
       loadNotificacoes()
     }
   }, [user])
@@ -41,10 +41,10 @@ export function NotificationCenter() {
     () => {
       loadNotificacoes()
     },
-    user?.role !== 'gerente',
+    user?.role !== 'gerente' && user?.role !== 'gerente_producao',
   )
 
-  if (user?.role === 'gerente') return null
+  if (user?.role === 'gerente' || user?.role === 'gerente_producao') return null
 
   const unreadCount = notificacoes.filter((n) => n.status === 'nao_lida').length
 

@@ -46,7 +46,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const RootRedirect = () => {
   const { user } = useAuth()
-  if (['julia', 'paulo'].includes(user?.role) || user?.email === 'soaresclaudio@gmail.com') {
+  if (
+    ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
+    user?.email === 'soaresclaudio@gmail.com'
+  ) {
     return <Navigate to="/producao" replace />
   }
   return <Navigate to="/dashboard" replace />
@@ -54,7 +57,10 @@ const RootRedirect = () => {
 
 const RestrictedLayout = () => {
   const { user } = useAuth()
-  if (['julia', 'paulo'].includes(user?.role) || user?.email === 'soaresclaudio@gmail.com') {
+  if (
+    ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
+    user?.email === 'soaresclaudio@gmail.com'
+  ) {
     return <Navigate to="/producao" replace />
   }
   return <Outlet />

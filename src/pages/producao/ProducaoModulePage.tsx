@@ -8,8 +8,11 @@ import { Factory } from 'lucide-react'
 
 export default function ProducaoModulePage() {
   const { user } = useAuth()
-  const canViewHistory = canViewProducaoHistorico(user?.role, user?.email)
-  const canViewItems = ['admin', 'gerente', 'julia', 'paulo'].includes(user?.role || '')
+  const canViewHistory =
+    canViewProducaoHistorico(user?.role, user?.email) || user?.role === 'gerente_producao'
+  const canViewItems = ['admin', 'gerente', 'julia', 'paulo', 'gerente_producao'].includes(
+    user?.role || '',
+  )
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto flex flex-col gap-6">

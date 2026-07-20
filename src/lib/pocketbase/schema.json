@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T14:41:06.202Z",
+  "generatedAt": "2026-07-20T15:06:30.335Z",
   "collections": [
     {
       "name": "users",
@@ -43,7 +43,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["admin", "julia", "vendedor", "paulo", "gerente"]
+          "selectValues": ["admin", "julia", "vendedor", "paulo", "gerente", "gerente_producao"]
         },
         {
           "name": "active",
@@ -756,11 +756,11 @@
       "name": "itens_producao",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia'))",
-        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'paulo' || @request.auth.role = 'julia'))",
-        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
-        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')",
-        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'paulo')"
+        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo' || @request.auth.role = 'julia'))",
+        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo' || @request.auth.role = 'julia'))",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo')",
+        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'gerente_producao' || @request.auth.role = 'paulo')"
       },
       "fields": [
         {

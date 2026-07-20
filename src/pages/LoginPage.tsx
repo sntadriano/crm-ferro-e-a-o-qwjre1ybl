@@ -68,6 +68,7 @@ const sanitizePassword = (raw: string): string =>
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
     .normalize('NFKC')
     .trim()
+    .toLowerCase()
 
 export default function LoginPage() {
   const { signIn, requestPasswordReset } = useAuth()
@@ -196,7 +197,10 @@ export default function LoginPage() {
         return
       }
 
-      if (['paulo', 'julia'].includes(user?.role) || user?.email === 'soaresclaudio@gmail.com') {
+      if (
+        ['paulo', 'julia', 'gerente_producao'].includes(user?.role) ||
+        user?.email === 'soaresclaudio@gmail.com'
+      ) {
         navigate('/producao', { replace: true })
       } else {
         navigate('/dashboard', { replace: true })

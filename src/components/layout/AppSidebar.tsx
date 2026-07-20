@@ -63,7 +63,7 @@ const items = [
     title: 'Produção',
     url: '/producao',
     icon: Factory,
-    roles: ['admin', 'julia', 'gerente', 'paulo'],
+    roles: ['admin', 'julia', 'gerente', 'paulo', 'gerente_producao'],
   },
 ]
 
@@ -92,7 +92,7 @@ export function AppSidebar() {
               {items.map((item) => {
                 let isAllowed = true
                 if (
-                  ['julia', 'paulo'].includes(user?.role) ||
+                  ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
                   user?.email === 'soaresclaudio@gmail.com'
                 ) {
                   isAllowed = item.title === 'Produção'
