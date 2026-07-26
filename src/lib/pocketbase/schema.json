@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-21T19:10:37.428Z",
+  "generatedAt": "2026-07-26T18:30:49.876Z",
   "collections": [
     {
       "name": "users",
@@ -56,6 +56,12 @@
           "type": "number",
           "required": false,
           "system": false
+        },
+        {
+          "name": "codigos_vendedor",
+          "type": "json",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -67,8 +73,8 @@
       "name": "clientes",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && vendedor = @request.auth.codigo)))",
-        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && vendedor = @request.auth.codigo)))",
+        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ vendedor)))",
+        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ vendedor)))",
         "create": "@request.auth.active = true",
         "update": "@request.auth.active = true",
         "delete": "@request.auth.role = 'admin'"
@@ -200,8 +206,8 @@
       "name": "leads",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id)))",
-        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id)))",
+        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
+        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.role = 'julia' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
         "create": "@request.auth.active = true",
         "update": "@request.auth.active = true",
         "delete": "@request.auth.role = 'admin'"
@@ -273,11 +279,11 @@
       "name": "contatos",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id)))",
-        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id)))",
-        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || @request.auth.role = 'vendedor')",
-        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex' || (@request.auth.role = 'vendedor' && usuario_id = @request.auth.id))",
-        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.name ?~ 'Alex')"
+        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
+        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
+        "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || @request.auth.role = 'vendedor')",
+        "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor))",
+        "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')"
       },
       "fields": [
         {
@@ -908,6 +914,46 @@
         }
       ],
       "indexes": ["CREATE INDEX idx_maquinas_nome ON maquinas (nome)"]
+    },
+    {
+      "name": "vendedores",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "codigo",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_vendedores_codigo ON vendedores (codigo)"]
     }
   ]
 }

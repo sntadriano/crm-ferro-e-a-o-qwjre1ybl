@@ -5,6 +5,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { CustomerProvider } from '@/hooks/use-customers'
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
+import { VendedorProvider } from '@/hooks/use-vendedores'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import Layout from './components/Layout'
 
@@ -72,40 +73,42 @@ const App = () => (
       <AuthProvider>
         <TooltipProvider>
           <CustomerProvider>
-            <Toaster />
-            <Sonner richColors closeButton />
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <Layout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="/" element={<RootRedirect />} />
+            <VendedorProvider>
+              <Toaster />
+              <Sonner richColors closeButton />
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <Layout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route path="/" element={<RootRedirect />} />
 
-                  <Route element={<RestrictedLayout />}>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/clientes" element={<CustomerListPage />} />
-                    <Route path="/clientes/novo" element={<CustomerFormPage />} />
-                    <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
-                    <Route path="/leads" element={<LeadListPage />} />
-                    <Route path="/contatos" element={<ContatoListPage />} />
-                    <Route path="/contatos/novo" element={<ContatoFormPage />} />
-                    <Route path="/validacao" element={<ValidacaoPage />} />
-                    <Route path="/admin" element={<AdminPage />} />
-                    <Route path="/relatorios" element={<RelatoriosPage />} />
-                    <Route path="/relatorios/vendas" element={<VendasReportPage />} />
-                    <Route path="/auditoria" element={<AuditPage />} />
+                    <Route element={<RestrictedLayout />}>
+                      <Route path="/dashboard" element={<DashboardPage />} />
+                      <Route path="/clientes" element={<CustomerListPage />} />
+                      <Route path="/clientes/novo" element={<CustomerFormPage />} />
+                      <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+                      <Route path="/leads" element={<LeadListPage />} />
+                      <Route path="/contatos" element={<ContatoListPage />} />
+                      <Route path="/contatos/novo" element={<ContatoFormPage />} />
+                      <Route path="/validacao" element={<ValidacaoPage />} />
+                      <Route path="/admin" element={<AdminPage />} />
+                      <Route path="/relatorios" element={<RelatoriosPage />} />
+                      <Route path="/relatorios/vendas" element={<VendasReportPage />} />
+                      <Route path="/auditoria" element={<AuditPage />} />
+                    </Route>
+
+                    <Route path="/producao" element={<ProducaoModulePage />} />
                   </Route>
-
-                  <Route path="/producao" element={<ProducaoModulePage />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </VendedorProvider>
           </CustomerProvider>
         </TooltipProvider>
       </AuthProvider>

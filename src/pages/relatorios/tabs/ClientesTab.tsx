@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Users, UserCheck, UserX } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/use-auth'
+import { useVendedores } from '@/hooks/use-vendedores'
 import { canExport } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { format } from 'date-fns'
@@ -38,6 +39,7 @@ const COLORS = [
 
 export function ClientesTab({ filters, refreshKey, usersMap }: any) {
   const { user } = useAuth()
+  const { getVendedorName } = useVendedores()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -86,12 +88,12 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
   const activeCount = countActiveClients(data)
   const inactiveCount = total - activeCount
 
-  // Vendedor Distribution
+  // Vendedor Distribution — resolve vendor code -> human-readable name from
+  // the `vendedores` collection (single source of truth). Falls back to the
+  // raw code when no mapping exists.
   const vendedorCounts = data.reduce(
     (acc, curr) => {
-      const vName = curr.vendedor
-        ? usersMap[curr.vendedor] || `Cód: ${curr.vendedor}`
-        : 'Sem vendedor'
+      const vName = curr.vendedor ? getVendedorName(curr.vendedor) : 'Sem vendedor'
       acc[vName] = (acc[vName] || 0) + 1
       return acc
     },
@@ -114,6 +116,7 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
           <ExportDropdown
             data={data.map((d) => ({
               ...d,
+              vendedor_nome: getVendedorName(d.vendedor),
               data_cadastro_fmt: format(new Date(d.created), 'dd/MM/yyyy'),
             }))}
             columns={[
@@ -122,6 +125,7 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
               { header: 'CNPJ/CPF', key: 'cnpj_cpf' },
               { header: 'Cidade', key: 'cidade' },
               { header: 'UF', key: 'uf' },
+              { header: 'Vendedor', key: 'vendedor_nome' },
               { header: 'Status', key: 'status' },
               { header: 'Data Cadastro', key: 'data_cadastro_fmt' },
             ]}

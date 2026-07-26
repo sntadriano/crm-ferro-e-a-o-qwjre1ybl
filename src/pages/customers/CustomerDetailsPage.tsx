@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator'
 import { getContatosByCliente } from '@/services/contatos'
 import { getLeads } from '@/services/leads'
 import { useRealtime } from '@/hooks/use-realtime'
+import { useVendedores } from '@/hooks/use-vendedores'
 import { ContatoDetailsDialog } from '@/components/contatos/ContatoDetailsDialog'
 import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
 import { format } from 'date-fns'
@@ -32,6 +33,7 @@ import { PhoneCall } from 'lucide-react'
 export default function CustomerDetailsPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { getVendedorName } = useVendedores()
   const [customer, setCustomer] = useState<any>(null)
   const [contatos, setContatos] = useState<RecordModel[]>([])
   const [leads, setLeads] = useState<RecordModel[]>([])
@@ -245,7 +247,7 @@ export default function CustomerDetailsPage() {
                 <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-sm">
                   <div className="text-muted-foreground font-medium">Vendedor:</div>
                   <div className="font-semibold text-right sm:text-left">
-                    {customer.seller || '-'}
+                    {getVendedorName(customer.seller)}
                   </div>
                   <div className="text-muted-foreground font-medium">Data de Cadastro:</div>
                   <div className="font-semibold text-right sm:text-left">

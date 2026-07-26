@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { PhoneCall, CalendarDays, TrendingUp, DollarSign, Users } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useVendedores } from '@/hooks/use-vendedores'
 import {
   Table,
   TableBody,
@@ -30,6 +31,7 @@ const COMPANY_NAME = 'Ferro e Aço Eldorado'
 
 export function ContatosTab({ filters, refreshKey, usersList }: any) {
   const { user } = useAuth()
+  const { getVendedorName } = useVendedores()
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -84,6 +86,7 @@ export function ContatosTab({ filters, refreshKey, usersList }: any) {
     ...d,
     cliente: d.expand?.cliente_id?.descricao || 'Desconhecido',
     vendedor: d.expand?.usuario_id?.name || 'Desconhecido',
+    vendedor_cliente: getVendedorName(d.expand?.cliente_id?.vendedor),
     data_fmt: format(new Date(d.data_contato), 'dd/MM/yyyy'),
     hora_fmt: d.hora || format(new Date(d.data_contato), 'HH:mm'),
     resultado_fmt: formatResultado(d.resultado),
@@ -259,6 +262,7 @@ export function ContatosTab({ filters, refreshKey, usersList }: any) {
                   { header: 'Hora', key: 'hora_fmt' },
                   { header: 'Vendedor', key: 'vendedor' },
                   { header: 'Cliente', key: 'cliente' },
+                  { header: 'Vendedor do Cliente', key: 'vendedor_cliente' },
                   { header: 'Tipo', key: 'tipo' },
                   { header: 'Resultado', key: 'resultado_fmt' },
                   { header: 'Pedido', key: 'pedido_fmt' },

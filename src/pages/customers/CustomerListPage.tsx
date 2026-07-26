@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Users, AlertCircle, RefreshCcw, Info, Search, Filter, X } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useAuth } from '@/hooks/use-auth'
+import { useVendedores } from '@/hooks/use-vendedores'
 import { canExport, canUseFilters } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { Button } from '@/components/ui/button'
@@ -70,17 +71,10 @@ export default function CustomerListPage() {
   })
 
   const [debouncedSearch, setDebouncedSearch] = useState('')
-  const [vendedores, setVendedores] = useState<RecordModel[]>([])
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
   const showFilters = canUseFilters(user?.role, 'clientes', user?.email)
-
-  useEffect(() => {
-    pb.collection('users')
-      .getFullList({ filter: "role = 'vendedor' || role = 'admin'" })
-      .then(setVendedores)
-      .catch(console.error)
-  }, [])
+  const { vendedores } = useVendedores()
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -175,7 +169,7 @@ export default function CustomerListPage() {
             <SelectItem value="all">Todos</SelectItem>
             {vendedores.map((v) => (
               <SelectItem key={v.id} value={v.codigo?.toString() || v.id}>
-                {v.name || v.email}
+                {v.nome}
               </SelectItem>
             ))}
           </SelectContent>
