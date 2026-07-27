@@ -77,6 +77,13 @@ routerAdd(
       return 'normal'
     }
 
+    const normalizeCodigo = (v) => {
+      if (v === undefined || v === null) return ''
+      const s = String(v).trim()
+      if (/^\d+-\d+$/.test(s)) return s.replace(/-/g, '')
+      return s
+    }
+
     let total = 0
     let created = 0
     let updated = 0
@@ -211,13 +218,13 @@ routerAdd(
         try {
           const itemRecord = new Record(itensCol)
           itemRecord.set('pedido_id', pedidoId)
-          itemRecord.set('codigo_produto', item.codigo_produto || '')
+          const codigoProdutoNorm = normalizeCodigo(item.codigo_produto)
+          itemRecord.set('codigo_produto', codigoProdutoNorm)
 
           if (item.produto_id !== undefined && item.produto_id !== null && item.produto_id !== '') {
             itemRecord.set('produto_id', item.produto_id)
           } else {
-            const codigoProduto = item.codigo_produto ? String(item.codigo_produto) : ''
-            const produtoMatch = codigoProduto ? produtosMap[codigoProduto] : null
+            const produtoMatch = codigoProdutoNorm ? produtosMap[codigoProdutoNorm] : null
             if (produtoMatch) {
               itemRecord.set('produto_id', produtoMatch)
             }

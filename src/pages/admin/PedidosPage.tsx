@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Navigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Upload, Search, Link2 } from 'lucide-react'
+import { Upload, Search, Link2, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,7 +30,10 @@ import { getAllProdutos, type ProdutoRecord } from '@/services/produtos'
 import { PedidosImportDialog } from '@/components/pedidos/PedidosImportDialog'
 import { ProdutosImportDialog } from '@/components/pedidos/ProdutosImportDialog'
 import { BackfillReportDialog } from '@/components/pedidos/BackfillReportDialog'
+import { NormalizeCodesDialog } from '@/components/pedidos/NormalizeCodesDialog'
 import { backfillPedidosRelations, type BackfillReport } from '@/services/pedidos'
+
+const PROD_PER_PAGE = 20
 
 export default function PedidosPage() {
   const { user } = useAuth()
@@ -46,7 +49,9 @@ export default function PedidosPage() {
   const [backfillOpen, setBackfillOpen] = useState(false)
   const [backfillLoading, setBackfillLoading] = useState(false)
   const [backfillReport, setBackfillReport] = useState<BackfillReport | null>(null)
+  const [normalizeOpen, setNormalizeOpen] = useState(false)
   const [activeTab, setActiveTab] = useState('pedidos')
+  const [prodPage, setProdPage] = useState(1)
 
   const handleBackfill = async () => {
     setBackfillLoading(true)
@@ -84,6 +89,19 @@ export default function PedidosPage() {
     loadData()
   }, [page, activeTab])
 
+  useEffect(() => {
+    setProdPage(1)
+  }, [search, activeTab])
+
+  const filteredProdutos = useMemo(() => {
+    if (!search) return produtos
+    const q = search.toLowerCase()
+    return produtos.filter(
+      (p) =>
+        (p.codigo || '').toLowerCase().includes(q) || (p.descricao || '').toLowerCase().includes(q),
+    )
+  }, [produtos, search])
+
   if (user?.role !== 'admin') return <Navigate to="/dashboard" replace />
 
   const filteredPedidos = search
@@ -92,13 +110,12 @@ export default function PedidosPage() {
       )
     : pedidos
 
-  const filteredProdutos = search
-    ? produtos.filter(
-        (p) =>
-          p.codigo.includes(search) ||
-          (p.descricao || '').toLowerCase().includes(search.toLowerCase()),
-      )
-    : produtos
+  const prodTotalPages = Math.max(1, Math.ceil(filteredProdutos.length / PROD_PER_PAGE))
+  const currentProdPage = Math.min(prodPage, prodTotalPages)
+  const paginatedProdutos = filteredProdutos.slice(
+    (currentProdPage - 1) * PROD_PER_PAGE,
+    currentProdPage * PROD_PER_PAGE,
+  )
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-6">
@@ -112,6 +129,7 @@ export default function PedidosPage() {
         onValueChange={(v) => {
           setActiveTab(v)
           setPage(1)
+          setProdPage(1)
           setSearch('')
         }}
       >
@@ -223,8 +241,8 @@ export default function PedidosPage() {
         </TabsContent>
 
         <TabsContent value="produtos" className="space-y-4 mt-4">
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por código ou descrição..."
@@ -235,6 +253,9 @@ export default function PedidosPage() {
             </div>
             <Button onClick={() => setProdImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" /> Importar Produtos
+            </Button>
+            <Button variant="outline" onClick={() => setNormalizeOpen(true)}>
+              <Sparkles className="mr-2 h-4 w-4" /> Normalizar Códigos
             </Button>
           </div>
 
@@ -256,16 +277,16 @@ export default function PedidosPage() {
                         Carregando...
                       </TableCell>
                     </TableRow>
-                  ) : filteredProdutos.length === 0 ? (
+                  ) : paginatedProdutos.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center h-16 text-muted-foreground">
                         Nenhum produto encontrado.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProdutos.slice(0, 50).map((p) => (
+                    paginatedProdutos.map((p) => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium">{p.codigo}</TableCell>
+                        <TableCell className="font-medium font-mono">{p.codigo}</TableCell>
                         <TableCell>{p.descricao || '-'}</TableCell>
                         <TableCell>{p.unidade || '-'}</TableCell>
                         <TableCell className="text-right">
@@ -281,6 +302,30 @@ export default function PedidosPage() {
                   )}
                 </TableBody>
               </Table>
+              {prodTotalPages > 1 && (
+                <Pagination className="py-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setProdPage((p) => Math.max(1, p - 1))}
+                        className="cursor-pointer"
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="text-sm px-4">
+                        Página {currentProdPage} de {prodTotalPages} · {filteredProdutos.length}{' '}
+                        produtos
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setProdPage((p) => Math.min(prodTotalPages, p + 1))}
+                        className="cursor-pointer"
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -297,6 +342,11 @@ export default function PedidosPage() {
         onOpenChange={setBackfillOpen}
         report={backfillReport}
         loading={backfillLoading}
+      />
+      <NormalizeCodesDialog
+        open={normalizeOpen}
+        onOpenChange={setNormalizeOpen}
+        onSuccess={loadData}
       />
     </div>
   )

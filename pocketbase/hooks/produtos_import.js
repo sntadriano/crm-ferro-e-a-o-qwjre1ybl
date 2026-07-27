@@ -22,11 +22,13 @@ routerAdd(
 
     for (var i = 0; i < rows.length; i++) {
       var row = rows[i]
-      var codigo = String(row.codigo || '').trim()
-      if (!codigo) {
+      var rawCodigo = String(row.codigo || '').trim()
+      if (!rawCodigo) {
         errors.push({ reason: 'codigo ausente' })
         continue
       }
+
+      var codigo = /^\d+-\d+$/.test(rawCodigo) ? rawCodigo.replace(/-/g, '') : rawCodigo
 
       var rec
       var isNew = false
