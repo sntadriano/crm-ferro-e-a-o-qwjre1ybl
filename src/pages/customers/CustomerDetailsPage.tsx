@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/customers/StatusBadge'
 import { Separator } from '@/components/ui/separator'
-import { getContatosByCliente } from '@/services/contatos'
+import { getContatosByCliente, getContatosByClientePaginated } from '@/services/contatos'
 import { getLeads } from '@/services/leads'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useVendedores } from '@/hooks/use-vendedores'
@@ -36,6 +36,9 @@ export default function CustomerDetailsPage() {
   const { getVendedorName } = useVendedores()
   const [customer, setCustomer] = useState<any>(null)
   const [contatos, setContatos] = useState<RecordModel[]>([])
+  const [contatosPage, setContatosPage] = useState(1)
+  const [contatosTotal, setContatosTotal] = useState(0)
+  const [contatosPerPage] = useState(20)
   const [leads, setLeads] = useState<RecordModel[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingLeads, setLoadingLeads] = useState(true)
@@ -43,9 +46,19 @@ export default function CustomerDetailsPage() {
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
 
-  const loadContatos = () => {
-    if (id) {
-      getContatosByCliente(id).then((data) => setContatos(data || []))
+  const loadContatos = async (pageNum = 1, append = false) => {
+    if (!id) return
+    try {
+      const res = await getContatosByClientePaginated(id, pageNum, contatosPerPage)
+      if (append) {
+        setContatos((prev) => [...prev, ...(res.items || [])])
+      } else {
+        setContatos(res.items || [])
+      }
+      setContatosPage(pageNum)
+      setContatosTotal(res.totalItems)
+    } catch (err) {
+      if (!append) setContatos([])
     }
   }
 
@@ -61,7 +74,7 @@ export default function CustomerDetailsPage() {
   }
 
   useRealtime('contatos', () => {
-    loadContatos()
+    loadContatos(1, false)
   })
 
   useRealtime('leads', () => {
@@ -95,7 +108,7 @@ export default function CustomerDetailsPage() {
             zip: r.cep,
           },
         })
-        loadContatos()
+        loadContatos(1, false)
         loadLeads()
         setLoading(false)
       })
@@ -485,6 +498,17 @@ export default function CustomerDetailsPage() {
                         Registro inicial do cliente no sistema.
                       </div>
                     </div>
+                  </div>
+                )}
+                {contatos.length < contatosTotal && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => loadContatos(contatosPage + 1, true)}
+                      className="min-h-[44px]"
+                    >
+                      Carregar mais ({contatosTotal - contatos.length} restantes)
+                    </Button>
                   </div>
                 )}
               </div>

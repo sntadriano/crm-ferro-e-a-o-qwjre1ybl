@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T15:46:15.180Z",
+  "generatedAt": "2026-07-27T17:34:47.536Z",
   "collections": [
     {
       "name": "users",
@@ -199,7 +199,8 @@
       ],
       "indexes": [
         "CREATE UNIQUE INDEX idx_clientes_cnpj_cpf ON clientes (cnpj_cpf) WHERE cnpj_cpf != ''",
-        "CREATE UNIQUE INDEX idx_clientes_codigo ON clientes (codigo) WHERE codigo IS NOT NULL"
+        "CREATE UNIQUE INDEX idx_clientes_codigo ON clientes (codigo) WHERE codigo IS NOT NULL",
+        "CREATE INDEX `idx_clientes_vendedor` ON `clientes` (vendedor)"
       ]
     },
     {
@@ -393,7 +394,8 @@
       ],
       "indexes": [
         "CREATE INDEX `idx_contatos_status_validacao` ON `contatos` (status_validacao)",
-        "CREATE INDEX `idx_contatos_data_contato` ON `contatos` (data_contato)"
+        "CREATE INDEX `idx_contatos_data_contato` ON `contatos` (data_contato)",
+        "CREATE INDEX `idx_contatos_cliente_id` ON `contatos` (cliente_id)"
       ]
     },
     {
@@ -1219,7 +1221,10 @@
           "autodateTriggers": ["onCreate", "onUpdate"]
         }
       ],
-      "indexes": ["CREATE INDEX idx_pedido_itens_pedido_id ON pedido_itens (pedido_id)"]
+      "indexes": [
+        "CREATE INDEX idx_pedido_itens_pedido_id ON pedido_itens (pedido_id)",
+        "CREATE INDEX `idx_pedido_itens_produto_id` ON `pedido_itens` (produto_id)"
+      ]
     }
   ]
 }

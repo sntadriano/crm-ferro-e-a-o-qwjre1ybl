@@ -32,8 +32,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-
-const ITEMS_PER_PAGE = 20
+import { useListCache } from '@/hooks/use-list-cache'
 
 const mapToCustomer = (r: RecordModel): Customer => ({
   id: r.id,
@@ -60,6 +59,7 @@ export default function CustomerListPage() {
   const [hasError, setHasError] = useState(false)
 
   const [page, setPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
   const [filters, setFilters] = useState<ClienteFilters>({
     search: '',
     status: 'all',
@@ -84,13 +84,29 @@ export default function CustomerListPage() {
     return () => clearTimeout(handler)
   }, [debouncedSearch])
 
+  const { getCached, setCached, getCacheKey } = useListCache<{
+    items: Customer[]
+    totalItems: number
+  }>()
+
   const fetchCustomers = async () => {
+    const cacheKey = getCacheKey('clientes', { page, itemsPerPage, ...filters })
+    const cached = getCached(cacheKey)
+    if (cached) {
+      setCustomers(cached.items)
+      setTotalItems(cached.totalItems)
+      setIsLoading(false)
+      setHasError(false)
+      return
+    }
     setIsLoading(true)
     setHasError(false)
     try {
-      const res = await getClientes(page, ITEMS_PER_PAGE, filters)
-      setCustomers(res.items.map(mapToCustomer))
+      const res = await getClientes(page, itemsPerPage, filters)
+      const mapped = res.items.map(mapToCustomer)
+      setCustomers(mapped)
       setTotalItems(res.totalItems)
+      setCached(cacheKey, { items: mapped, totalItems: res.totalItems })
     } catch (err) {
       console.error(err)
       setHasError(true)
@@ -101,9 +117,9 @@ export default function CustomerListPage() {
 
   useEffect(() => {
     fetchCustomers()
-  }, [page, filters])
+  }, [page, itemsPerPage, filters])
 
-  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   const clearFilters = () => {
     setDebouncedSearch('')
@@ -298,35 +314,55 @@ export default function CustomerListPage() {
             )}
           </div>
 
-          {!isLoading && totalPages > 1 && (
+          {!isLoading && totalItems > 0 && (
             <div className="flex items-center justify-between pt-4">
-              <div className="text-sm text-muted-foreground hidden sm:block">
-                Mostrando {(page - 1) * ITEMS_PER_PAGE + 1} a{' '}
-                {Math.min(page * ITEMS_PER_PAGE, totalItems)} de {totalItems}
+              <div className="flex items-center gap-3">
+                <div className="text-sm text-muted-foreground hidden sm:block">
+                  Mostrando {(page - 1) * itemsPerPage + 1} a{' '}
+                  {Math.min(page * itemsPerPage, totalItems)} de {totalItems}
+                </div>
+                <Select
+                  value={String(itemsPerPage)}
+                  onValueChange={(v) => {
+                    setItemsPerPage(Number(v))
+                    setPage(1)
+                  }}
+                >
+                  <SelectTrigger className="w-[70px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Pagination className="w-auto mx-0">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      className={page === 1 ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
-                    />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <span className="px-4 text-sm font-medium">
-                      Página {page} de {totalPages}
-                    </span>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      className={
-                        page === totalPages ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
+              {totalPages > 1 && (
+                <Pagination className="w-auto mx-0">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setPage(Math.max(1, page - 1))}
+                        className={page === 1 ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <span className="px-4 text-sm font-medium">
+                        Página {page} de {totalPages}
+                      </span>
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setPage(Math.min(totalPages, page + 1))}
+                        className={
+                          page === totalPages ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
             </div>
           )}
         </>

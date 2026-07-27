@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef } fro
 import pb from '@/lib/pocketbase/client'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { toast } from '@/hooks/use-toast'
+import { clearListCache } from '@/hooks/use-list-cache'
 
 interface AuthContextType {
   user: any
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isMobile = useIsMobile()
   const lastActivityRef = useRef(Date.now())
   const warningShownRef = useRef(false)
+  const refreshingRef = useRef(false)
 
   useEffect(() => {
     const unsubscribe = pb.authStore.onChange((_token, record) => {
@@ -90,17 +92,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const inactiveFor = Date.now() - lastActivityRef.current
 
       if (inactiveFor > INACTIVITY_LIMIT) {
-        try {
-          pb.authStore.clear()
-          localStorage.removeItem('pocketbase_auth')
-        } catch {
-          /* intentionally ignored */
+        if (!refreshingRef.current) {
+          refreshingRef.current = true
+          pb.collection('users')
+            .authRefresh()
+            .then(() => {
+              refreshingRef.current = false
+              lastActivityRef.current = Date.now()
+              warningShownRef.current = false
+            })
+            .catch(() => {
+              refreshingRef.current = false
+              try {
+                pb.authStore.clear()
+                localStorage.removeItem('pocketbase_auth')
+              } catch {
+                /* intentionally ignored */
+              }
+              clearListCache()
+              toast({
+                title: 'Sessão expirada',
+                description: 'Sua sessão expirou. Faça login novamente.',
+                variant: 'destructive',
+              })
+              window.location.href = '/login'
+            })
         }
-        toast({
-          title: 'Sessão expirada',
-          description: 'Você foi desconectado por inatividade.',
-          variant: 'destructive',
-        })
       } else if (inactiveFor > INACTIVITY_LIMIT - WARNING_TIME && !warningShownRef.current) {
         warningShownRef.current = true
         toast({
@@ -148,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       pb.authStore.clear()
       localStorage.removeItem('pocketbase_auth')
+      clearListCache()
     } catch (e) {
       console.warn('[Auth] Erro ao limpar sessão:', e)
     }

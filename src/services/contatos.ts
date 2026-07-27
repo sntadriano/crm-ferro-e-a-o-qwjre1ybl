@@ -81,3 +81,11 @@ export const getContatosByCliente = (clienteId: string) => {
     expand: 'usuario_id,cliente_id',
   })
 }
+
+export const getContatosByClientePaginated = async (clienteId: string, page = 1, perPage = 20) => {
+  return pb.collection('contatos').getList(page, perPage, {
+    filter: `cliente_id = '${clienteId}'`,
+    sort: '-data_contato',
+    expand: 'usuario_id,cliente_id',
+  })
+}
