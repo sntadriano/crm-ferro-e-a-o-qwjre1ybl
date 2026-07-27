@@ -26,7 +26,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/use-auth'
-import { isRestrictedFromClientes } from '@/lib/permissions'
+import { isRestrictedFromClientes, isProductionOnlyUser } from '@/lib/permissions'
 import { cn } from '@/lib/utils'
 
 const items = [
@@ -99,10 +99,7 @@ export function AppSidebar() {
                   (item.url === '/clientes' || item.url === '/relatorios/vendas')
                 ) {
                   isAllowed = false
-                } else if (
-                  ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
-                  user?.email === 'soaresclaudio@gmail.com'
-                ) {
+                } else if (isProductionOnlyUser(user?.email, user?.role)) {
                   isAllowed = item.title === 'Produção'
                 } else if (item.roles) {
                   isAllowed = item.roles.includes(user?.role)

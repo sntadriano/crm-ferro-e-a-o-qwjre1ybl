@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T19:57:16.803Z",
+  "generatedAt": "2026-07-27T20:02:27.418Z",
   "collections": [
     {
       "name": "users",
@@ -611,10 +611,10 @@
       "name": "notificacoes",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || usuario_id = @request.auth.id)",
-        "view": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || usuario_id = @request.auth.id)",
+        "list": "@request.auth.id != '' && @request.auth.role != 'gerente_producao' && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || usuario_id = @request.auth.id)",
+        "view": "@request.auth.id != '' && @request.auth.role != 'gerente_producao' && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || usuario_id = @request.auth.id)",
         "create": null,
-        "update": "@request.auth.id != '' && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || usuario_id = @request.auth.id)",
+        "update": "@request.auth.id != '' && @request.auth.role != 'gerente_producao' && (@request.auth.role = 'admin' || @request.auth.role = 'julia' || usuario_id = @request.auth.id)",
         "delete": "@request.auth.role = 'admin' || @request.auth.role = 'julia'"
       },
       "fields": [
@@ -921,8 +921,8 @@
       "name": "vendedores",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.id != ''",
-        "view": "@request.auth.id != ''",
+        "list": "@request.auth.id != '' && @request.auth.role != 'gerente_producao'",
+        "view": "@request.auth.id != '' && @request.auth.role != 'gerente_producao'",
         "create": "@request.auth.role = 'admin'",
         "update": "@request.auth.role = 'admin'",
         "delete": "@request.auth.role = 'admin'"

@@ -6,7 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { CustomerProvider } from '@/hooks/use-customers'
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { VendedorProvider } from '@/hooks/use-vendedores'
-import { isRestrictedFromClientes } from '@/lib/permissions'
+import { isRestrictedFromClientes, isProductionOnlyUser } from '@/lib/permissions'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import Layout from './components/Layout'
 
@@ -49,10 +49,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const RootRedirect = () => {
   const { user } = useAuth()
-  if (
-    ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
-    user?.email === 'soaresclaudio@gmail.com'
-  ) {
+  if (isProductionOnlyUser(user?.email, user?.role)) {
     return <Navigate to="/producao" replace />
   }
   return <Navigate to="/dashboard" replace />
@@ -60,10 +57,7 @@ const RootRedirect = () => {
 
 const RestrictedLayout = () => {
   const { user } = useAuth()
-  if (
-    ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
-    user?.email === 'soaresclaudio@gmail.com'
-  ) {
+  if (isProductionOnlyUser(user?.email, user?.role)) {
     return <Navigate to="/producao" replace />
   }
   return <Outlet />

@@ -40,3 +40,10 @@ export function canViewProducaoHistorico(role?: string, email?: string): boolean
   if (!role) return false
   return true
 }
+
+export function isProductionOnlyUser(email?: string, role?: string): boolean {
+  if (!role && !email) return false
+  if (role && ['julia', 'paulo', 'gerente_producao'].includes(role)) return true
+  if (email && email.toLowerCase() === 'soaresclaudio65@gmail.com') return true
+  return false
+}
