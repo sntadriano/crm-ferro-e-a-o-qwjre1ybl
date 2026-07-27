@@ -2,198 +2,246 @@ routerAdd(
   'POST',
   '/backend/v1/pedidos/import',
   (e) => {
-    if (!e.auth || e.auth.getString('role') !== 'admin') {
-      return e.forbiddenError('Acesso restrito a administradores.')
+    const body = e.requestInfo().body
+    let rows = []
+
+    if (body.rows && Array.isArray(body.rows)) {
+      rows = body.rows
+    } else {
+      return e.badRequestError('Formato inválido. Envie um CSV (rows).')
     }
 
-    const body = e.requestInfo().body || {}
-    const pedidosRows = body.pedidos || []
-    const itensRows = body.itens || []
-
-    if (!Array.isArray(pedidosRows)) {
-      return e.badRequestError("Campo 'pedidos' deve ser um array.")
+    if (!rows || rows.length < 2) {
+      return e.badRequestError('Arquivo vazio ou sem dados válidos.')
     }
-    if (!Array.isArray(itensRows)) {
-      return e.badRequestError("Campo 'itens' deve ser um array.")
+
+    const normalizeHeader = (h) => {
+      if (!h) return ''
+      let s = String(h).toUpperCase().trim()
+      const accents = {
+        Á: 'A',
+        À: 'A',
+        Â: 'A',
+        Ã: 'A',
+        Ä: 'A',
+        É: 'E',
+        È: 'E',
+        Ê: 'E',
+        Ë: 'E',
+        Í: 'I',
+        Ì: 'I',
+        Î: 'I',
+        Ï: 'I',
+        Ó: 'O',
+        Ò: 'O',
+        Ô: 'O',
+        Õ: 'O',
+        Ö: 'O',
+        Ú: 'U',
+        Ù: 'U',
+        Û: 'U',
+        Ü: 'U',
+        Ç: 'C',
+        Ñ: 'N',
+      }
+      return s
+        .replace(/[ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑ]/g, (m) => accents[m] || m)
+        .replace(/[^A-Z0-9]/g, '')
+    }
+
+    const headerRow = rows[0].map(normalizeHeader)
+
+    const findCol = (names) => {
+      for (const name of names) {
+        const idx = headerRow.indexOf(normalizeHeader(name))
+        if (idx !== -1) return idx
+      }
+      return -1
+    }
+
+    const idxPedido = findCol(['NUMERO', 'PEDIDO', 'NUMERO PEDIDO', 'COD PEDIDO'])
+    const idxData = findCol(['DATA', 'DATA PEDIDO', 'EMISSAO'])
+    const idxCodigoCliente = findCol(['CODIGO CLIENTE', 'CLIENTE', 'CODIGO'])
+    const idxVendedor = findCol(['VENDEDOR', 'COD VENDEDOR'])
+    const idxCp = findCol(['CP', 'CONDICAO PAGAMENTO'])
+    const idxValorPedido = findCol(['VALOR PEDIDO', 'VALOR'])
+    const idxEntradaDinheiro = findCol(['ENTRADA DINHEIRO', 'ENTRADA'])
+    const idxEntradaPix = findCol(['ENTRADA PIX', 'PIX'])
+    const idxEntradaCartao = findCol(['ENTRADA CARTAO', 'CARTAO'])
+    const idxValorAprazo = findCol(['VALOR APRAZO', 'APRAZO'])
+    const idxQtdItens = findCol(['QTD ITENS', 'QTD', 'ITENS'])
+    const idxFrete = findCol(['FRETE'])
+    const idxStatus = findCol(['STATUS', 'SITUACAO'])
+    const idxTotalMercadorias = findCol(['TOTAL MERCADORIAS', 'TOTAL'])
+    const idxDescontoAcrescimo = findCol(['DESCONTO ACRESCIMO', 'DESCONTO'])
+
+    if (idxPedido === -1) {
+      return e.badRequestError(`O arquivo deve conter a coluna 'NUMERO'.`)
     }
 
     const pedidosCol = $app.findCollectionByNameOrId('pedidos')
     const itensCol = $app.findCollectionByNameOrId('pedido_itens')
-    const auditCol = $app.findCollectionByNameOrId('audit_logs')
 
-    var created = 0
-    var updated = 0
-    var itemsInserted = 0
-    var missingClientes = 0
-    var missingProdutos = 0
-    var errors = []
+    let total = 0
+    let created = 0
+    let updated = 0
+    let skipped = 0
+    const errors = []
 
-    var itensByNumero = {}
-    for (var i = 0; i < itensRows.length; i++) {
-      var item = itensRows[i]
-      var num = Number(item.numero || item.pedido_numero)
-      if (!num || !Number.isFinite(num)) continue
-      if (!itensByNumero[num]) itensByNumero[num] = []
-      itensByNumero[num].push(item)
+    const parseNum = (v) => {
+      if (v === undefined || v === null || v === '') return 0
+      const s = String(v)
+        .replace(/[^\d,.-]/g, '')
+        .replace(/\./g, '')
+        .replace(',', '.')
+      const n = parseFloat(s)
+      return Number.isFinite(n) ? n : 0
     }
 
-    var numFields = [
-      'valor_pedido',
-      'entrada_dinheiro',
-      'entrada_pix',
-      'entrada_cartao',
-      'valor_aprazo',
-      'qtd_itens',
-      'frete',
-      'total_mercadorias',
-      'desconto_acrescimo',
-    ]
+    const parseDate = (raw) => {
+      if (!raw && raw !== 0) return ''
+      if (typeof raw === 'number') {
+        const d = new Date((raw - 25569) * 86400 * 1000)
+        return d.toISOString().replace('T', ' ').replace('Z', '000Z')
+      }
+      const s = String(raw).trim()
+      const parts = s.split('/')
+      if (parts.length === 3) {
+        return `${parts[2]}-${parts[1]}-${parts[0]} 12:00:00.000Z`
+      }
+      if (s.match(/^\d{4}-\d{2}-\d{2}/)) return s
+      return ''
+    }
 
-    for (var pi = 0; pi < pedidosRows.length; pi++) {
-      var row = pedidosRows[pi]
-      var numero = Number(row.numero)
-      if (!numero || !Number.isFinite(numero)) {
-        errors.push({ reason: 'numero invalido ou ausente' })
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i]
+      if (
+        !row ||
+        row.length === 0 ||
+        row.every((c) => c === undefined || c === null || String(c).trim() === '')
+      ) {
+        continue
+      }
+      total++
+
+      const get = (idx) =>
+        idx !== -1 && row[idx] !== undefined && row[idx] !== null && row[idx] !== ''
+          ? String(row[idx]).trim()
+          : ''
+
+      const numeroRaw = get(idxPedido)
+      if (!numeroRaw) {
+        skipped++
+        errors.push({ row: i + 1, reason: 'NUMERO ausente' })
+        continue
+      }
+      const numero = parseInt(numeroRaw.replace(/[^\d]/g, ''), 10)
+      if (!numero) {
+        skipped++
+        errors.push({ row: i + 1, reason: 'NUMERO inválido' })
         continue
       }
 
-      var clienteId = null
-      var codigoCliente = Number(row.codigo_cliente)
-      if (codigoCliente && Number.isFinite(codigoCliente)) {
-        try {
-          var cliente = $app.findFirstRecordByFilter('clientes', 'codigo = ?', codigoCliente)
-          clienteId = cliente.id
-        } catch (_) {
-          missingClientes++
-        }
-      }
+      const data = parseDate(idxData !== -1 ? row[idxData] : '')
+      const codigoCliente = parseInt(get(idxCodigoCliente).replace(/[^\d]/g, ''), 10) || 0
+      const vendedor = parseInt(get(idxVendedor).replace(/[^\d]/g, ''), 10) || 0
+      const cp = get(idxCp)
+      const valorPedido = parseNum(get(idxValorPedido))
+      const entradaDinheiro = parseNum(get(idxEntradaDinheiro))
+      const entradaPix = parseNum(get(idxEntradaPix))
+      const entradaCartao = parseNum(get(idxEntradaCartao))
+      const valorAprazo = parseNum(get(idxValorAprazo))
+      const qtdItens = parseInt(get(idxQtdItens).replace(/[^\d]/g, ''), 10) || 0
+      const frete = parseNum(get(idxFrete))
+      const statusRaw = get(idxStatus).toLowerCase()
+      const status = statusRaw.indexOf('cancel') !== -1 ? 'cancelado' : 'normal'
+      const totalMercadorias = parseNum(get(idxTotalMercadorias))
+      const descontoAcrescimo = parseNum(get(idxDescontoAcrescimo))
 
-      var pedido
-      var isNew = false
+      let pedido
+      let isNew = false
       try {
-        pedido = $app.findFirstRecordByFilter('pedidos', 'numero = ?', numero)
+        pedido = $app.findFirstRecordByFilter('pedidos', 'numero = {:n}', { n: numero })
       } catch (_) {
         pedido = new Record(pedidosCol)
         isNew = true
       }
 
       pedido.set('numero', numero)
-      if (row.data) {
-        try {
-          pedido.set('data', row.data)
-        } catch (_) {}
-      }
-      if (codigoCliente && Number.isFinite(codigoCliente)) {
-        pedido.set('codigo_cliente', codigoCliente)
-      }
-      if (clienteId) pedido.set('cliente_id', clienteId)
-      var vendedor = Number(row.vendedor)
-      if (Number.isFinite(vendedor)) pedido.set('vendedor', vendedor)
-      if (row.cp) pedido.set('cp', String(row.cp))
-      for (var nf = 0; nf < numFields.length; nf++) {
-        var f = numFields[nf]
-        if (row[f] !== undefined && row[f] !== null && row[f] !== '') {
-          pedido.set(f, Number(row[f]) || 0)
-        }
-      }
-      if (row.status) pedido.set('status', String(row.status))
+      if (data) pedido.set('data', data)
+      if (codigoCliente) pedido.set('codigo_cliente', codigoCliente)
+      if (vendedor) pedido.set('vendedor', vendedor)
+      pedido.set('cp', cp)
+      pedido.set('valor_pedido', valorPedido)
+      pedido.set('entrada_dinheiro', entradaDinheiro)
+      pedido.set('entrada_pix', entradaPix)
+      pedido.set('entrada_cartao', entradaCartao)
+      pedido.set('valor_aprazo', valorAprazo)
+      pedido.set('qtd_itens', qtdItens)
+      pedido.set('frete', frete)
+      pedido.set('status', status)
+      pedido.set('total_mercadorias', totalMercadorias)
+      pedido.set('desconto_acrescimo', descontoAcrescimo)
 
       try {
         $app.save(pedido)
-        if (isNew) created++
-        else updated++
+      } catch (saveErr) {
+        skipped++
+        errors.push({ row: i + 1, reason: saveErr.message || 'Erro ao salvar pedido' })
+        continue
+      }
 
-        var existingItems = $app.findRecordsByFilter(
+      const pedidoId = pedido.id
+
+      // Delete existing pedido_itens for this pedido (idempotent reimport)
+      try {
+        const existingItens = $app.findRecordsByFilter(
           'pedido_itens',
-          'pedido_id = ?',
-          '',
+          'pedido_id = {:pid}',
+          '-created',
           1000,
           0,
-          pedido.id,
+          { pid: pedidoId },
         )
-        for (var ei = 0; ei < existingItems.length; ei++) {
-          $app.delete(existingItems[ei])
-        }
-
-        var items = itensByNumero[numero] || []
-        for (var ii = 0; ii < items.length; ii++) {
-          var itemRow = items[ii]
-          var produtoId = null
-          var codigoProduto = String(itemRow.codigo_produto || '').trim()
-          if (codigoProduto) {
-            try {
-              var produto = $app.findFirstRecordByFilter('produtos', 'codigo = ?', codigoProduto)
-              produtoId = produto.id
-            } catch (_) {
-              missingProdutos++
-            }
-          }
-
-          var itemRec = new Record(itensCol)
-          itemRec.set('pedido_id', pedido.id)
-          if (codigoProduto) itemRec.set('codigo_produto', codigoProduto)
-          if (produtoId) itemRec.set('produto_id', produtoId)
-          if (itemRow.descricao) itemRec.set('descricao', String(itemRow.descricao))
-          if (itemRow.unidade) itemRec.set('unidade', String(itemRow.unidade))
-          if (itemRow.quantidade !== undefined) {
-            itemRec.set('quantidade', Number(itemRow.quantidade) || 0)
-          }
-          if (itemRow.valor_unitario !== undefined) {
-            itemRec.set('valor_unitario', Number(itemRow.valor_unitario) || 0)
-          }
-          if (itemRow.valor_total !== undefined) {
-            itemRec.set('valor_total', Number(itemRow.valor_total) || 0)
-          }
-
+        for (const item of existingItens) {
           try {
-            $app.save(itemRec)
-            itemsInserted++
-          } catch (saveErr) {
+            $app.delete(item)
+          } catch (_) {}
+        }
+      } catch (_) {}
+
+      // Items provided inline via "itens" array on the row
+      const itensRaw =
+        body.itens && Array.isArray(body.itens) && body.itens[i - 1]
+          ? body.itens[i - 1]
+          : row.__itens || null
+
+      if (itensRaw && Array.isArray(itensRaw)) {
+        for (const item of itensRaw) {
+          try {
+            const itemRecord = new Record(itensCol)
+            itemRecord.set('pedido_id', pedidoId)
+            itemRecord.set('codigo_produto', item.codigo_produto || '')
+            itemRecord.set('descricao', item.descricao || '')
+            itemRecord.set('unidade', item.unidade || '')
+            itemRecord.set('quantidade', parseFloat(item.quantidade) || 0)
+            itemRecord.set('valor_unitario', parseFloat(item.valor_unitario) || 0)
+            itemRecord.set('valor_total', parseFloat(item.valor_total) || 0)
+            $app.save(itemRecord)
+          } catch (itemErr) {
             errors.push({
-              reason: 'item save: ' + (saveErr.message || 'erro'),
+              row: i + 1,
+              reason: 'Erro ao salvar item: ' + (itemErr.message || ''),
             })
           }
         }
-      } catch (saveErr) {
-        errors.push({
-          numero: numero,
-          reason: saveErr.message || 'Erro ao salvar pedido',
-        })
       }
+
+      if (isNew) created++
+      else updated++
     }
 
-    try {
-      var auditRec = new Record(auditCol)
-      auditRec.set('usuario_id', e.auth ? e.auth.id : 'system')
-      auditRec.set('usuario_nome', e.auth ? e.auth.getString('name') : 'System')
-      auditRec.set('acao', 'IMPORT')
-      auditRec.set('tabela', 'pedidos')
-      auditRec.set('registro_id', '')
-      auditRec.set('detalhes', [
-        {
-          campo: 'import',
-          valor_anterior: null,
-          valor_novo: {
-            created: created,
-            updated: updated,
-            itemsInserted: itemsInserted,
-            missingClientes: missingClientes,
-            missingProdutos: missingProdutos,
-            errorsCount: errors.length,
-          },
-        },
-      ])
-      $app.saveNoValidate(auditRec)
-    } catch (_) {}
-
-    return e.json(200, {
-      created: created,
-      updated: updated,
-      itemsInserted: itemsInserted,
-      missingClientes: missingClientes,
-      missingProdutos: missingProdutos,
-      errors: errors,
-    })
+    return e.json(200, { total, created, updated, skipped, errors })
   },
   $apis.requireAuth(),
 )
