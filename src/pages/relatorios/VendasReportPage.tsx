@@ -1,7 +1,13 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { Navigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/use-auth'
+import { useVendedorUsers } from '@/hooks/use-vendedor-users'
+import { useVendedores } from '@/hooks/use-vendedores'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -9,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -18,330 +23,218 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Input } from '@/components/ui/input'
-import { getContatosVendas } from '@/services/contatos'
-import { format } from 'date-fns'
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts'
-
-const COLORS = ['#10b981', '#f43f5e', '#f59e0b', '#3b82f6', '#8b5cf6']
+import { ShoppingCart, DollarSign, Package, TrendingUp, Printer, Loader2 } from 'lucide-react'
+import { getVendasResumo, type VendasResumo } from '@/services/vendas'
 
 export default function VendasReportPage() {
-  const { user } = useAuth()
-  const [reportType, setReportType] = useState('resumo')
-  const [dateRange, setDateRange] = useState('30')
-  const [customStart, setCustomStart] = useState('')
-  const [customEnd, setCustomEnd] = useState('')
-  const [data, setData] = useState<any[]>([])
+  const { user, loading: authLoading } = useAuth()
+  const { vendedorUsers } = useVendedorUsers()
+  const { getVendedorName } = useVendedores()
+  const [dateStart, setDateStart] = useState('')
+  const [dateEnd, setDateEnd] = useState('')
+  const [vendedor, setVendedor] = useState('all')
+  const [data, setData] = useState<VendasResumo | null>(null)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    fetchData()
-  }, [dateRange, customStart, customEnd])
-
-  const fetchData = async () => {
-    if (dateRange === 'custom' && (!customStart || !customEnd)) return
-
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      let start = new Date()
-      let end = new Date()
-
-      if (dateRange === '7') {
-        start.setDate(end.getDate() - 7)
-      } else if (dateRange === '30') {
-        start.setDate(end.getDate() - 30)
-      } else if (dateRange === 'custom') {
-        start = new Date(customStart)
-        end = new Date(customEnd)
-      }
-
-      const records = await getContatosVendas(start.toISOString(), end.toISOString())
-      setData(records)
+      const res = await getVendasResumo({
+        dateStart: dateStart || undefined,
+        dateEnd: dateEnd || undefined,
+        vendedor: vendedor !== 'all' ? vendedor : undefined,
+      })
+      setData(res)
     } catch (e) {
       toast.error('Erro ao carregar dados do relatório.')
     } finally {
       setLoading(false)
     }
+  }, [dateStart, dateEnd, vendedor])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  if (authLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  const stats = useMemo(() => {
-    const totalVisitas = data.length
-    const pedidos = data.filter((d) => d.teve_pedido)
-    const totalPedidos = pedidos.length
-    const taxaConversao = totalVisitas > 0 ? (totalPedidos / totalVisitas) * 100 : 0
-    const valorTotal = pedidos.reduce((acc, curr) => acc + (curr.valor_pedido || 0), 0)
-
-    return { totalVisitas, totalPedidos, taxaConversao, valorTotal }
-  }, [data])
-
-  const pieData = useMemo(() => {
-    const resultCount: Record<string, number> = {}
-    data.forEach((d) => {
-      resultCount[d.resultado] = (resultCount[d.resultado] || 0) + 1
-    })
-    return Object.entries(resultCount).map(([name, value]) => ({ name, value }))
-  }, [data])
-
-  const hourlyData = useMemo(() => {
-    const hours = Array.from({ length: 24 }).map((_, i) => ({
-      hour: `${i}h`,
-      Visitas: 0,
-      Pedidos: 0,
-    }))
-    data.forEach((d) => {
-      const h = new Date(d.data_contato).getHours()
-      hours[h].Visitas += 1
-      if (d.teve_pedido) hours[h].Pedidos += 1
-    })
-    return hours.filter((h) => h.Visitas > 0 || h.Pedidos > 0)
-  }, [data])
-
-  const handlePrint = () => {
-    window.print()
+  if (user && user.role !== 'admin') {
+    return <Navigate to="/dashboard" replace />
   }
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
+
+  const handlePrint = () => window.print()
 
   return (
     <div className="p-6 max-w-6xl mx-auto w-full space-y-6 animate-fade-in-up">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
-        <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Relatório de Vendas</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-[#1A3A52]">Relatório de Vendas</h1>
+          <p className="text-muted-foreground mt-1">
+            Análise de vendas baseada em pedidos importados
+          </p>
+        </div>
         <Button
           onClick={handlePrint}
           variant="outline"
-          className="bg-[#4A90E2] text-white hover:bg-[#357ABD] border-none transition-colors"
+          className="bg-[#4A90E2] text-white hover:bg-[#357ABD] border-none"
         >
-          Gerar PDF
+          <Printer className="mr-2 h-4 w-4" /> Gerar PDF
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 print:hidden bg-white dark:bg-slate-900 p-4 rounded-lg shadow-sm border">
-        <div className="space-y-1 w-full md:w-48">
-          <label className="text-sm font-medium">Tipo de Relatório</label>
-          <Select value={reportType} onValueChange={setReportType}>
+      <div className="flex flex-col md:flex-row gap-4 items-end print:hidden bg-card p-4 rounded-lg border shadow-sm">
+        <div className="space-y-1 flex-1 w-full md:w-auto">
+          <Label>Data Inicial</Label>
+          <Input type="date" value={dateStart} onChange={(e) => setDateStart(e.target.value)} />
+        </div>
+        <div className="space-y-1 flex-1 w-full md:w-auto">
+          <Label>Data Final</Label>
+          <Input type="date" value={dateEnd} onChange={(e) => setDateEnd(e.target.value)} />
+        </div>
+        <div className="space-y-1 flex-1 w-full md:w-auto min-w-[200px]">
+          <Label>Vendedor</Label>
+          <Select value={vendedor} onValueChange={setVendedor}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Todos" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="basico">Básico</SelectItem>
-              <SelectItem value="resumo">Resumo</SelectItem>
-              <SelectItem value="detalhado">Detalhado</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
+              {vendedorUsers
+                .filter((u) => u.codigo)
+                .map((u) => (
+                  <SelectItem key={u.id} value={String(u.codigo)}>
+                    {u.name || u.email}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
-
-        <div className="space-y-1 w-full md:w-48">
-          <label className="text-sm font-medium">Período</label>
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="custom">Customizado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {dateRange === 'custom' && (
-          <>
-            <div className="space-y-1 w-full md:w-40 animate-fade-in-up">
-              <label className="text-sm font-medium">Data Inicial</label>
-              <Input
-                type="date"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1 w-full md:w-40 animate-fade-in-up">
-              <label className="text-sm font-medium">Data Final</label>
-              <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} />
-            </div>
-          </>
-        )}
+        <Button onClick={fetchData} disabled={loading} className="w-full md:w-auto min-h-[44px]">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          Filtrar
+        </Button>
       </div>
 
-      {loading ? (
+      {loading && !data ? (
         <div className="h-64 flex items-center justify-center">
-          <div className="animate-pulse flex space-x-4">
-            <div className="h-12 w-12 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-            <div className="space-y-3">
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-36"></div>
-              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24"></div>
-            </div>
-          </div>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : data.length === 0 ? (
-        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-lg border">
-          <p className="text-slate-500">Nenhum registro encontrado no período selecionado.</p>
+      ) : data ? (
+        <div className="space-y-6 print:space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total de Pedidos
+                </CardTitle>
+                <ShoppingCart className="h-4 w-4 text-[#4A90E2]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-[#1A3A52]">{data.totalPedidos}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Valor Total Vendido
+                </CardTitle>
+                <DollarSign className="h-4 w-4 text-emerald-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-emerald-600">
+                  {formatCurrency(data.valorTotal)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Itens Vendidos
+                </CardTitle>
+                <Package className="h-4 w-4 text-amber-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-[#1A3A52]">
+                  {Math.round(data.quantidadeItens)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Ticket Médio
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-[#1A3A52]">
+                  {formatCurrency(data.ticketMedio)}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {data.vendedorBreakdown && data.vendedorBreakdown.length > 0 && (
+            <Card className="print:shadow-none print:border-none">
+              <CardHeader className="print:hidden">
+                <CardTitle className="text-[#1A3A52]">Detalhamento por Vendedor</CardTitle>
+                <CardDescription>
+                  Performance de vendas por vendedor no período selecionado
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vendedor</TableHead>
+                        <TableHead className="text-center">Total de Pedidos</TableHead>
+                        <TableHead className="text-right">Valor Total</TableHead>
+                        <TableHead className="text-right">Ticket Médio</TableHead>
+                        <TableHead className="text-right">% do Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.vendedorBreakdown.map((v, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium text-[#1A3A52]">
+                            {getVendedorName(v.vendedor)}
+                          </TableCell>
+                          <TableCell className="text-center">{v.totalPedidos}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(v.valorTotal)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {v.totalPedidos > 0
+                              ? formatCurrency(v.valorTotal / v.totalPedidos)
+                              : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {data.valorTotal > 0
+                              ? ((v.valorTotal / data.valorTotal) * 100).toFixed(1) + '%'
+                              : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       ) : (
-        <div className="space-y-6 print:space-y-4 print:text-black">
-          {(reportType === 'resumo' || reportType === 'detalhado') && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-500">
-                    Total de Visitas
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalVisitas}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-500">
-                    Total de Pedidos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalPedidos}</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-500">
-                    Taxa de Conversão
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.taxaConversao.toFixed(1)}%</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-500">
-                    Valor Total Vendido
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-emerald-600">
-                    R$ {stats.valorTotal.toFixed(2)}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {reportType === 'detalhado' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:break-inside-avoid">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Resultados das Visitas</CardTitle>
-                </CardHeader>
-                <CardContent className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        label
-                      >
-                        {pieData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Atividades por Hora</CardTitle>
-                </CardHeader>
-                <CardContent className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={hourlyData}>
-                      <XAxis dataKey="hour" />
-                      <YAxis />
-                      <RechartsTooltip />
-                      <Legend />
-                      <Bar dataKey="Visitas" fill="#3b82f6" />
-                      <Bar dataKey="Pedidos" fill="#10b981" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          <Card className="print:shadow-none print:border-none">
-            <CardHeader className="print:hidden">
-              <CardTitle>Registros Detalhados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Data/Hora</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Resultado</TableHead>
-                      <TableHead>Pedido</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                      {reportType !== 'basico' && <TableHead>Status</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.map((d) => (
-                      <TableRow
-                        key={d.id}
-                        className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800"
-                      >
-                        <TableCell className="whitespace-nowrap">
-                          {format(new Date(d.data_contato), 'dd/MM/yyyy HH:mm')}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {d.expand?.cliente_id?.descricao || 'Desconhecido'}
-                        </TableCell>
-                        <TableCell>{d.resultado}</TableCell>
-                        <TableCell>
-                          {d.teve_pedido ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                              Sim
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                              Não
-                            </span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {d.teve_pedido ? `R$ ${d.valor_pedido.toFixed(2)}` : '-'}
-                        </TableCell>
-                        {reportType !== 'basico' && (
-                          <TableCell>
-                            {d.status_aprovacao === 'aprovado' ? (
-                              <span className="text-emerald-600 text-xs font-medium">Aprovado</span>
-                            ) : (
-                              <span className="text-amber-600 text-xs font-medium">Pendente</span>
-                            )}
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="text-center py-12 bg-card rounded-lg border">
+          <p className="text-muted-foreground">Nenhum dado encontrado.</p>
         </div>
       )}
     </div>

@@ -16,7 +16,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { cn } from '@/lib/utils'
-import pb from '@/lib/pocketbase/client'
+import { useVendedorUsers } from '@/hooks/use-vendedor-users'
 
 import { ClientesTab } from './tabs/ClientesTab'
 import { LeadsTab } from './tabs/LeadsTab'
@@ -32,23 +32,17 @@ export default function RelatoriosPage() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [startOpen, setStartOpen] = useState(false)
   const [endOpen, setEndOpen] = useState(false)
-  const [usersList, setUsersList] = useState<any[]>([])
+  const { vendedorUsers: usersList } = useVendedorUsers()
 
   const [usersMap, setUsersMap] = useState<Record<number, string>>({})
 
   useEffect(() => {
-    pb.collection('users')
-      .getFullList({ filter: "role='vendedor' || role='paulo' || role='admin'" })
-      .then((res) => {
-        setUsersList(res)
-        const map: Record<number, string> = {}
-        res.forEach((u) => {
-          if (u.codigo) map[u.codigo] = formatUserLabel(u, res)
-        })
-        setUsersMap(map)
-      })
-      .catch(() => {})
-  }, [])
+    const map: Record<number, string> = {}
+    usersList.forEach((u) => {
+      if (u.codigo) map[u.codigo] = formatUserLabel(u, usersList)
+    })
+    setUsersMap(map)
+  }, [usersList])
 
   if (user?.role === 'vendedor') {
     return <Navigate to="/dashboard" replace />

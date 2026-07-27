@@ -56,6 +56,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/use-auth'
+import { useVendedorUsers } from '@/hooks/use-vendedor-users'
 import { canExport, canUseFilters } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 
@@ -76,18 +77,9 @@ export default function ContatoListPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sortField, setSortField] = useState('-data_contato')
-  const [vendedores, setVendedores] = useState<RecordModel[]>([])
+  const { vendedorUsers: vendedores } = useVendedorUsers()
 
   const showFilters = canUseFilters(user?.role, 'contatos', user?.email)
-
-  useEffect(() => {
-    import('@/lib/pocketbase/client').then(({ default: pb }) => {
-      pb.collection('users')
-        .getFullList({ filter: "role = 'vendedor' || role = 'admin'" })
-        .then(setVendedores)
-        .catch(console.error)
-    })
-  }, [])
 
   // Dialogs
   const [formOpen, setFormOpen] = useState(false)

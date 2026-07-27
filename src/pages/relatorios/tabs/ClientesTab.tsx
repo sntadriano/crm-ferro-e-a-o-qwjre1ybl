@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Users, UserCheck, UserX } from 'lucide-react'
+import { Users, UserCheck, UserX, Wand2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
 import { useVendedores } from '@/hooks/use-vendedores'
 import { canExport } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
+import { PopularVendedorDialog } from '@/components/clientes/PopularVendedorDialog'
 import { format } from 'date-fns'
 import {
   Table,
@@ -43,6 +45,8 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
   const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [popularOpen, setPopularOpen] = useState(false)
+  const [localRefresh, setLocalRefresh] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -69,7 +73,7 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
     return () => {
       isMounted = false
     }
-  }, [filters, refreshKey])
+  }, [filters, refreshKey, localRefresh])
 
   const total = data.length
 
@@ -112,7 +116,12 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
       onRetry={() => {}}
     >
       {canExport(user?.role, 'clientes', user?.email) && data.length > 0 && (
-        <div className="flex justify-end mb-4">
+        <div className="flex justify-end mb-4 gap-2">
+          {user?.role === 'admin' && (
+            <Button variant="outline" onClick={() => setPopularOpen(true)} className="min-h-[40px]">
+              <Wand2 className="mr-2 h-4 w-4" /> Popular Vendedor
+            </Button>
+          )}
           <ExportDropdown
             data={data.map((d) => ({
               ...d,
@@ -246,6 +255,12 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
           </Table>
         </CardContent>
       </Card>
+
+      <PopularVendedorDialog
+        open={popularOpen}
+        onOpenChange={setPopularOpen}
+        onApplied={() => setLocalRefresh((r) => r + 1)}
+      />
     </StateDisplay>
   )
 }
