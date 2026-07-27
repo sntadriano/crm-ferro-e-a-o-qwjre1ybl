@@ -5,6 +5,7 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { useAuth } from '@/hooks/use-auth'
 import { canExport, canUseFilters } from '@/lib/permissions'
 import pb from '@/lib/pocketbase/client'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -156,7 +157,7 @@ export default function LeadListPage() {
         await deleteLead(id)
         toast.success('Lead excluído com sucesso')
       } catch (err) {
-        toast.error('Erro ao excluir lead')
+        toast.error(getErrorMessage(err))
       }
     }
   }
