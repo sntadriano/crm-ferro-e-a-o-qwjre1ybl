@@ -26,6 +26,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useAuth } from '@/hooks/use-auth'
+import { isRestrictedFromClientes } from '@/lib/permissions'
 import { cn } from '@/lib/utils'
 
 const items = [
@@ -74,6 +75,7 @@ export function AppSidebar() {
   const { setOpenMobile, isMobile } = useSidebar()
 
   const userName = user?.name || user?.email || 'Usuário'
+  const hiddenByClientesModule = isRestrictedFromClientes(user?.email)
 
   return (
     <Sidebar variant="inset" className="border-r-0">
@@ -93,6 +95,11 @@ export function AppSidebar() {
               {items.map((item) => {
                 let isAllowed = true
                 if (
+                  hiddenByClientesModule &&
+                  (item.url === '/clientes' || item.url === '/relatorios/vendas')
+                ) {
+                  isAllowed = false
+                } else if (
                   ['julia', 'paulo', 'gerente_producao'].includes(user?.role) ||
                   user?.email === 'soaresclaudio@gmail.com'
                 ) {

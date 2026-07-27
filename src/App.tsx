@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { CustomerProvider } from '@/hooks/use-customers'
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
 import { VendedorProvider } from '@/hooks/use-vendedores'
+import { isRestrictedFromClientes } from '@/lib/permissions'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import Layout from './components/Layout'
 
@@ -68,6 +69,14 @@ const RestrictedLayout = () => {
   return <Outlet />
 }
 
+const ClientesModuleGuard = () => {
+  const { user } = useAuth()
+  if (isRestrictedFromClientes(user?.email)) {
+    return <Navigate to="/" replace />
+  }
+  return <Outlet />
+}
+
 const App = () => (
   <ErrorBoundary>
     <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
@@ -91,16 +100,18 @@ const App = () => (
 
                     <Route element={<RestrictedLayout />}>
                       <Route path="/dashboard" element={<DashboardPage />} />
-                      <Route path="/clientes" element={<CustomerListPage />} />
-                      <Route path="/clientes/novo" element={<CustomerFormPage />} />
-                      <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+                      <Route element={<ClientesModuleGuard />}>
+                        <Route path="/clientes" element={<CustomerListPage />} />
+                        <Route path="/clientes/novo" element={<CustomerFormPage />} />
+                        <Route path="/clientes/:id" element={<CustomerDetailsPage />} />
+                        <Route path="/relatorios/vendas" element={<VendasReportPage />} />
+                      </Route>
                       <Route path="/leads" element={<LeadListPage />} />
                       <Route path="/contatos" element={<ContatoListPage />} />
                       <Route path="/contatos/novo" element={<ContatoFormPage />} />
                       <Route path="/validacao" element={<ValidacaoPage />} />
                       <Route path="/admin" element={<AdminPage />} />
                       <Route path="/relatorios" element={<RelatoriosPage />} />
-                      <Route path="/relatorios/vendas" element={<VendasReportPage />} />
                       <Route path="/auditoria" element={<AuditPage />} />
                       <Route path="/pedidos" element={<PedidosPage />} />
                     </Route>
