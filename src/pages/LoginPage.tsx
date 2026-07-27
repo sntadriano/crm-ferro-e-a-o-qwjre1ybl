@@ -68,7 +68,6 @@ const sanitizePassword = (raw: string): string =>
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
     .normalize('NFKC')
     .trim()
-    .toLowerCase()
 
 export default function LoginPage() {
   const { signIn, requestPasswordReset } = useAuth()
