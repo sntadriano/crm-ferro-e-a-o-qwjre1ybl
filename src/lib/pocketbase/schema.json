@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-26T18:30:49.876Z",
+  "generatedAt": "2026-07-26T19:16:07.276Z",
   "collections": [
     {
       "name": "users",
@@ -954,6 +954,266 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_vendedores_codigo ON vendedores (codigo)"]
+    },
+    {
+      "name": "produtos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin'",
+        "view": "@request.auth.role = 'admin'",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "codigo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "unidade",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "custo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_produtos_codigo ON produtos (codigo)"]
+    },
+    {
+      "name": "pedidos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin'",
+        "view": "@request.auth.role = 'admin'",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "numero",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "data",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "codigo_cliente",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cliente_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "clientes"
+        },
+        {
+          "name": "vendedor",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "cp",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_pedido",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "entrada_dinheiro",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "entrada_pix",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "entrada_cartao",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_aprazo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "qtd_itens",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "frete",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["normal", "cancelado"]
+        },
+        {
+          "name": "total_mercadorias",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "desconto_acrescimo",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_pedidos_numero ON pedidos (numero)",
+        "CREATE INDEX idx_pedidos_data ON pedidos (data)",
+        "CREATE INDEX idx_pedidos_vendedor ON pedidos (vendedor)"
+      ]
+    },
+    {
+      "name": "pedido_itens",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.role = 'admin'",
+        "view": "@request.auth.role = 'admin'",
+        "create": "@request.auth.role = 'admin'",
+        "update": "@request.auth.role = 'admin'",
+        "delete": "@request.auth.role = 'admin'"
+      },
+      "fields": [
+        {
+          "name": "pedido_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "pedidos"
+        },
+        {
+          "name": "codigo_produto",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "produto_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "produtos"
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "unidade",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "quantidade",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_unitario",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "valor_total",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_pedido_itens_pedido_id ON pedido_itens (pedido_id)"]
     }
   ]
 }

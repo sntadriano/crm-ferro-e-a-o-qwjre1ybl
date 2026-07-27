@@ -24,6 +24,7 @@ const ContatoFormPage = lazy(() => import('./pages/contatos/ContatoFormPage'))
 const ValidacaoPage = lazy(() => import('./pages/contatos/ValidacaoPage'))
 const VendasReportPage = lazy(() => import('./pages/relatorios/VendasReportPage'))
 const ProducaoModulePage = lazy(() => import('./pages/producao/ProducaoModulePage'))
+const PedidosPage = lazy(() => import('./pages/admin/PedidosPage'))
 
 const LoadingFallback = () => (
   <div className="flex h-screen w-screen items-center justify-center bg-background">
@@ -101,6 +102,7 @@ const App = () => (
                       <Route path="/relatorios" element={<RelatoriosPage />} />
                       <Route path="/relatorios/vendas" element={<VendasReportPage />} />
                       <Route path="/auditoria" element={<AuditPage />} />
+                      <Route path="/pedidos" element={<PedidosPage />} />
                     </Route>
 
                     <Route path="/producao" element={<ProducaoModulePage />} />

@@ -15,6 +15,7 @@ import {
   BellRing,
 } from 'lucide-react'
 import { ContatoFormDialog } from '@/components/contatos/ContatoFormDialog'
+import { VendasPorVendedor } from '@/components/reports/VendasPorVendedor'
 import { ACTIVE_CLIENT_FILTER, INACTIVE_CLIENT_FILTER } from '@/lib/client-metrics'
 import { useCustomers } from '@/hooks/use-customers'
 import { formatClientDisplayName } from '@/lib/entity-labels'
@@ -551,6 +552,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {user?.role === 'admin' && <VendasPorVendedor />}
 
       <ContatoFormDialog
         open={contatoOpen}
