@@ -23,8 +23,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ShoppingCart, DollarSign, Package, TrendingUp, Printer, Loader2 } from 'lucide-react'
+import {
+  ShoppingCart,
+  DollarSign,
+  Package,
+  TrendingUp,
+  Printer,
+  Loader2,
+  Users,
+} from 'lucide-react'
 import { getVendasResumo, type VendasResumo } from '@/services/vendas'
+import { cn } from '@/lib/utils'
 
 export default function VendasReportPage() {
   const { user, loading: authLoading } = useAuth()
@@ -183,12 +192,15 @@ export default function VendasReportPage() {
             </Card>
           </div>
 
-          {data.vendedorBreakdown && data.vendedorBreakdown.length > 0 && (
+          {data.usuarioBreakdown && data.usuarioBreakdown.length > 0 && (
             <Card className="print:shadow-none print:border-none">
               <CardHeader className="print:hidden">
-                <CardTitle className="text-[#1A3A52]">Detalhamento por Vendedor</CardTitle>
+                <CardTitle className="text-[#1A3A52] flex items-center gap-2">
+                  <Users className="h-5 w-5" /> Total por Vendedor
+                </CardTitle>
                 <CardDescription>
-                  Performance de vendas por vendedor no período selecionado
+                  Consolidação por usuário somando todos os códigos de vendedor mapeados
+                  (codigos_vendedor)
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -196,8 +208,60 @@ export default function VendasReportPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Nome do Vendedor</TableHead>
+                        <TableHead className="text-center">Códigos</TableHead>
+                        <TableHead className="text-center">Total de Pedidos</TableHead>
+                        <TableHead className="text-right">Valor Total</TableHead>
+                        <TableHead className="text-center">Itens</TableHead>
+                        <TableHead className="text-right">Ticket Médio</TableHead>
+                        <TableHead className="text-right">% do Total Geral</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.usuarioBreakdown.map((u) => (
+                        <TableRow key={u.userId}>
+                          <TableCell className="font-medium text-[#1A3A52]">{u.nome}</TableCell>
+                          <TableCell className="text-center text-xs text-muted-foreground">
+                            {u.codigos.join(', ')}
+                          </TableCell>
+                          <TableCell className="text-center">{u.totalPedidos}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {formatCurrency(u.valorTotal)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {Math.round(u.quantidadeItens)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(u.ticketMedio)}
+                          </TableCell>
+                          <TableCell className="text-right">{u.percentual.toFixed(1)}%</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {data.vendedorBreakdown && data.vendedorBreakdown.length > 0 && (
+            <Card className="print:shadow-none print:border-none">
+              <CardHeader className="print:hidden">
+                <CardTitle className="text-[#1A3A52]">Detalhamento por Vendedor</CardTitle>
+                <CardDescription>
+                  Performance de vendas por código de vendedor no período selecionado. Códigos não
+                  mapeados a nenhum usuário aparecem como &quot;(não mapeado)&quot;.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Código</TableHead>
                         <TableHead>Vendedor</TableHead>
                         <TableHead className="text-center">Total de Pedidos</TableHead>
+                        <TableHead className="text-center">Itens</TableHead>
                         <TableHead className="text-right">Valor Total</TableHead>
                         <TableHead className="text-right">Ticket Médio</TableHead>
                         <TableHead className="text-right">% do Total</TableHead>
@@ -205,18 +269,25 @@ export default function VendasReportPage() {
                     </TableHeader>
                     <TableBody>
                       {data.vendedorBreakdown.map((v, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="font-medium text-[#1A3A52]">
-                            {getVendedorName(v.vendedor)}
+                        <TableRow key={i} className={cn(!v.mapeado && 'bg-amber-50')}>
+                          <TableCell className="font-mono text-[#1A3A52]">{v.vendedor}</TableCell>
+                          <TableCell
+                            className={cn(
+                              'font-medium',
+                              v.mapeado ? 'text-[#1A3A52]' : 'text-amber-700',
+                            )}
+                          >
+                            {v.mapeado ? getVendedorName(v.vendedor) : v.label}
                           </TableCell>
                           <TableCell className="text-center">{v.totalPedidos}</TableCell>
+                          <TableCell className="text-center">
+                            {Math.round(v.quantidadeItens)}
+                          </TableCell>
                           <TableCell className="text-right font-medium">
                             {formatCurrency(v.valorTotal)}
                           </TableCell>
                           <TableCell className="text-right">
-                            {v.totalPedidos > 0
-                              ? formatCurrency(v.valorTotal / v.totalPedidos)
-                              : '-'}
+                            {formatCurrency(v.ticketMedio)}
                           </TableCell>
                           <TableCell className="text-right">
                             {data.valorTotal > 0
