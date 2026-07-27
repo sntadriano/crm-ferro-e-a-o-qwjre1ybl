@@ -18,6 +18,30 @@ routerAdd(
     const pedidosCol = $app.findCollectionByNameOrId('pedidos')
     const itensCol = $app.findCollectionByNameOrId('pedido_itens')
 
+    const clientesMap = {}
+    try {
+      const allClientes = $app.findRecordsByFilter('clientes', 'id != ""', '', 0, 0)
+      for (const c of allClientes) {
+        const codigo = c.getInt('codigo')
+        if (codigo) {
+          clientesMap[codigo] = {
+            id: c.id,
+            descricao: c.getString('descricao'),
+            fantasia: c.getString('fantasia'),
+          }
+        }
+      }
+    } catch (_) {}
+
+    const produtosMap = {}
+    try {
+      const allProdutos = $app.findRecordsByFilter('produtos', 'id != ""', '', 0, 0)
+      for (const p of allProdutos) {
+        const codigo = p.getString('codigo')
+        if (codigo) produtosMap[codigo] = p.id
+      }
+    } catch (_) {}
+
     const itensByNumero = {}
     for (const item of itens) {
       if (item === null || typeof item !== 'object') continue
@@ -99,6 +123,21 @@ routerAdd(
       }
       if (p.cliente_id !== undefined && p.cliente_id !== null && p.cliente_id !== '') {
         pedido.set('cliente_id', p.cliente_id)
+      } else {
+        const codigoCliente = parseIntSafe(p.codigo_cliente)
+        const clienteMatch = codigoCliente ? clientesMap[codigoCliente] : null
+        if (clienteMatch) {
+          pedido.set('cliente_id', clienteMatch.id)
+          const nome = clienteMatch.descricao || clienteMatch.fantasia || ''
+          if (nome) pedido.set('cliente_nome', nome)
+        } else if (p.cliente_nome !== undefined && p.cliente_nome !== null) {
+          pedido.set('cliente_nome', String(p.cliente_nome || ''))
+        } else {
+          pedido.set('cliente_nome', '')
+        }
+      }
+      if (p.cliente_nome !== undefined && p.cliente_nome !== null) {
+        pedido.set('cliente_nome', String(p.cliente_nome || ''))
       }
       if (p.vendedor !== undefined) {
         pedido.set('vendedor', parseIntSafe(p.vendedor))
@@ -173,6 +212,17 @@ routerAdd(
           const itemRecord = new Record(itensCol)
           itemRecord.set('pedido_id', pedidoId)
           itemRecord.set('codigo_produto', item.codigo_produto || '')
+
+          if (item.produto_id !== undefined && item.produto_id !== null && item.produto_id !== '') {
+            itemRecord.set('produto_id', item.produto_id)
+          } else {
+            const codigoProduto = item.codigo_produto ? String(item.codigo_produto) : ''
+            const produtoMatch = codigoProduto ? produtosMap[codigoProduto] : null
+            if (produtoMatch) {
+              itemRecord.set('produto_id', produtoMatch)
+            }
+          }
+
           itemRecord.set('descricao', item.descricao || '')
           itemRecord.set('unidade', item.unidade || '')
           itemRecord.set('quantidade', parseNum(item.quantidade))

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T10:43:10.054Z",
+  "generatedAt": "2026-07-27T12:11:58.556Z",
   "collections": [
     {
       "name": "users",
@@ -1129,6 +1129,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "cliente_nome",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [

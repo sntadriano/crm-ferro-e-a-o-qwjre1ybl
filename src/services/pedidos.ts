@@ -6,6 +6,7 @@ export interface PedidoRecord extends RecordModel {
   data?: string
   codigo_cliente?: number
   cliente_id?: string
+  cliente_nome?: string
   vendedor?: number
   cp?: string
   valor_pedido?: number
@@ -35,6 +36,18 @@ export interface PedidoFilters {
   dateStart?: string
   dateEnd?: string
   vendedor?: string
+}
+
+export interface BackfillUnmatchedCode {
+  codigo: string
+  count: number
+}
+
+export interface BackfillReport {
+  pedidos: { total: number; resolved: number; stillEmpty: number }
+  itens: { total: number; resolved: number; stillEmpty: number }
+  unmatchedCodigoCliente: BackfillUnmatchedCode[]
+  unmatchedCodigoProduto: BackfillUnmatchedCode[]
 }
 
 const buildFilter = (filters?: PedidoFilters): string => {
@@ -76,6 +89,13 @@ export const importPedidos = async (pedidos: any[], itens: any[]) => {
   return pb.send('/backend/v1/pedidos/import', {
     method: 'POST',
     body: JSON.stringify({ pedidos, itens }),
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+export const backfillPedidosRelations = async (): Promise<BackfillReport> => {
+  return pb.send('/backend/v1/pedidos/backfill-relations', {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
   })
 }

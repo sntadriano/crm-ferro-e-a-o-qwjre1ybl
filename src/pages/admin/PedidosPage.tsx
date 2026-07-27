@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Upload, Search } from 'lucide-react'
+import { Upload, Search, Link2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +29,8 @@ import { getPedidos, type PedidoRecord } from '@/services/pedidos'
 import { getAllProdutos, type ProdutoRecord } from '@/services/produtos'
 import { PedidosImportDialog } from '@/components/pedidos/PedidosImportDialog'
 import { ProdutosImportDialog } from '@/components/pedidos/ProdutosImportDialog'
+import { BackfillReportDialog } from '@/components/pedidos/BackfillReportDialog'
+import { backfillPedidosRelations, type BackfillReport } from '@/services/pedidos'
 
 export default function PedidosPage() {
   const { user } = useAuth()
@@ -41,7 +43,24 @@ export default function PedidosPage() {
   const [loading, setLoading] = useState(true)
   const [importOpen, setImportOpen] = useState(false)
   const [prodImportOpen, setProdImportOpen] = useState(false)
+  const [backfillOpen, setBackfillOpen] = useState(false)
+  const [backfillLoading, setBackfillLoading] = useState(false)
+  const [backfillReport, setBackfillReport] = useState<BackfillReport | null>(null)
   const [activeTab, setActiveTab] = useState('pedidos')
+
+  const handleBackfill = async () => {
+    setBackfillLoading(true)
+    setBackfillOpen(true)
+    try {
+      const report = await backfillPedidosRelations()
+      setBackfillReport(report)
+      await loadData()
+    } catch (e) {
+      console.error('Backfill failed', e)
+    } finally {
+      setBackfillLoading(false)
+    }
+  }
 
   const loadData = async () => {
     setLoading(true)
@@ -115,6 +134,9 @@ export default function PedidosPage() {
             <Button onClick={() => setImportOpen(true)}>
               <Upload className="mr-2 h-4 w-4" /> Importar Pedidos
             </Button>
+            <Button variant="outline" onClick={handleBackfill}>
+              <Link2 className="mr-2 h-4 w-4" /> Corrigir Relações
+            </Button>
           </div>
 
           <Card>
@@ -152,7 +174,10 @@ export default function PedidosPage() {
                         </TableCell>
                         <TableCell>{getVendedorName(p.vendedor)}</TableCell>
                         <TableCell>
-                          {(p as any).expand?.cliente_id?.descricao || p.codigo_cliente || '-'}
+                          {(p as any).expand?.cliente_id?.descricao ||
+                            (p as any).expand?.cliente_id?.fantasia ||
+                            p.cliente_nome ||
+                            (p.codigo_cliente ? String(p.codigo_cliente) : '-')}
                         </TableCell>
                         <TableCell className="text-right">
                           {new Intl.NumberFormat('pt-BR', {
@@ -266,6 +291,12 @@ export default function PedidosPage() {
         open={prodImportOpen}
         onOpenChange={setProdImportOpen}
         onSuccess={loadData}
+      />
+      <BackfillReportDialog
+        open={backfillOpen}
+        onOpenChange={setBackfillOpen}
+        report={backfillReport}
+        loading={backfillLoading}
       />
     </div>
   )
