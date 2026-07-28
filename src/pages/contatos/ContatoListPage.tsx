@@ -127,7 +127,17 @@ export default function ContatoListPage() {
     }, 300)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [page, search, tipoFilter, vendedorFilter, resultadoFilter, dateFrom, dateTo, sortField, possivelClienteFilter])
+  }, [
+    page,
+    search,
+    tipoFilter,
+    vendedorFilter,
+    resultadoFilter,
+    dateFrom,
+    dateTo,
+    sortField,
+    possivelClienteFilter,
+  ])
 
   useRealtime('contatos', () => loadData())
 
@@ -579,12 +589,15 @@ export default function ContatoListPage() {
                   <TableHead
                     className="text-white font-semibold cursor-pointer select-none"
                     onClick={() =>
-                      setSortField(sortField === 'possivel_cliente' ? '-possivel_cliente' : 'possivel_cliente')
+                      setSortField(
+                        sortField === 'possivel_cliente' ? '-possivel_cliente' : 'possivel_cliente',
+                      )
                     }
                   >
                     Possível Cliente
                   </TableHead>
-                  <TableHead className="text-white font-semibold">Usuário</TableHead>                  <TableHead
+                  <TableHead className="text-white font-semibold">Usuário</TableHead>{' '}
+                  <TableHead
                     className="text-white font-semibold cursor-pointer select-none"
                     onClick={() => setSortField(sortField === 'tipo' ? '-tipo' : 'tipo')}
                   >
@@ -640,9 +653,6 @@ export default function ContatoListPage() {
                     />
                   ))
                 )}
-              </TableBody>
-            </Table>
-          </div>
               </TableBody>
             </Table>
           </div>
