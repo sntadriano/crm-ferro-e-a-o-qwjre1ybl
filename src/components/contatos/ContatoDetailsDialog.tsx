@@ -12,6 +12,7 @@ import {
   Trash2,
   Edit2,
   Link as LinkIcon,
+  Star,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -121,6 +122,19 @@ export function ContatoDetailsDialog({
                 <p className="font-medium">
                   {contato.teve_pedido ? (
                     <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                      Sim
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Não</Badge>
+                  )}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Possível Cliente?</p>
+                <p className="font-medium">
+                  {contato.possivel_cliente ? (
+                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                      <Star className="h-3 w-3 mr-1 fill-emerald-600 text-emerald-600" />
                       Sim
                     </Badge>
                   ) : (

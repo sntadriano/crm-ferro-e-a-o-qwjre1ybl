@@ -34,6 +34,7 @@ const formSchema = z
     hora: z.string().min(1, 'Hora é obrigatória'),
     teve_pedido: z.boolean().default(false),
     valor_pedido: z.number().min(0).optional(),
+    possivel_cliente: z.boolean().default(false),
   })
   .refine(
     (data) => {
@@ -69,6 +70,7 @@ export default function ContatoFormPage() {
       data_contato: defaultDate,
       hora: defaultTime,
       teve_pedido: false,
+      possivel_cliente: false,
       valor_pedido: 0,
     },
   })
@@ -84,6 +86,7 @@ export default function ContatoFormPage() {
   const tipo = watch('tipo')
   const resultado = watch('resultado')
   const teve_pedido = watch('teve_pedido')
+  const possivel_cliente = watch('possivel_cliente')
   const data_contato = watch('data_contato')
   const cliente_id = watch('cliente_id')
 
@@ -129,6 +132,7 @@ export default function ContatoFormPage() {
         data_contato: new Date(`${values.data_contato}T${values.hora}:00`).toISOString(),
         hora: values.hora,
         teve_pedido: values.teve_pedido,
+        possivel_cliente: values.possivel_cliente,
         valor_pedido: values.teve_pedido ? values.valor_pedido : 0,
         status_validacao,
       })
@@ -205,6 +209,20 @@ export default function ContatoFormPage() {
             />
           )}
           {errors.cliente_id && <p className="text-xs text-red-500">{errors.cliente_id.message}</p>}
+        </div>
+
+        <div className="flex items-center gap-3 rounded-md border bg-emerald-50/60 p-3">
+          <Checkbox
+            id="possivel_cliente"
+            checked={possivel_cliente}
+            onCheckedChange={(c) => setValue('possivel_cliente', c as boolean)}
+          />
+          <Label
+            htmlFor="possivel_cliente"
+            className="cursor-pointer font-semibold text-emerald-800"
+          >
+            Possível Cliente
+          </Label>
         </div>
 
         <div className="space-y-2">

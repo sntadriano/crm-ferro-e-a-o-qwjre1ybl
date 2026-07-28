@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import { RecordModel } from 'pocketbase'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Form,
@@ -13,6 +14,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -23,20 +26,24 @@ import {
 import { toast } from 'sonner'
 import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
-import { Textarea } from '@/components/ui/textarea'
+import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
+import { createContato, updateContato } from '@/services/contatos'
 
 const schema = z.object({
   tipo: z.string(),
+  cliente_id: z.string().min(1, 'Selecione um cliente'),
   descricao: z.string().min(1, 'Descrição é obrigatória'),
   resultado: z.string().optional(),
   data_contato: z.string().min(1, 'Data é obrigatória'),
   hora: z.string().optional(),
+  possivel_cliente: z.boolean().default(false),
 })
 
 interface ContatoFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  clienteId: string
+  clienteId?: string
+  contato?: RecordModel | null
   onSuccess?: () => void
 }
 
@@ -44,57 +51,104 @@ export function ContatoFormDialog({
   open,
   onOpenChange,
   clienteId,
+  contato,
   onSuccess,
 }: ContatoFormDialogProps) {
   const { user } = useAuth()
+  const [clientes, setClientes] = useState<RecordModel[]>([])
+  const [fetchingClients, setFetchingClients] = useState(false)
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       tipo: 'whatsapp',
+      cliente_id: '',
       descricao: '',
       resultado: '',
       data_contato: new Date().toISOString().split('T')[0],
+      hora: new Date().toTimeString().substring(0, 5),
+      possivel_cliente: false,
     },
   })
 
+  const fetchClientes = async () => {
+    setFetchingClients(true)
+    try {
+      let filter = ''
+      if (user?.role === 'vendedor') {
+        filter = `vendedor = ${user?.codigo}`
+      }
+      const records = await pb.collection('clientes').getFullList({ sort: 'descricao', filter })
+      setClientes(records)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setFetchingClients(false)
+    }
+  }
+
   useEffect(() => {
     if (open) {
-      form.reset({
-        tipo: 'whatsapp',
-        descricao: '',
-        resultado: '',
-        data_contato: new Date().toISOString().split('T')[0],
-        hora: new Date().toTimeString().substring(0, 5),
-      })
+      fetchClientes()
+      if (contato) {
+        form.reset({
+          tipo: contato.tipo || 'whatsapp',
+          cliente_id: contato.cliente_id || '',
+          descricao: contato.descricao || '',
+          resultado: contato.resultado || '',
+          data_contato: contato.data_contato
+            ? new Date(contato.data_contato).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0],
+          hora: contato.hora || new Date().toTimeString().substring(0, 5),
+          possivel_cliente: !!contato.possivel_cliente,
+        })
+      } else {
+        form.reset({
+          tipo: 'whatsapp',
+          cliente_id: clienteId || '',
+          descricao: '',
+          resultado: '',
+          data_contato: new Date().toISOString().split('T')[0],
+          hora: new Date().toTimeString().substring(0, 5),
+          possivel_cliente: false,
+        })
+      }
     }
-  }, [open, form])
+  }, [open, contato, clienteId])
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     try {
       const now = new Date()
       const isPast = new Date(data.data_contato + 'T00:00:00') < new Date(now.setHours(0, 0, 0, 0))
+      const status_validacao = isPast ? 'pendente' : 'aprovado'
 
-      await pb.collection('contatos').create({
+      const payload = {
         ...data,
-        cliente_id: clienteId,
         usuario_id: user?.id,
         data_contato: new Date(`${data.data_contato}T${data.hora || '12:00'}:00`).toISOString(),
-        status_validacao: isPast ? 'pendente' : 'aprovado',
-      })
-      toast.success('Contato registrado com sucesso')
+        status_validacao,
+        possivel_cliente: data.possivel_cliente,
+      }
+
+      if (contato) {
+        await updateContato(contato.id, payload)
+        toast.success('Contato atualizado com sucesso')
+      } else {
+        await createContato(payload)
+        toast.success('Contato registrado com sucesso')
+      }
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (err) {
-      toast.error('Erro ao registrar contato')
+      toast.error('Erro ao salvar contato')
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Registrar Contato</DialogTitle>
+          <DialogTitle>{contato ? 'Editar Contato' : 'Registrar Contato'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -118,6 +172,26 @@ export function ContatoFormDialog({
                       <SelectItem value="email">E-mail</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="cliente_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Cliente</FormLabel>
+                  <FormControl>
+                    <ClienteCombobox
+                      clientes={clientes}
+                      value={field.value}
+                      onChange={(v) => field.onChange(v)}
+                      loading={fetchingClients}
+                      onClienteCreated={(c) => setClientes((prev) => [...prev, c])}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -190,6 +264,32 @@ export function ContatoFormDialog({
                       <SelectItem value="outro">Outro</SelectItem>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="possivel_cliente"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3 rounded-md border bg-emerald-50/60 p-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(c) => field.onChange(c as boolean)}
+                      />
+                    </FormControl>
+                    <div className="leading-none">
+                      <FormLabel className="cursor-pointer font-semibold text-emerald-800">
+                        Possível Cliente
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Marque se este contato tem potencial de se tornar cliente.
+                      </p>
+                    </div>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

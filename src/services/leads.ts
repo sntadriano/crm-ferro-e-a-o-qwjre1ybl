@@ -11,6 +11,7 @@ export interface LeadFilters {
   value_max?: number | ''
   cliente_id?: string
   vendedor_id?: string
+  possivel_cliente?: 'todos' | 'sim' | 'nao'
 }
 
 export const getLeads = (page = 1, perPage = 20, filters: LeadFilters = {}) => {
@@ -28,6 +29,8 @@ export const getLeads = (page = 1, perPage = 20, filters: LeadFilters = {}) => {
   if (filters.value_max !== undefined && filters.value_max !== '')
     f.push(`valor_estimado <= ${filters.value_max}`)
   if (filters.cliente_id) f.push(`cliente_id = '${filters.cliente_id}'`)
+  if (filters.possivel_cliente === 'sim') f.push('possivel_cliente = true')
+  if (filters.possivel_cliente === 'nao') f.push('possivel_cliente = false')
 
   return pb.collection('leads').getList(page, perPage, {
     filter: f.join(' && '),

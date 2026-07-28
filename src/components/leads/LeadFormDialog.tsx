@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -43,6 +44,7 @@ const schema = z.object({
   status: z.string(),
   valor_estimado: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
   proximo_followup: z.string().optional(),
+  possivel_cliente: z.boolean().default(false),
 })
 
 interface LeadFormDialogProps {
@@ -68,6 +70,7 @@ export function LeadFormDialog({
       status: 'novo',
       valor_estimado: 0,
       proximo_followup: '',
+      possivel_cliente: false,
     },
   })
 
@@ -79,6 +82,7 @@ export function LeadFormDialog({
           status: lead.status || 'novo',
           valor_estimado: lead.valor_estimado || 0,
           proximo_followup: lead.proximo_followup ? lead.proximo_followup.split(' ')[0] : '',
+          possivel_cliente: !!lead.possivel_cliente,
         })
       } else {
         form.reset({
@@ -86,6 +90,7 @@ export function LeadFormDialog({
           status: 'novo',
           valor_estimado: 0,
           proximo_followup: '',
+          possivel_cliente: false,
         })
       }
       fetchClientes()
@@ -110,6 +115,7 @@ export function LeadFormDialog({
         proximo_followup: data.proximo_followup
           ? new Date(data.proximo_followup).toISOString()
           : '',
+        possivel_cliente: data.possivel_cliente,
       }
 
       if (lead) {
@@ -232,6 +238,32 @@ export function LeadFormDialog({
                   <FormControl>
                     <Input type="number" step="0.01" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="possivel_cliente"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-3 rounded-md border bg-emerald-50/60 p-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={(c) => field.onChange(c as boolean)}
+                      />
+                    </FormControl>
+                    <div className="leading-none">
+                      <FormLabel className="cursor-pointer font-semibold text-emerald-800">
+                        Possível Cliente
+                      </FormLabel>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Marque se este prospecto tem potencial de se tornar cliente.
+                      </p>
+                    </div>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

@@ -12,6 +12,7 @@ import {
   Home,
   RefreshCcw,
   Check,
+  Star,
 } from 'lucide-react'
 import { RecordModel } from 'pocketbase'
 import { format } from 'date-fns'
@@ -77,6 +78,7 @@ export default function ContatoListPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sortField, setSortField] = useState('-data_contato')
+  const [possivelClienteFilter, setPossivelClienteFilter] = useState('all')
   const { vendedorUsers: vendedores } = useVendedorUsers()
 
   const showFilters = canUseFilters(user?.role, 'contatos', user?.email)
@@ -94,6 +96,8 @@ export default function ContatoListPage() {
       if (tipoFilter !== 'all') filterExp.push(`tipo = '${tipoFilter}'`)
       if (resultadoFilter !== 'all') filterExp.push(`resultado = '${resultadoFilter}'`)
       if (vendedorFilter !== 'all') filterExp.push(`usuario_id = '${vendedorFilter}'`)
+      if (possivelClienteFilter === 'sim') filterExp.push('possivel_cliente = true')
+      if (possivelClienteFilter === 'nao') filterExp.push('possivel_cliente = false')
       if (search) {
         const safeSearch = search.replace(/'/g, "\\'")
         filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
@@ -123,7 +127,7 @@ export default function ContatoListPage() {
     }, 300)
 
     return () => clearTimeout(delayDebounceFn)
-  }, [page, search, tipoFilter, vendedorFilter, resultadoFilter, dateFrom, dateTo, sortField])
+  }, [page, search, tipoFilter, vendedorFilter, resultadoFilter, dateFrom, dateTo, sortField, possivelClienteFilter])
 
   useRealtime('contatos', () => loadData())
 
@@ -187,7 +191,22 @@ export default function ContatoListPage() {
       )}
     >
       <TableCell className="font-medium">
-        {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
+        <div className="flex items-center gap-1.5">
+          {contato.possivel_cliente && (
+            <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
+          )}
+          {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
+        </div>
+      </TableCell>
+      <TableCell>
+        {contato.possivel_cliente ? (
+          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-semibold">
+            <Star className="h-3 w-3 mr-1 fill-emerald-600 text-emerald-600" />
+            Sim
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground text-sm">—</span>
+        )}
       </TableCell>
       <TableCell>{contato.expand?.usuario_id?.name || 'Sistema'}</TableCell>
       <TableCell>
@@ -266,7 +285,10 @@ export default function ContatoListPage() {
         <div className="p-4 flex flex-col gap-4">
           <div className="flex justify-between items-start">
             <div>
-              <div className="font-bold text-[#1A3A52] line-clamp-1 text-base">
+              <div className="font-bold text-[#1A3A52] line-clamp-1 text-base flex items-center gap-1.5">
+                {contato.possivel_cliente && (
+                  <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
+                )}
                 {contato.expand?.cliente_id?.descricao}
               </div>
               <div className="text-sm text-muted-foreground font-medium mt-1">
@@ -313,6 +335,12 @@ export default function ContatoListPage() {
           </div>
           <p className="text-sm text-foreground/90 line-clamp-2 mt-1">{contato.descricao}</p>
           <div className="flex flex-wrap gap-2 mt-1">
+            {contato.possivel_cliente && (
+              <Badge className="text-xs bg-emerald-100 text-emerald-800 border-emerald-200 font-semibold">
+                <Star className="h-3 w-3 mr-1 fill-emerald-600 text-emerald-600" />
+                Possível Cliente
+              </Badge>
+            )}
             {contato.resultado && (
               <Badge
                 variant="outline"
@@ -370,6 +398,8 @@ export default function ContatoListPage() {
                 if (tipoFilter !== 'all') filterExp.push(`tipo = '${tipoFilter}'`)
                 if (resultadoFilter !== 'all') filterExp.push(`resultado = '${resultadoFilter}'`)
                 if (vendedorFilter !== 'all') filterExp.push(`usuario_id = '${vendedorFilter}'`)
+                if (possivelClienteFilter === 'sim') filterExp.push('possivel_cliente = true')
+                if (possivelClienteFilter === 'nao') filterExp.push('possivel_cliente = false')
                 if (search) {
                   const safeSearch = search.replace(/'/g, "\\'")
                   filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
@@ -381,11 +411,13 @@ export default function ContatoListPage() {
                 return res.items.map((contato) => ({
                   ...contato,
                   cliente: contato.expand?.cliente_id?.descricao || 'Desconhecido',
+                  possivel_cliente_fmt: contato.possivel_cliente ? 'Sim' : 'Não',
                   data_fmt: format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm'),
                 }))
               }}
               columns={[
                 { header: 'Cliente', key: 'cliente' },
+                { header: 'Possível Cliente', key: 'possivel_cliente_fmt' },
                 { header: 'Tipo', key: 'tipo' },
                 { header: 'Descrição', key: 'descricao' },
                 { header: 'Resultado', key: 'resultado' },
@@ -456,6 +488,16 @@ export default function ContatoListPage() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={possivelClienteFilter} onValueChange={setPossivelClienteFilter}>
+            <SelectTrigger className="min-h-[44px]">
+              <SelectValue placeholder="Possível Cliente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Possível Cliente (Todos)</SelectItem>
+              <SelectItem value="sim">Sim</SelectItem>
+              <SelectItem value="nao">Não</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex gap-2 lg:col-span-2">
             <div className="flex-1">
               <Input
@@ -484,6 +526,7 @@ export default function ContatoListPage() {
               setTipoFilter('all')
               setResultadoFilter('all')
               setVendedorFilter('all')
+              setPossivelClienteFilter('all')
               setDateFrom('')
               setDateTo('')
             }}
@@ -533,8 +576,15 @@ export default function ContatoListPage() {
               <TableHeader className="bg-[#1A3A52] hover:bg-[#1A3A52]">
                 <TableRow>
                   <TableHead className="text-white font-semibold">Cliente</TableHead>
-                  <TableHead className="text-white font-semibold">Usuário</TableHead>
                   <TableHead
+                    className="text-white font-semibold cursor-pointer select-none"
+                    onClick={() =>
+                      setSortField(sortField === 'possivel_cliente' ? '-possivel_cliente' : 'possivel_cliente')
+                    }
+                  >
+                    Possível Cliente
+                  </TableHead>
+                  <TableHead className="text-white font-semibold">Usuário</TableHead>                  <TableHead
                     className="text-white font-semibold cursor-pointer select-none"
                     onClick={() => setSortField(sortField === 'tipo' ? '-tipo' : 'tipo')}
                   >
@@ -557,7 +607,7 @@ export default function ContatoListPage() {
               <TableBody>
                 {contatos.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-16">
+                    <TableCell colSpan={8} className="text-center py-16">
                       <div className="flex flex-col items-center justify-center space-y-3">
                         <PhoneCall className="h-12 w-12 text-muted-foreground" />
                         <h3 className="text-lg font-bold text-[#1A3A52]">
@@ -590,6 +640,9 @@ export default function ContatoListPage() {
                     />
                   ))
                 )}
+              </TableBody>
+            </Table>
+          </div>
               </TableBody>
             </Table>
           </div>

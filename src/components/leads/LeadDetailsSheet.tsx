@@ -14,6 +14,7 @@ import { getLeadAuditLogs } from '@/services/audit_logs'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Star } from 'lucide-react'
 
 export const statusColors: Record<string, string> = {
   novo: 'bg-[#4A90E2]/20 text-[#1A3A52] border-[#4A90E2]/30',
@@ -97,6 +98,17 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
               <Badge className={statusColors[lead.status] || ''} variant="outline">
                 {statusLabels[lead.status] || lead.status}
               </Badge>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Possível Cliente</h3>
+              {lead.possivel_cliente ? (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-semibold">
+                  <Star className="h-3 w-3 mr-1 fill-emerald-600 text-emerald-600" />
+                  Sim
+                </Badge>
+              ) : (
+                <p className="font-medium text-sm">Não</p>
+              )}
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Valor Estimado</h3>

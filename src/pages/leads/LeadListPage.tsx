@@ -37,6 +37,7 @@ import {
   Filter,
   XCircle,
   AlertCircle,
+  Star,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { LeadFormDialog } from '@/components/leads/LeadFormDialog'
@@ -99,6 +100,7 @@ export default function LeadListPage() {
     date_end: '',
     value_min: '',
     value_max: '',
+    possivel_cliente: 'todos',
   })
 
   const [tempFilters, setTempFilters] = useState<LeadFilters>(filters)
@@ -182,6 +184,7 @@ export default function LeadListPage() {
       date_end: '',
       value_min: '',
       value_max: '',
+      possivel_cliente: 'todos',
     }
     setDebouncedSearch('')
     setTempFilters(defaultFilters)
@@ -204,7 +207,10 @@ export default function LeadListPage() {
       >
         <CardContent className="p-5">
           <div className="flex justify-between items-start mb-3">
-            <h3 className="font-bold text-primary text-lg line-clamp-1 pr-2">
+            <h3 className="font-bold text-primary text-lg line-clamp-1 pr-2 flex items-center gap-1.5">
+              {lead.possivel_cliente && (
+                <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
+              )}
               {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
             </h3>
             <Badge
@@ -268,12 +274,25 @@ export default function LeadListPage() {
         onClick={() => onSelect(lead)}
       >
         <TableCell className="py-4">
-          <div className="font-bold text-primary group-hover:text-white">
+          <div className="font-bold text-primary group-hover:text-white flex items-center gap-1.5">
+            {lead.possivel_cliente && (
+              <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
+            )}
             {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
           </div>
           <div className="text-xs text-muted-foreground group-hover:text-white/80 mt-1">
             {lead.expand?.cliente_id?.cnpj_cpf}
           </div>
+        </TableCell>
+        <TableCell className="py-4">
+          {lead.possivel_cliente ? (
+            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-semibold">
+              <Star className="h-3 w-3 mr-1 fill-emerald-600 text-emerald-600" />
+              Possível Cliente
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground text-sm">—</span>
+          )}
         </TableCell>
         <TableCell className="py-4">
           <Badge
@@ -401,6 +420,9 @@ export default function LeadListPage() {
           <Skeleton className="h-5 w-20 bg-muted/60" />
         </TableCell>
         <TableCell>
+          <Skeleton className="h-5 w-20 bg-muted/60" />
+        </TableCell>
+        <TableCell>
           <Skeleton className="h-5 w-24 bg-muted/60" />
         </TableCell>
         <TableCell>
@@ -435,6 +457,7 @@ export default function LeadListPage() {
                 return res.items.map((lead) => ({
                   ...lead,
                   cliente: lead.expand?.cliente_id?.descricao || 'Sem Cliente',
+                  possivel_cliente_fmt: lead.possivel_cliente ? 'Sim' : 'Não',
                   valor_estimado_fmt: new Intl.NumberFormat('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
@@ -447,6 +470,7 @@ export default function LeadListPage() {
               }}
               columns={[
                 { header: 'Cliente', key: 'cliente' },
+                { header: 'Possível Cliente', key: 'possivel_cliente_fmt' },
                 { header: 'Status', key: 'status' },
                 { header: 'Valor Estimado', key: 'valor_estimado_fmt' },
                 { header: 'Data de Criação', key: 'data_criacao_fmt' },
@@ -518,6 +542,22 @@ export default function LeadListPage() {
                       {v.name || v.email}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.possivel_cliente}
+                onValueChange={(v) => {
+                  setFilters((p) => ({ ...p, possivel_cliente: v as any }))
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[160px] min-h-[44px]">
+                  <SelectValue placeholder="Possível Cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="sim">Possível Cliente</SelectItem>
+                  <SelectItem value="nao">Não</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -618,8 +658,9 @@ export default function LeadListPage() {
                 <TableHeader className="bg-[#F5F5F5]">
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="font-bold text-primary">Cliente</TableHead>
+                    <TableHead className="font-bold text-primary">Possível Cliente</TableHead>
                     <TableHead className="font-bold text-primary">Status</TableHead>
-                    <TableHead className="font-bold text-primary">Valor Estimado</TableHead>
+                    <TableHead className="font-bold text-primary">Valor Estimado</TableHead>{' '}
                     <TableHead className="font-bold text-primary">Data de Criação</TableHead>
                     <TableHead className="font-bold text-primary">Próx. Follow-up</TableHead>
                     <TableHead className="w-[80px]"></TableHead>
@@ -669,6 +710,7 @@ export default function LeadListPage() {
               <TableHeader className="bg-[#F5F5F5]">
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="font-bold text-primary py-4">Cliente</TableHead>
+                  <TableHead className="font-bold text-primary py-4">Possível Cliente</TableHead>
                   <TableHead className="font-bold text-primary py-4">Status</TableHead>
                   <TableHead className="font-bold text-primary py-4">Valor Estimado</TableHead>
                   <TableHead className="font-bold text-primary py-4">Data de Criação</TableHead>
