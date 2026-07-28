@@ -29,15 +29,29 @@ import { useAuth } from '@/hooks/use-auth'
 import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
 import { createContato, updateContato } from '@/services/contatos'
 
-const schema = z.object({
-  tipo: z.string(),
-  cliente_id: z.string().min(1, 'Selecione um cliente'),
-  descricao: z.string().min(1, 'Descrição é obrigatória'),
-  resultado: z.string().optional(),
-  data_contato: z.string().min(1, 'Data é obrigatória'),
-  hora: z.string().optional(),
-  possivel_cliente: z.boolean().default(false),
-})
+const schema = z
+  .object({
+    tipo: z.string(),
+    cliente_id: z.string().optional(),
+    nome_possivel_cliente: z.string().optional(),
+    descricao: z.string().min(1, 'Descrição é obrigatória'),
+    resultado: z.string().optional(),
+    data_contato: z.string().min(1, 'Data é obrigatória'),
+    hora: z.string().optional(),
+    possivel_cliente: z.boolean().default(false),
+  })
+  .refine((data) => {
+    if (data.possivel_cliente) {
+      if (!data.nome_possivel_cliente || data.nome_possivel_cliente.trim() === '') {
+        return false
+      }
+    } else {
+      if (!data.cliente_id || data.cliente_id === '') {
+        return false
+      }
+    }
+    return true
+  }, 'Dados do cliente inválidos')
 
 interface ContatoFormDialogProps {
   open: boolean
@@ -63,6 +77,7 @@ export function ContatoFormDialog({
     defaultValues: {
       tipo: 'whatsapp',
       cliente_id: '',
+      nome_possivel_cliente: '',
       descricao: '',
       resultado: '',
       data_contato: new Date().toISOString().split('T')[0],
@@ -94,6 +109,7 @@ export function ContatoFormDialog({
         form.reset({
           tipo: contato.tipo || 'whatsapp',
           cliente_id: contato.cliente_id || '',
+          nome_possivel_cliente: contato.nome_possivel_cliente || '',
           descricao: contato.descricao || '',
           resultado: contato.resultado || '',
           data_contato: contato.data_contato
@@ -106,6 +122,7 @@ export function ContatoFormDialog({
         form.reset({
           tipo: 'whatsapp',
           cliente_id: clienteId || '',
+          nome_possivel_cliente: '',
           descricao: '',
           resultado: '',
           data_contato: new Date().toISOString().split('T')[0],
@@ -124,6 +141,8 @@ export function ContatoFormDialog({
 
       const payload = {
         ...data,
+        cliente_id: data.possivel_cliente ? '' : data.cliente_id,
+        nome_possivel_cliente: data.possivel_cliente ? data.nome_possivel_cliente?.trim() : '',
         usuario_id: user?.id,
         data_contato: new Date(`${data.data_contato}T${data.hora || '12:00'}:00`).toISOString(),
         status_validacao,
@@ -177,25 +196,41 @@ export function ContatoFormDialog({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="cliente_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cliente</FormLabel>
-                  <FormControl>
-                    <ClienteCombobox
-                      clientes={clientes}
-                      value={field.value}
-                      onChange={(v) => field.onChange(v)}
-                      loading={fetchingClients}
-                      onClienteCreated={(c) => setClientes((prev) => [...prev, c])}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {form.watch('possivel_cliente') ? (
+              <FormField
+                control={form.control}
+                name="nome_possivel_cliente"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Possível Cliente</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Digite o nome do possível cliente..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="cliente_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cliente</FormLabel>
+                    <FormControl>
+                      <ClienteCombobox
+                        clientes={clientes}
+                        value={field.value}
+                        onChange={(v) => field.onChange(v)}
+                        loading={fetchingClients}
+                        onClienteCreated={(c) => setClientes((prev) => [...prev, c])}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <FormField

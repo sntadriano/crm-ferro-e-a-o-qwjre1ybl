@@ -60,6 +60,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useVendedorUsers } from '@/hooks/use-vendedor-users'
 import { canExport, canUseFilters } from '@/lib/permissions'
 import { ExportDropdown } from '@/components/shared/ExportDropdown'
+import { getClienteDisplayName, isPossivelCliente } from '@/lib/client-display'
 
 export default function ContatoListPage() {
   const { user } = useAuth()
@@ -100,7 +101,9 @@ export default function ContatoListPage() {
       if (possivelClienteFilter === 'nao') filterExp.push('possivel_cliente = false')
       if (search) {
         const safeSearch = search.replace(/'/g, "\\'")
-        filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
+        filterExp.push(
+          `(cliente_id.descricao ~ '${safeSearch}' || nome_possivel_cliente ~ '${safeSearch}')`,
+        )
       }
       if (dateFrom) filterExp.push(`data_contato >= '${dateFrom} 00:00:00'`)
       if (dateTo) filterExp.push(`data_contato <= '${dateTo} 23:59:59'`)
@@ -202,10 +205,10 @@ export default function ContatoListPage() {
     >
       <TableCell className="font-medium">
         <div className="flex items-center gap-1.5">
-          {contato.possivel_cliente && (
+          {isPossivelCliente(contato) && (
             <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
           )}
-          {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
+          {getClienteDisplayName(contato)}
         </div>
       </TableCell>
       <TableCell>
@@ -296,10 +299,10 @@ export default function ContatoListPage() {
           <div className="flex justify-between items-start">
             <div>
               <div className="font-bold text-[#1A3A52] line-clamp-1 text-base flex items-center gap-1.5">
-                {contato.possivel_cliente && (
+                {isPossivelCliente(contato) && (
                   <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
                 )}
-                {contato.expand?.cliente_id?.descricao}
+                {getClienteDisplayName(contato)}
               </div>
               <div className="text-sm text-muted-foreground font-medium mt-1">
                 Usuário: {contato.expand?.usuario_id?.name || 'Sistema'}
@@ -412,7 +415,9 @@ export default function ContatoListPage() {
                 if (possivelClienteFilter === 'nao') filterExp.push('possivel_cliente = false')
                 if (search) {
                   const safeSearch = search.replace(/'/g, "\\'")
-                  filterExp.push(`cliente_id.descricao ~ '${safeSearch}'`)
+                  filterExp.push(
+                    `(cliente_id.descricao ~ '${safeSearch}' || nome_possivel_cliente ~ '${safeSearch}')`,
+                  )
                 }
                 if (dateFrom) filterExp.push(`data_contato >= '${dateFrom} 00:00:00'`)
                 if (dateTo) filterExp.push(`data_contato <= '${dateTo} 23:59:59'`)
@@ -420,7 +425,7 @@ export default function ContatoListPage() {
                 const res = await getContatos(1, 10000, filterExp.join(' && '), sortField)
                 return res.items.map((contato) => ({
                   ...contato,
-                  cliente: contato.expand?.cliente_id?.descricao || 'Desconhecido',
+                  cliente: getClienteDisplayName(contato),
                   possivel_cliente_fmt: contato.possivel_cliente ? 'Sim' : 'Não',
                   data_fmt: format(new Date(contato.data_contato), 'dd/MM/yyyy HH:mm'),
                 }))

@@ -16,7 +16,10 @@ export interface LeadFilters {
 
 export const getLeads = (page = 1, perPage = 20, filters: LeadFilters = {}) => {
   const f = []
-  if (filters.search) f.push(`cliente_id.descricao ~ '${filters.search.replace(/'/g, "\\'")}'`)
+  if (filters.search) {
+    const safe = filters.search.replace(/'/g, "\\'")
+    f.push(`(cliente_id.descricao ~ '${safe}' || nome_possivel_cliente ~ '${safe}')`)
+  }
   if (filters.status && filters.status !== 'todos') f.push(`status = '${filters.status}'`)
   if (filters.vendedor_id && filters.vendedor_id !== 'todos')
     f.push(`usuario_id = '${filters.vendedor_id}'`)

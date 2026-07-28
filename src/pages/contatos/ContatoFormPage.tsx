@@ -22,11 +22,13 @@ import { createContato } from '@/services/contatos'
 import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
 import { RecordModel } from 'pocketbase'
 import { format } from 'date-fns'
+import { Input } from '@/components/ui/input'
 
 const formSchema = z
   .object({
     tipo: z.enum(['visita_presencial', 'telefone']),
-    cliente_id: z.string().min(1, 'Selecione um cliente'),
+    cliente_id: z.string().optional(),
+    nome_possivel_cliente: z.string().optional(),
     resultado: z.string().min(1, 'Selecione um resultado'),
     observacoes_resultado: z.string().optional(),
     descricao: z.string().optional(),
@@ -48,6 +50,18 @@ const formSchema = z
       path: ['observacoes_resultado'],
     },
   )
+  .refine(
+    (data) => {
+      if (data.possivel_cliente) {
+        return !!(data.nome_possivel_cliente && data.nome_possivel_cliente.trim() !== '')
+      }
+      return !!(data.cliente_id && data.cliente_id !== '')
+    },
+    {
+      message: 'Informe o cliente ou o nome do possível cliente',
+      path: ['cliente_id'],
+    },
+  )
 
 export default function ContatoFormPage() {
   const { user } = useAuth()
@@ -64,6 +78,7 @@ export default function ContatoFormPage() {
     defaultValues: {
       tipo: 'visita_presencial',
       cliente_id: '',
+      nome_possivel_cliente: '',
       resultado: '',
       observacoes_resultado: '',
       descricao: '',
@@ -89,6 +104,7 @@ export default function ContatoFormPage() {
   const possivel_cliente = watch('possivel_cliente')
   const data_contato = watch('data_contato')
   const cliente_id = watch('cliente_id')
+  const nome_possivel_cliente = watch('nome_possivel_cliente')
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -124,7 +140,8 @@ export default function ContatoFormPage() {
 
       await createContato({
         usuario_id: user?.id,
-        cliente_id: values.cliente_id,
+        cliente_id: values.possivel_cliente ? '' : values.cliente_id,
+        nome_possivel_cliente: values.possivel_cliente ? values.nome_possivel_cliente?.trim() : '',
         tipo: values.tipo,
         resultado: values.resultado,
         observacoes_resultado: values.observacoes_resultado,
@@ -193,9 +210,31 @@ export default function ContatoFormPage() {
           </p>
         )}
 
+        <div className="flex items-center gap-3 rounded-md border bg-emerald-50/60 p-3">
+          <Checkbox
+            id="possivel_cliente"
+            checked={possivel_cliente}
+            onCheckedChange={(c) => setValue('possivel_cliente', c as boolean)}
+          />
+          <Label
+            htmlFor="possivel_cliente"
+            className="cursor-pointer font-semibold text-emerald-800"
+          >
+            Possível Cliente (sem cadastro)
+          </Label>
+        </div>
+
         <div className="space-y-2">
           <Label>Cliente</Label>
-          {fetchingClients ? (
+          {possivel_cliente ? (
+            <Input
+              placeholder="Digite o nome do possível cliente..."
+              value={nome_possivel_cliente || ''}
+              onChange={(e) =>
+                setValue('nome_possivel_cliente', e.target.value, { shouldValidate: true })
+              }
+            />
+          ) : fetchingClients ? (
             <div className="h-10 w-full animate-pulse bg-gray-200 rounded-md" />
           ) : (
             <ClienteCombobox
@@ -209,20 +248,9 @@ export default function ContatoFormPage() {
             />
           )}
           {errors.cliente_id && <p className="text-xs text-red-500">{errors.cliente_id.message}</p>}
-        </div>
-
-        <div className="flex items-center gap-3 rounded-md border bg-emerald-50/60 p-3">
-          <Checkbox
-            id="possivel_cliente"
-            checked={possivel_cliente}
-            onCheckedChange={(c) => setValue('possivel_cliente', c as boolean)}
-          />
-          <Label
-            htmlFor="possivel_cliente"
-            className="cursor-pointer font-semibold text-emerald-800"
-          >
-            Possível Cliente
-          </Label>
+          {errors.nome_possivel_cliente && (
+            <p className="text-xs text-red-500">{errors.nome_possivel_cliente.message}</p>
+          )}
         </div>
 
         <div className="space-y-2">

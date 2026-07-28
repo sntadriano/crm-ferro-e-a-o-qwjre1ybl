@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T10:42:16.706Z",
+  "generatedAt": "2026-07-28T10:49:38.268Z",
   "collections": [
     {
       "name": "users",
@@ -278,6 +278,12 @@
           "type": "bool",
           "required": false,
           "system": false
+        },
+        {
+          "name": "nome_possivel_cliente",
+          "type": "text",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": []
@@ -400,6 +406,12 @@
         {
           "name": "possivel_cliente",
           "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "nome_possivel_cliente",
+          "type": "text",
           "required": false,
           "system": false
         }

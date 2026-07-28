@@ -42,6 +42,7 @@ import {
 import { format } from 'date-fns'
 import { LeadFormDialog } from '@/components/leads/LeadFormDialog'
 import { LeadDetailsSheet, statusColors, statusLabels } from '@/components/leads/LeadDetailsSheet'
+import { getClienteDisplayName, isPossivelCliente } from '@/lib/client-display'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -203,15 +204,15 @@ export default function LeadListPage() {
         className="overflow-hidden cursor-pointer shadow-md border-[#E5E5E5] hover:shadow-lg transition-shadow bg-white rounded-xl"
         onClick={() => onSelect(lead)}
         role="button"
-        aria-label={`Ver detalhes do lead de ${lead.expand?.cliente_id?.descricao || 'Sem Cliente'}`}
+        aria-label={`Ver detalhes do lead de ${getClienteDisplayName(lead)}`}
       >
         <CardContent className="p-5">
           <div className="flex justify-between items-start mb-3">
             <h3 className="font-bold text-primary text-lg line-clamp-1 pr-2 flex items-center gap-1.5">
-              {lead.possivel_cliente && (
+              {isPossivelCliente(lead) && (
                 <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
               )}
-              {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
+              {getClienteDisplayName(lead)}
             </h3>
             <Badge
               variant="outline"
@@ -221,7 +222,8 @@ export default function LeadListPage() {
             </Badge>
           </div>
           <div className="text-sm text-muted-foreground mb-4 bg-[#F5F5F5] px-2 py-1 rounded inline-block">
-            CNPJ/CPF: {lead.expand?.cliente_id?.cnpj_cpf || '-'}
+            CNPJ/CPF:{' '}
+            {lead.expand?.cliente_id?.cnpj_cpf || (isPossivelCliente(lead) ? 'Sem cadastro' : '-')}
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm border-t border-[#E5E5E5] pt-3">
             <div>
@@ -275,13 +277,13 @@ export default function LeadListPage() {
       >
         <TableCell className="py-4">
           <div className="font-bold text-primary group-hover:text-white flex items-center gap-1.5">
-            {lead.possivel_cliente && (
+            {isPossivelCliente(lead) && (
               <Star className="h-4 w-4 fill-emerald-500 text-emerald-500 shrink-0" />
             )}
-            {lead.expand?.cliente_id?.descricao || 'Sem Cliente'}
+            {getClienteDisplayName(lead)}
           </div>
           <div className="text-xs text-muted-foreground group-hover:text-white/80 mt-1">
-            {lead.expand?.cliente_id?.cnpj_cpf}
+            {lead.expand?.cliente_id?.cnpj_cpf || (isPossivelCliente(lead) ? 'Sem cadastro' : '-')}
           </div>
         </TableCell>
         <TableCell className="py-4">
@@ -456,7 +458,7 @@ export default function LeadListPage() {
                 const res = await getLeads(1, 10000, filters)
                 return res.items.map((lead) => ({
                   ...lead,
-                  cliente: lead.expand?.cliente_id?.descricao || 'Sem Cliente',
+                  cliente: getClienteDisplayName(lead),
                   possivel_cliente_fmt: lead.possivel_cliente ? 'Sim' : 'Não',
                   valor_estimado_fmt: new Intl.NumberFormat('pt-BR', {
                     style: 'currency',

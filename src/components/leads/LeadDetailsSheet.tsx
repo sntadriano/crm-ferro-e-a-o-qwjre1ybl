@@ -14,7 +14,9 @@ import { getLeadAuditLogs } from '@/services/audit_logs'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Star } from 'lucide-react'
+import { Star, ExternalLink } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { getClienteDisplayName, isPossivelCliente } from '@/lib/client-display'
 
 export const statusColors: Record<string, string> = {
   novo: 'bg-[#4A90E2]/20 text-[#1A3A52] border-[#4A90E2]/30',
@@ -71,6 +73,8 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
 
   const cliente = lead.expand?.cliente_id
   const usuario = lead.expand?.usuario_id
+  const clienteNome = getClienteDisplayName(lead)
+  const isPossivel = isPossivelCliente(lead)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -86,9 +90,29 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Cliente</h3>
             <div className="bg-secondary/50 p-3 rounded-md">
-              <p className="font-semibold">{cliente?.descricao}</p>
-              <p className="text-sm text-muted-foreground">{cliente?.cnpj_cpf}</p>
-              {cliente?.fone && <p className="text-sm mt-1">{cliente?.fone}</p>}
+              <p className="font-semibold flex items-center gap-1.5">
+                {isPossivel && <Star className="h-4 w-4 fill-emerald-500 text-emerald-500" />}
+                {cliente ? (
+                  <Link
+                    to={`/clientes/${cliente.id}`}
+                    className="hover:underline inline-flex items-center gap-1"
+                  >
+                    {clienteNome}
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                ) : (
+                  <span>{clienteNome}</span>
+                )}
+              </p>
+              {cliente?.cnpj_cpf && (
+                <p className="text-sm text-muted-foreground">{cliente.cnpj_cpf}</p>
+              )}
+              {cliente?.fone && <p className="text-sm mt-1">{cliente.fone}</p>}
+              {isPossivel && (
+                <p className="text-xs text-emerald-700 mt-1 font-medium">
+                  Possível Cliente (sem cadastro)
+                </p>
+              )}
             </div>
           </div>
 

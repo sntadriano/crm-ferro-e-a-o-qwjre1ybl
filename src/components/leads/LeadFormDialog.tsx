@@ -39,13 +39,27 @@ import {
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const schema = z.object({
-  cliente_id: z.string().min(1, 'Cliente é obrigatório'),
-  status: z.string(),
-  valor_estimado: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
-  proximo_followup: z.string().optional(),
-  possivel_cliente: z.boolean().default(false),
-})
+const schema = z
+  .object({
+    cliente_id: z.string().optional(),
+    nome_possivel_cliente: z.string().optional(),
+    status: z.string(),
+    valor_estimado: z.coerce.number().min(0.01, 'Valor deve ser positivo'),
+    proximo_followup: z.string().optional(),
+    possivel_cliente: z.boolean().default(false),
+  })
+  .refine((data) => {
+    if (data.possivel_cliente) {
+      if (!data.nome_possivel_cliente || data.nome_possivel_cliente.trim() === '') {
+        return false
+      }
+    } else {
+      if (!data.cliente_id || data.cliente_id === '') {
+        return false
+      }
+    }
+    return true
+  }, 'Dados do cliente inválidos')
 
 interface LeadFormDialogProps {
   open: boolean
@@ -67,6 +81,7 @@ export function LeadFormDialog({
     resolver: zodResolver(schema),
     defaultValues: {
       cliente_id: '',
+      nome_possivel_cliente: '',
       status: 'novo',
       valor_estimado: 0,
       proximo_followup: '',
@@ -78,7 +93,8 @@ export function LeadFormDialog({
     if (open) {
       if (lead) {
         form.reset({
-          cliente_id: lead.cliente_id,
+          cliente_id: lead.cliente_id || '',
+          nome_possivel_cliente: lead.nome_possivel_cliente || '',
           status: lead.status || 'novo',
           valor_estimado: lead.valor_estimado || 0,
           proximo_followup: lead.proximo_followup ? lead.proximo_followup.split(' ')[0] : '',
@@ -87,6 +103,7 @@ export function LeadFormDialog({
       } else {
         form.reset({
           cliente_id: initialClienteId || '',
+          nome_possivel_cliente: '',
           status: 'novo',
           valor_estimado: 0,
           proximo_followup: '',
@@ -110,6 +127,8 @@ export function LeadFormDialog({
     try {
       const payload = {
         ...data,
+        cliente_id: data.possivel_cliente ? '' : data.cliente_id,
+        nome_possivel_cliente: data.possivel_cliente ? data.nome_possivel_cliente?.trim() : '',
         data_criacao: lead ? undefined : new Date().toISOString(),
         usuario_id: lead ? undefined : user?.id,
         proximo_followup: data.proximo_followup
@@ -146,64 +165,80 @@ export function LeadFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="cliente_id"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Cliente</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            'w-full justify-between',
-                            !field.value && 'text-muted-foreground',
-                          )}
-                          disabled={!!lead}
-                        >
-                          {field.value
-                            ? clientes.find((c) => c.id === field.value)?.descricao ||
-                              'Cliente selecionado'
-                            : 'Selecione o cliente'}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar cliente..." />
-                        <CommandList>
-                          <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
-                          <CommandGroup>
-                            {clientes.map((c) => (
-                              <CommandItem
-                                key={c.id}
-                                value={c.descricao}
-                                onSelect={() => {
-                                  form.setValue('cliente_id', c.id)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    c.id === field.value ? 'opacity-100' : 'opacity-0',
-                                  )}
-                                />
-                                {c.descricao}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {form.watch('possivel_cliente') ? (
+              <FormField
+                control={form.control}
+                name="nome_possivel_cliente"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome do Possível Cliente</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Digite o nome do possível cliente..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="cliente_id"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Cliente</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              'w-full justify-between',
+                              !field.value && 'text-muted-foreground',
+                            )}
+                            disabled={!!lead && !lead.possivel_cliente ? false : false}
+                          >
+                            {field.value
+                              ? clientes.find((c) => c.id === field.value)?.descricao ||
+                                'Cliente selecionado'
+                              : 'Selecione o cliente'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Buscar cliente..." />
+                          <CommandList>
+                            <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {clientes.map((c) => (
+                                <CommandItem
+                                  key={c.id}
+                                  value={c.descricao}
+                                  onSelect={() => {
+                                    form.setValue('cliente_id', c.id)
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      c.id === field.value ? 'opacity-100' : 'opacity-0',
+                                    )}
+                                  />
+                                  {c.descricao}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

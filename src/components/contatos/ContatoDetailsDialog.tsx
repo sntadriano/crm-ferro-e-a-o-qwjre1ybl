@@ -22,6 +22,7 @@ import { deleteContato } from '@/services/contatos'
 import { toast } from 'sonner'
 import { LeadFormDialog } from '@/components/leads/LeadFormDialog'
 import { useState } from 'react'
+import { getClienteDisplayName, isPossivelCliente } from '@/lib/client-display'
 
 interface ContatoDetailsDialogProps {
   open: boolean
@@ -75,12 +76,23 @@ export function ContatoDetailsDialog({
                 Cliente
               </h3>
               <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
-                <p className="font-bold text-[#1A3A52] text-lg">
-                  {contato.expand?.cliente_id?.descricao || 'Desconhecido'}
+                <p className="font-bold text-[#1A3A52] text-lg flex items-center gap-1.5">
+                  {isPossivelCliente(contato) && (
+                    <Star className="h-4 w-4 fill-emerald-500 text-emerald-500" />
+                  )}
+                  {getClienteDisplayName(contato)}
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  CNPJ/CPF: {contato.expand?.cliente_id?.cnpj_cpf || 'Não informado'}
-                </p>
+                {contato.expand?.cliente_id?.cnpj_cpf ? (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    CNPJ/CPF: {contato.expand.cliente_id.cnpj_cpf}
+                  </p>
+                ) : isPossivelCliente(contato) ? (
+                  <p className="text-xs text-emerald-700 mt-1 font-medium">
+                    Possível Cliente (sem cadastro)
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">CNPJ/CPF: Não informado</p>
+                )}
               </div>
             </div>
 
