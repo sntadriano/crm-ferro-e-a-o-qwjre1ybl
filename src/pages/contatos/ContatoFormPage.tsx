@@ -22,6 +22,7 @@ import { createContato } from '@/services/contatos'
 import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
 import { RecordModel } from 'pocketbase'
 import { format } from 'date-fns'
+import { buildVendedorFilter } from '@/lib/vendedor-filter'
 
 const formSchema = z
   .object({
@@ -108,10 +109,7 @@ export default function ContatoFormPage() {
   useEffect(() => {
     const fetchClientes = async () => {
       try {
-        let filter = ''
-        if (user?.role === 'vendedor') {
-          filter = `vendedor = ${user?.codigo}`
-        }
+        const filter = buildVendedorFilter()
         const records = await pb.collection('clientes').getFullList({ sort: 'descricao', filter })
         setClientes(records)
       } catch (e) {

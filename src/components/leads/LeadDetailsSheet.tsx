@@ -145,7 +145,7 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Próximo Follow-up</h3>
               <p className="text-sm">
                 {lead.proximo_followup
-                  ? format(new Date(lead.proximo_followup), 'dd/MM/yyyy')
+                  ? format(new Date(lead.proximo_followup), "dd/MM/yyyy 'às' HH:mm")
                   : '-'}
               </p>
             </div>

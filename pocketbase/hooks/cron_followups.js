@@ -15,7 +15,12 @@ cronAdd('check_followups', '0 * * * *', () => {
     const followupStr = lead.getString('proximo_followup')
     if (!followupStr) continue
 
+    // Parse the full datetime value — proximo_followup now stores
+    // both date and time (e.g. "2024-01-15 15:00:00.000Z"). This
+    // ensures notifications respect the time portion: a follow-up
+    // at 15:00 only triggers "1h_antes" after 14:00, not at midnight.
     const followupDate = new Date(followupStr)
+    if (isNaN(followupDate.getTime())) continue
 
     let tipo = null
     if (followupDate < now) {

@@ -1,6 +1,11 @@
 cronAdd('expire_stale_followups', '0 2 * * *', () => {
   const now = new Date()
   const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+  // Use full ISO datetime for the cutoff so the string comparison
+  // respects the time portion of proximo_followup. A follow-up
+  // scheduled for today at a future time is NOT expired — only
+  // those 30+ days in the past (including time) are marked expired.
   const cutoffStr = cutoff.toISOString().replace('T', ' ').substring(0, 19)
 
   let expiredCount = 0

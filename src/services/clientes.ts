@@ -1,5 +1,6 @@
 import pb from '@/lib/pocketbase/client'
 import { RecordModel } from 'pocketbase'
+import { buildVendedorFilter } from '@/lib/vendedor-filter'
 
 export interface ClienteFilters {
   search?: string
@@ -37,9 +38,12 @@ const buildFilter = (filters: ClienteFilters = {}): string => {
   const parts: string[] = []
 
   // Only vendedores are restricted to their own clients.
-  // Admin, gerente, and julia can see all clients — no hardcoded vendedor filter.
+  // Uses the full codigos_vendedor array so users managing multiple
+  // codes (e.g. Danilo, Vinicius) see all clients assigned to any of
+  // their codes.
   if (role === 'vendedor') {
-    parts.push(`vendedor = ${user?.codigo ?? 0}`)
+    const vendedorFilter = buildVendedorFilter()
+    if (vendedorFilter) parts.push(vendedorFilter)
   }
 
   if (filters.search) {

@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/command'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toDateTimeLocal } from '@/lib/date-utils'
 
 const schema = z
   .object({
@@ -97,7 +98,7 @@ export function LeadFormDialog({
           nome_possivel_cliente: lead.nome_possivel_cliente || '',
           status: lead.status || 'novo',
           valor_estimado: lead.valor_estimado || 0,
-          proximo_followup: lead.proximo_followup ? lead.proximo_followup.split(' ')[0] : '',
+          proximo_followup: lead.proximo_followup ? toDateTimeLocal(lead.proximo_followup) : '',
           possivel_cliente: !!lead.possivel_cliente,
         })
       } else {
@@ -309,9 +310,9 @@ export function LeadFormDialog({
               name="proximo_followup"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Próximo Follow-up</FormLabel>
+                  <FormLabel>Próximo Follow-up (Data e Hora)</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="datetime-local" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

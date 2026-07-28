@@ -28,6 +28,7 @@ import pb from '@/lib/pocketbase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
 import { createContato, updateContato } from '@/services/contatos'
+import { buildVendedorFilter } from '@/lib/vendedor-filter'
 
 const schema = z
   .object({
@@ -89,10 +90,7 @@ export function ContatoFormDialog({
   const fetchClientes = async () => {
     setFetchingClients(true)
     try {
-      let filter = ''
-      if (user?.role === 'vendedor') {
-        filter = `vendedor = ${user?.codigo}`
-      }
+      const filter = buildVendedorFilter()
       const records = await pb.collection('clientes').getFullList({ sort: 'descricao', filter })
       setClientes(records)
     } catch (e) {
