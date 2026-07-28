@@ -22,7 +22,6 @@ import { createContato } from '@/services/contatos'
 import { ClienteCombobox } from '@/components/contatos/ClienteCombobox'
 import { RecordModel } from 'pocketbase'
 import { format } from 'date-fns'
-import { Input } from '@/components/ui/input'
 
 const formSchema = z
   .object({
