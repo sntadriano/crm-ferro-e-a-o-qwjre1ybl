@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T18:38:41.858Z",
+  "generatedAt": "2026-07-29T19:27:53.585Z",
   "collections": [
     {
       "name": "users",
@@ -292,8 +292,8 @@
       "name": "contatos",
       "type": "base",
       "apiRules": {
-        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
-        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
+        "list": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && (possivel_cliente = true && usuario_id = @request.auth.id || @request.auth.codigos_vendedor ~ cliente_id.vendedor))))",
+        "view": "@request.auth.role = 'admin' || (@request.auth.active = true && (@request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && (possivel_cliente = true && usuario_id = @request.auth.id || @request.auth.codigos_vendedor ~ cliente_id.vendedor))))",
         "create": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && (possivel_cliente = true || @request.auth.codigos_vendedor ~ cliente_id.vendedor)))",
         "update": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente' || (@request.auth.role = 'vendedor' && @request.auth.codigos_vendedor ~ cliente_id.vendedor))",
         "delete": "@request.auth.active = true && (@request.auth.role = 'admin' || @request.auth.role = 'gerente')"
