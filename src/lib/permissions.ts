@@ -44,6 +44,9 @@ export function canViewProducaoHistorico(role?: string, email?: string): boolean
 export function isProductionOnlyUser(email?: string, role?: string): boolean {
   if (!role && !email) return false
   if (role && ['julia', 'paulo', 'gerente_producao'].includes(role)) return true
+  // Claudio's account (soaresclaudio65@gmail.com) is now `gerente_producao`,
+  // so the role check above already covers it. Keep the email fallback as a
+  // defensive guard in case the role is ever reset to `gerente` accidentally.
   if (email && email.toLowerCase() === 'soaresclaudio65@gmail.com') return true
   return false
 }
