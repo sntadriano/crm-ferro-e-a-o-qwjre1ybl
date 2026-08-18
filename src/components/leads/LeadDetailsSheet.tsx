@@ -13,6 +13,7 @@ import { getContatosByCliente } from '@/services/contatos'
 import { getLeadAuditLogs } from '@/services/audit_logs'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import type { RecordModel } from 'pocketbase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Star, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -40,7 +41,7 @@ interface LeadDetailsSheetProps {
 
 export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetProps) {
   const [contatos, setContatos] = useState<RecordModel[]>([])
-  const [logs, setLogs] = useState<RecordModel[]>([])
+  const [logs, setLogs] = useState<Awaited<ReturnType<typeof getLeadAuditLogs>>>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -166,7 +167,9 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
               </div>
             ) : logs.length > 0 ? (
               <div className="space-y-3">
-                {logs.map((log) => (
+                {logs.map((log) => {
+                  const detalhes = (log as any).detalhes || {}
+                  return (
                   <div
                     key={log.id}
                     className="text-sm flex flex-col gap-1 bg-secondary/30 p-2 rounded"
@@ -177,19 +180,20 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
                     {log.acao === 'change_lead_status' ? (
                       <span>
                         Alterou de{' '}
-                        <strong>{statusLabels[log.detalhes?.from] || log.detalhes?.from}</strong>{' '}
-                        para <strong>{statusLabels[log.detalhes?.to] || log.detalhes?.to}</strong>
+                        <strong>{statusLabels[detalhes?.from] || detalhes?.from}</strong>{' '}
+                        para <strong>{statusLabels[detalhes?.to] || detalhes?.to}</strong>
                       </span>
                     ) : (
                       <span>
                         Lead criado com status{' '}
                         <strong>
-                          {statusLabels[log.detalhes?.status] || log.detalhes?.status}
+                          {statusLabels[detalhes?.status] || detalhes?.status}
                         </strong>
                       </span>
                     )}
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">Nenhum histórico encontrado.</p>

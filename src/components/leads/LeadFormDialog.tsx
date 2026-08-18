@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { createLead, updateLead } from '@/services/leads'
-import { getClientes } from '@/services/clientes'
+import { getClientes, getAllClientes } from '@/services/clientes'
 import { toast } from 'sonner'
 import { extractFieldErrors } from '@/lib/pocketbase/errors'
 import { useAuth } from '@/hooks/use-auth'
@@ -49,18 +49,23 @@ const schema = z
     proximo_followup: z.string().optional(),
     possivel_cliente: z.boolean().default(false),
   })
-  .refine((data) => {
-    if (data.possivel_cliente) {
-      if (!data.nome_possivel_cliente || data.nome_possivel_cliente.trim() === '') {
-        return false
+  .refine(
+    (data) => {
+      if (data.possivel_cliente) {
+        if (!data.nome_possivel_cliente || data.nome_possivel_cliente.trim() === '') {
+          return false
+        }
+      } else {
+        if (!data.cliente_id || data.cliente_id === '') {
+          return false
+        }
       }
-    } else {
-      if (!data.cliente_id || data.cliente_id === '') {
-        return false
-      }
-    }
-    return true
-  }, 'Dados do cliente inválidos')
+      return true
+    },
+    { message: 'Dados do cliente inválidos' },
+  )
+
+type LeadFormValues = z.infer<typeof schema>
 
 interface LeadFormDialogProps {
   open: boolean
@@ -78,8 +83,8 @@ export function LeadFormDialog({
   const { user } = useAuth()
   const [clientes, setClientes] = useState<RecordModel[]>([])
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<LeadFormValues>({
+    resolver: zodResolver(schema as any),
     defaultValues: {
       cliente_id: '',
       nome_possivel_cliente: '',
@@ -117,14 +122,14 @@ export function LeadFormDialog({
 
   const fetchClientes = async () => {
     try {
-      const data = await getClientes()
-      setClientes(data.items)
+      const data = await getAllClientes()
+      setClientes(data)
     } catch (err) {
       console.error(err)
     }
   }
 
-  const onSubmit = async (data: z.infer<typeof schema>) => {
+  const onSubmit = async (data: LeadFormValues) => {
     try {
       const payload = {
         ...data,

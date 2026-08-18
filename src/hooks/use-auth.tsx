@@ -7,9 +7,8 @@ import { clearListCache } from '@/hooks/use-list-cache'
 interface AuthContextType {
   user: any
   loading: boolean
-  signIn: (email: string, p: string) => Promise<{ error: any }>
+  signIn: (identity: string, p: string) => Promise<{ error: any }>
   signOut: () => void
-  requestPasswordReset: (email: string) => Promise<{ error: any }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -135,9 +134,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user, isMobile])
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (identity: string, password: string) => {
     try {
-      await pb.collection('users').authWithPassword(email, password, {
+      await pb.collection('users').authWithPassword(identity, password, {
         fetch: async (url: RequestInfo | URL, config?: RequestInit) => {
           const controller = new AbortController()
           const id = setTimeout(() => controller.abort(), 30000) // 30 seconds timeout
@@ -171,18 +170,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const requestPasswordReset = async (email: string) => {
-    try {
-      await pb.collection('users').requestPasswordReset(email)
-      return { error: null }
-    } catch (error: any) {
-      console.warn('[Auth] requestPasswordReset failed:', error)
-      return { error }
-    }
-  }
-
   return (
-    <AuthContext.Provider value={{ user, signIn, signOut, requestPasswordReset, loading }}>
+    <AuthContext.Provider value={{ user, signIn, signOut, loading }}>
       {children}
     </AuthContext.Provider>
   )

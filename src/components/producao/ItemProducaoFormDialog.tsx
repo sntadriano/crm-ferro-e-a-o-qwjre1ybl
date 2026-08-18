@@ -58,7 +58,7 @@ export function ItemProducaoFormDialog({ open, onOpenChange, item, onSuccess }: 
   const [loading, setLoading] = useState(false)
 
   const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema as any),
     defaultValues: {
       nome: '',
       tipo: '',

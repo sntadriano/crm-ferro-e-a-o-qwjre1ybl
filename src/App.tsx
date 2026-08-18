@@ -73,7 +73,7 @@ const ClientesModuleGuard = () => {
 
 const App = () => (
   <ErrorBoundary>
-    <BrowserRouter future={{ v7_startTransition: false, v7_relativeSplatPath: false }}>
+    <BrowserRouter>
       <AuthProvider>
         <TooltipProvider>
           <CustomerProvider>

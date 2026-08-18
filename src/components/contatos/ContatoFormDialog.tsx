@@ -41,18 +41,23 @@ const schema = z
     hora: z.string().optional(),
     possivel_cliente: z.boolean().default(false),
   })
-  .refine((data) => {
-    if (data.possivel_cliente) {
-      if (!data.nome_possivel_cliente || data.nome_possivel_cliente.trim() === '') {
-        return false
+  .refine(
+    (data) => {
+      if (data.possivel_cliente) {
+        if (!data.nome_possivel_cliente || data.nome_possivel_cliente.trim() === '') {
+          return false
+        }
+      } else {
+        if (!data.cliente_id || data.cliente_id === '') {
+          return false
+        }
       }
-    } else {
-      if (!data.cliente_id || data.cliente_id === '') {
-        return false
-      }
-    }
-    return true
-  }, 'Dados do cliente inválidos')
+      return true
+    },
+    { message: 'Dados do cliente inválidos' },
+  )
+
+type ContatoFormValues = z.infer<typeof schema>
 
 interface ContatoFormDialogProps {
   open: boolean
@@ -73,8 +78,8 @@ export function ContatoFormDialog({
   const [clientes, setClientes] = useState<RecordModel[]>([])
   const [fetchingClients, setFetchingClients] = useState(false)
 
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<ContatoFormValues>({
+    resolver: zodResolver(schema as any),
     defaultValues: {
       tipo: 'whatsapp',
       cliente_id: '',
@@ -131,7 +136,7 @@ export function ContatoFormDialog({
     }
   }, [open, contato, clienteId])
 
-  const onSubmit = async (data: z.infer<typeof schema>) => {
+  const onSubmit = async (data: ContatoFormValues) => {
     try {
       const now = new Date()
       const isPast = new Date(data.data_contato + 'T00:00:00') < new Date(now.setHours(0, 0, 0, 0))

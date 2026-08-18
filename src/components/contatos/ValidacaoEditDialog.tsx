@@ -33,6 +33,8 @@ const schema = z.object({
   valor_pedido: z.number().optional(),
 })
 
+type ValidacaoFormValues = z.infer<typeof schema>
+
 interface ValidacaoEditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -46,8 +48,8 @@ export function ValidacaoEditDialog({
   contato,
   onSuccess,
 }: ValidacaoEditDialogProps) {
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
+  const form = useForm<ValidacaoFormValues>({
+    resolver: zodResolver(schema as any),
     defaultValues: {
       resultado: '',
       observacoes_resultado: '',
@@ -69,7 +71,7 @@ export function ValidacaoEditDialog({
     }
   }, [open, contato, form])
 
-  const onSubmit = async (data: z.infer<typeof schema>) => {
+  const onSubmit = async (data: ValidacaoFormValues) => {
     if (!contato) return
     try {
       await pb.collection('contatos').update(contato.id, {
