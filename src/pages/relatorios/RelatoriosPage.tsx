@@ -48,7 +48,7 @@ export default function RelatoriosPage() {
     return <Navigate to="/dashboard" replace />
   }
 
-  const canSeeClientes = user?.role === 'admin' || user?.email === 'Alex' // Adapt as needed
+  const canSeeClientes = user?.role === 'admin' || user?.email?.toLowerCase().includes('alex')
   const canSeeLeads = user?.role === 'admin' || user?.role === 'julia'
   const canSeeContatos = user?.role === 'admin' || user?.role === 'julia'
   const canSeeProducao = user?.role === 'admin' || user?.role === 'gerente'
