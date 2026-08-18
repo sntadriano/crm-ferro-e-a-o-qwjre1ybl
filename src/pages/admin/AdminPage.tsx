@@ -16,6 +16,21 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/hooks/use-auth'
 import { Navigate } from 'react-router-dom'
+import PasswordManagerSection from './components/PasswordManagerSection'
+
+// A seção "Gerenciar Senhas" é visível APENAS para o Adriano —
+// identificado por username "adriano" ou e-mail adriano_santos_09@hotmail.com.
+// Outros admins (ex.: Alex, Admin genérico) NÃO veem a seção.
+const isAdriano = (user: any) => {
+  if (!user) return false
+  const username = String(user.username ?? '')
+    .trim()
+    .toLowerCase()
+  const email = String(user.email ?? '')
+    .trim()
+    .toLowerCase()
+  return username === 'adriano' || email === 'adriano_santos_09@hotmail.com'
+}
 
 type UserRow = {
   id: string
@@ -214,6 +229,8 @@ export default function AdminPage() {
           </CardContent>
         </Card>
       </div>
+
+      {isAdriano(user) && <PasswordManagerSection />}
 
       <Card>
         <CardHeader className="pb-2">

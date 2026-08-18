@@ -170,28 +170,26 @@ export function LeadDetailsSheet({ open, onOpenChange, lead }: LeadDetailsSheetP
                 {logs.map((log) => {
                   const detalhes = (log as any).detalhes || {}
                   return (
-                  <div
-                    key={log.id}
-                    className="text-sm flex flex-col gap-1 bg-secondary/30 p-2 rounded"
-                  >
-                    <span className="text-muted-foreground text-xs">
-                      {format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm')} - {log.usuario_nome}
-                    </span>
-                    {log.acao === 'change_lead_status' ? (
-                      <span>
-                        Alterou de{' '}
-                        <strong>{statusLabels[detalhes?.from] || detalhes?.from}</strong>{' '}
-                        para <strong>{statusLabels[detalhes?.to] || detalhes?.to}</strong>
+                    <div
+                      key={log.id}
+                      className="text-sm flex flex-col gap-1 bg-secondary/30 p-2 rounded"
+                    >
+                      <span className="text-muted-foreground text-xs">
+                        {format(new Date(log.timestamp), 'dd/MM/yyyy HH:mm')} - {log.usuario_nome}
                       </span>
-                    ) : (
-                      <span>
-                        Lead criado com status{' '}
-                        <strong>
-                          {statusLabels[detalhes?.status] || detalhes?.status}
-                        </strong>
-                      </span>
-                    )}
-                  </div>
+                      {log.acao === 'change_lead_status' ? (
+                        <span>
+                          Alterou de{' '}
+                          <strong>{statusLabels[detalhes?.from] || detalhes?.from}</strong> para{' '}
+                          <strong>{statusLabels[detalhes?.to] || detalhes?.to}</strong>
+                        </span>
+                      ) : (
+                        <span>
+                          Lead criado com status{' '}
+                          <strong>{statusLabels[detalhes?.status] || detalhes?.status}</strong>
+                        </span>
+                      )}
+                    </div>
                   )
                 })}
               </div>
