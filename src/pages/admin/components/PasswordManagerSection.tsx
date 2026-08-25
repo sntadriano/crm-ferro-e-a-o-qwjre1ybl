@@ -182,10 +182,10 @@ export default function PasswordManagerSection({ onUserDeleted }: PasswordManage
     const raw = passwordDrafts[target.id] ?? ''
     const password = sanitizePassword(raw)
 
-    if (password.length < 4) {
+    if (password.length < 6) {
       toast({
         title: 'Senha muito curta',
-        description: 'A senha deve ter no mínimo 4 caracteres.',
+        description: 'A senha deve ter no mínimo 6 caracteres (exigência do sistema).',
         variant: 'destructive',
       })
       return
