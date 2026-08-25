@@ -215,11 +215,19 @@ export default function PasswordManagerSection({ onUserDeleted }: PasswordManage
       })
     } catch (err: any) {
       const data = err?.response?.data ?? err?.data
-      const msg =
-        data?.password?.message ||
-        data?.passwordConfirm?.message ||
-        err?.message ||
-        'Não foi possível alterar a senha.'
+      let msg = data?.password?.message || data?.passwordConfirm?.message
+
+      if (!msg) {
+        const rawResponse = err?.response?.data || err?.response || err?.data
+        if (rawResponse && Object.keys(rawResponse).length > 0) {
+          const rawString =
+            typeof rawResponse === 'string' ? rawResponse : JSON.stringify(rawResponse)
+          msg = `${err?.message || 'Erro ao alterar senha'}: ${rawString}`
+        } else {
+          msg = err?.message || 'Não foi possível alterar a senha.'
+        }
+      }
+
       toast({
         title: 'Erro ao alterar senha',
         description: msg,
