@@ -230,7 +230,7 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      {isAdriano(user) && <PasswordManagerSection />}
+      {isAdriano(user) && <PasswordManagerSection onUserDeleted={loadData} />}
 
       <Card>
         <CardHeader className="pb-2">

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T14:30:25.424Z",
+  "generatedAt": "2026-08-25T15:00:13.378Z",
   "collections": [
     {
       "name": "users",
@@ -1256,6 +1256,47 @@
         "CREATE INDEX idx_pedido_itens_pedido_id ON pedido_itens (pedido_id)",
         "CREATE INDEX `idx_pedido_itens_produto_id` ON `pedido_itens` (produto_id)"
       ]
+    },
+    {
+      "name": "user_credentials",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "view": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "create": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "update": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "delete": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'"
+      },
+      "fields": [
+        {
+          "name": "user",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "password_plain",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_user_credentials_user ON user_credentials (user)"]
     }
   ]
 }
