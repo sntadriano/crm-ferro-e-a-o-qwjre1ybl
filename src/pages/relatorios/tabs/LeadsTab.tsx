@@ -105,12 +105,12 @@ export function LeadsTab({ filters, refreshKey }: any) {
   )
 
   const barData = Object.entries(statusCounts)
-    .map(([name, value]) => ({ name: formatStatus(name), rawName: name, value }))
-    .sort((a, b) => b.value - a.value)
+    .map(([name, value]) => ({ name: formatStatus(name), rawName: name, value: Number(value) }))
+    .sort((a, b) => Number(b.value) - Number(a.value))
 
   const pieData = Object.entries(statusCounts)
-    .map(([name, value]) => ({ name: formatStatus(name), value }))
-    .filter((item) => item.value > 0)
+    .map(([name, value]) => ({ name: formatStatus(name), value: Number(value) }))
+    .filter((item) => Number(item.value) > 0)
 
   const endRef = filters.dateEnd ? new Date(filters.dateEnd + 'T00:00:00') : new Date()
   const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -308,9 +308,9 @@ export function LeadsTab({ filters, refreshKey }: any) {
               {barData.map((row) => (
                 <TableRow key={row.name}>
                   <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell className="text-right">{row.value}</TableCell>
+                  <TableCell className="text-right">{Number(row.value)}</TableCell>
                   <TableCell className="text-right">
-                    {total > 0 ? ((row.value / total) * 100).toFixed(1) : 0}%
+                    {total > 0 ? ((Number(row.value) / total) * 100).toFixed(1) : 0}%
                   </TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(

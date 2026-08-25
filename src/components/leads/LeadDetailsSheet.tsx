@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RecordModel } from 'pocketbase'
+import type { RecordModel } from 'pocketbase'
 import {
   Sheet,
   SheetContent,
@@ -13,7 +13,6 @@ import { getContatosByCliente } from '@/services/contatos'
 import { getLeadAuditLogs } from '@/services/audit_logs'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import type { RecordModel } from 'pocketbase'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Star, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'

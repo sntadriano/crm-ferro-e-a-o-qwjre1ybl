@@ -55,7 +55,7 @@ export default function PasswordManagerSection() {
         sort: 'name',
         fields: 'id,name,email,username,role',
       })
-      const rows = data as ManagedUser[]
+      const rows = data as unknown as ManagedUser[]
       setUsers(rows)
       setUsernameDrafts(
         rows.reduce(

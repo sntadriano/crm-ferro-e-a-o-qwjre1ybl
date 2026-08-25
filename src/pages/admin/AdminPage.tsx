@@ -53,9 +53,9 @@ export default function AdminPage() {
   const loadData = async () => {
     try {
       const usersData = await pb.collection('users').getFullList({ sort: '-created' })
-      setUsers(usersData as UserRow[])
+      setUsers(usersData as unknown as UserRow[])
       const drafts: Record<string, string> = {}
-      for (const u of usersData as UserRow[]) {
+      for (const u of usersData as unknown as UserRow[]) {
         drafts[u.id] = u.codigo != null ? String(u.codigo) : ''
       }
       setCodigoDrafts(drafts)

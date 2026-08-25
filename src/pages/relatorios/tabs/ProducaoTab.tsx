@@ -106,8 +106,8 @@ export function ProducaoTab({ filters, refreshKey }: any) {
   )
 
   const barData = Object.entries(itemCounts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
+    .map(([name, value]) => ({ name, value: Number(value) }))
+    .sort((a, b) => Number(b.value) - Number(a.value))
 
   const last7Days = Array.from({ length: 7 }, (_, i) =>
     format(subDays(endRef, 6 - i), 'yyyy-MM-dd'),

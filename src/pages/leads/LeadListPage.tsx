@@ -176,7 +176,7 @@ export default function LeadListPage() {
   }
 
   const clearAdvancedFilters = () => {
-    const defaultFilters = {
+    const defaultFilters: LeadFilters = {
       search: '',
       status: 'todos',
       vendedor_id: 'todos',

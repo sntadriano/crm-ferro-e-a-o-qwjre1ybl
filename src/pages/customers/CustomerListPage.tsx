@@ -37,16 +37,24 @@ import { useListCache } from '@/hooks/use-list-cache'
 const mapToCustomer = (r: RecordModel): Customer => ({
   id: r.id,
   code: r.codigo?.toString() || '',
+  type: (r.tipo as any) || 'PJ',
   name: r.descricao,
   tradeName: r.fantasia,
   document: r.cnpj_cpf,
+  stateRegistration: r.ie || '',
   phone: r.fone,
   mobile: r.celular,
   email: r.email,
-  status: r.status || 'Ativo',
+  status: (r.status as any) || 'Ativo',
   seller: r.vendedor?.toString() || '',
   registeredAt: r.cadastro || r.created,
-  city: r.cidade,
+  address: {
+    street: r.endereco || '',
+    neighborhood: r.bairro || '',
+    city: r.cidade || '',
+    state: r.uf || '',
+    zip: r.cep || '',
+  },
 })
 
 export default function CustomerListPage() {

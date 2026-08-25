@@ -105,8 +105,8 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
   )
 
   const barData = Object.entries(vendedorCounts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
+    .map(([name, value]) => ({ name, value: Number(value) }))
+    .sort((a, b) => Number(b.value) - Number(a.value))
 
   return (
     <StateDisplay
@@ -245,9 +245,9 @@ export function ClientesTab({ filters, refreshKey, usersMap }: any) {
               {barData.map((row) => (
                 <TableRow key={row.name}>
                   <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell className="text-right">{row.value}</TableCell>
+                  <TableCell className="text-right">{Number(row.value)}</TableCell>
                   <TableCell className="text-right">
-                    {((row.value / total) * 100).toFixed(1)}%
+                    {((Number(row.value) / (total || 1)) * 100).toFixed(1)}%
                   </TableCell>
                 </TableRow>
               ))}

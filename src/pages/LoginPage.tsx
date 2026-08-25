@@ -24,7 +24,7 @@ import logoUrl from '@/assets/whatsapp-image-2026-06-17-at-09.00.12-1c7fd.jpeg'
 const formSchema = z.object({
   username: z.string().min(1, 'Usuário obrigatório'),
   password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean(),
 })
 
 const memoryStorage: Record<string, string> = {}
@@ -271,9 +271,9 @@ export default function LoginPage() {
                             checkCapsLock(e)
                           }}
                           onKeyUpCapture={checkCapsLock}
-                          onBlur={(e) => {
+                          onBlur={() => {
                             setCapsLockOn(false)
-                            field.onBlur(e)
+                            field.onBlur()
                           }}
                           onAnimationStart={handleAutofillAnimation}
                           name={field.name}

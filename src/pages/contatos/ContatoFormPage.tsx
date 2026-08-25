@@ -74,7 +74,7 @@ export default function ContatoFormPage() {
   const defaultTime = format(new Date(), 'HH:mm')
 
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema as any),
     defaultValues: {
       tipo: 'visita_presencial',
       cliente_id: '',

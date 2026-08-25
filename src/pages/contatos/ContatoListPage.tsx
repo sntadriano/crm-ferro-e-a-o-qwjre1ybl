@@ -113,7 +113,7 @@ export default function ContatoListPage() {
       setTotalPages(res.totalPages)
 
       if (clientes.length === 0) {
-        const cliRes = await getClientes()
+        const cliRes = await getClientes(1, 500)
         setClientes(cliRes.items)
       }
     } catch (err) {

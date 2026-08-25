@@ -533,7 +533,7 @@ export default function CustomerDetailsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         contato={selectedContato}
-        initialClienteId={id}
+        clienteId={id}
       />
     </div>
   )

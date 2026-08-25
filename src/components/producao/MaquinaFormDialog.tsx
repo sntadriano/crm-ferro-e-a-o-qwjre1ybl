@@ -27,7 +27,7 @@ import { getErrorMessage, extractFieldErrors } from '@/lib/pocketbase/errors'
 const formSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   tipo_categoria: z.string().optional(),
-  status: z.boolean().default(true),
+  status: z.boolean(),
 })
 
 type FormData = z.infer<typeof formSchema>

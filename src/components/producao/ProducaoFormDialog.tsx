@@ -42,7 +42,7 @@ import './producao-combobox.css'
 const schema = z.object({
   item_id: z.string().min(1, 'Selecione um item'),
   maquina_id: z.string().min(1, 'Selecione uma máquina/processo'),
-  quantidade: z.coerce.number().min(0.01, 'Quantidade deve ser maior que 0'),
+  quantidade: z.number().min(0.01, 'Quantidade deve ser maior que 0'),
   data_producao: z.string(),
   observacoes: z.string().optional(),
 })
@@ -428,7 +428,12 @@ export function ProducaoFormDialog({ open, onOpenChange, record }: Props) {
                 <FormItem>
                   <FormLabel>Quantidade</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
