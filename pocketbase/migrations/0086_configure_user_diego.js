@@ -1,6 +1,6 @@
 migrate(
   (app) => {
-    // 0085 — Ensure user diego is configured and credential synced
+    // 0086 — Ensure user diego is configured, active, verified, credentials synced and production permissions assigned
     const usersCol = app.findCollectionByNameOrId('users')
     const userCredentialsCol = app.findCollectionByNameOrId('user_credentials')
     const permissoesCol = app.findCollectionByNameOrId('permissoes')
@@ -79,5 +79,5 @@ migrate(
       }
     }
   },
-  (app) => {}
+  (app) => {},
 )
