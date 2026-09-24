@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T18:05:38.233Z",
+  "generatedAt": "2026-09-24T20:02:54.881Z",
   "collections": [
     {
       "name": "users",
@@ -1297,6 +1297,114 @@
         }
       ],
       "indexes": ["CREATE UNIQUE INDEX idx_user_credentials_user ON user_credentials (user)"]
+    },
+    {
+      "name": "diretrizes_categorias",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "update": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "delete": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'"
+      },
+      "fields": [
+        {
+          "name": "nome",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "descricao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "icone",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ordem",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_diretrizes_categorias_ordem ON diretrizes_categorias (ordem)"]
+    },
+    {
+      "name": "diretrizes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "update": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'",
+        "delete": "@request.auth.username = 'adriano' || @request.auth.email = 'adriano_santos_09@hotmail.com'"
+      },
+      "fields": [
+        {
+          "name": "categoria",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "diretrizes_categorias"
+        },
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "conteudo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "ordem",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_diretrizes_categoria ON diretrizes (categoria)",
+        "CREATE INDEX idx_diretrizes_ordem ON diretrizes (ordem)"
+      ]
     }
   ]
 }
