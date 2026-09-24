@@ -69,7 +69,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   FileText,
 }
 
-// Mesma regra de permissão usada no painel de administração:
+// Regra de permissão administrativa para diretrizes (Adriano)
 const isAdriano = (user: any) => {
   if (!user) return false
   const username = String(user.username ?? '')
