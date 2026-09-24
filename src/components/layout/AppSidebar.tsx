@@ -12,6 +12,7 @@ import {
   Factory,
   ShieldCheck,
   TrendingUp,
+  BookOpen,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -67,6 +68,11 @@ const items = [
     icon: Factory,
     roles: ['admin', 'julia', 'gerente', 'paulo', 'gerente_producao'],
   },
+  {
+    title: 'Diretrizes',
+    url: '/diretrizes',
+    icon: BookOpen,
+  },
 ]
 
 export function AppSidebar() {
@@ -100,7 +106,7 @@ export function AppSidebar() {
                 ) {
                   isAllowed = false
                 } else if (isProductionOnlyUser(user?.email, user?.role)) {
-                  isAllowed = item.title === 'Produção'
+                  isAllowed = item.title === 'Produção' || item.title === 'Diretrizes'
                 } else if (item.roles) {
                   isAllowed = item.roles.includes(user?.role)
                   if (

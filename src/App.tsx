@@ -26,6 +26,7 @@ const ValidacaoPage = lazy(() => import('./pages/contatos/ValidacaoPage'))
 const VendasReportPage = lazy(() => import('./pages/relatorios/VendasReportPage'))
 const ProducaoModulePage = lazy(() => import('./pages/producao/ProducaoModulePage'))
 const PedidosPage = lazy(() => import('./pages/admin/PedidosPage'))
+const DiretrizesPage = lazy(() => import('./pages/diretrizes/DiretrizesPage'))
 
 const LoadingFallback = () => (
   <div className="flex h-screen w-screen items-center justify-center bg-background">
@@ -111,6 +112,7 @@ const App = () => (
                     </Route>
 
                     <Route path="/producao" element={<ProducaoModulePage />} />
+                    <Route path="/diretrizes" element={<DiretrizesPage />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
