@@ -168,7 +168,11 @@ migrate(
       app.save(official)
 
       console.log(
-        'SUCESSO: conta oficial da Julia = ' + official.id + ' (' + official.getString('email') + ')',
+        'SUCESSO: conta oficial da Julia = ' +
+          official.id +
+          ' (' +
+          official.getString('email') +
+          ')',
       )
       console.log('  Login: usuário "julia" (ou o e-mail da conta oficial)')
     } catch (err) {
