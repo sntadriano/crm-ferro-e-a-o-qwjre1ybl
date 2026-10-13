@@ -23,7 +23,9 @@ import logoUrl from '@/assets/whatsapp-image-2026-06-17-at-09.00.12-1c7fd.jpeg'
 
 const formSchema = z.object({
   username: z.string().min(1, 'Usuário obrigatório'),
-  password: z.string().min(8, 'A senha deve ter no mínimo 8 caracteres.'),
+  // Sem mínimo aqui: senhas antigas (ex.: 6 dígitos) continuam válidas no servidor,
+  // e bloquear no formulário impedia o acesso sem sequer tentar entrar.
+  password: z.string().min(1, 'Senha obrigatória'),
   rememberMe: z.boolean(),
 })
 
@@ -55,12 +57,19 @@ const safeStorage = {
   },
 }
 
-const sanitizePassword = (raw: string): string =>
+const cleanPassword = (raw: string): string =>
   String(raw)
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
     .normalize('NFKC')
     .trim()
-    .toLowerCase()
+
+// Senhas gravadas pelo sistema ficam em min\u00FAsculas, mas qualquer senha definida
+// por fora (painel do PocketBase, redefini\u00E7\u00E3o) mant\u00E9m mai\u00FAsculas. Tentamos as
+// duas formas para o login nunca travar por diferen\u00E7a de caixa.
+const passwordAttempts = (raw: string): string[] => {
+  const cleaned = cleanPassword(raw)
+  return Array.from(new Set([cleaned.toLowerCase(), cleaned]))
+}
 
 export default function LoginPage() {
   const { signIn } = useAuth()
@@ -119,7 +128,6 @@ export default function LoginPage() {
       .trim()
       .toLowerCase()
       .replace(/[\u200B-\u200D\uFEFF]/g, '')
-    const safePassword = sanitizePassword(values.password)
 
     try {
       pb.authStore.clear()
@@ -128,7 +136,13 @@ export default function LoginPage() {
       console.warn('[Login] Erro ao limpar sessão anterior', e)
     }
 
-    const { error } = await signIn(safeIdentity, safePassword)
+    let error: any = null
+    for (const attempt of passwordAttempts(values.password)) {
+      const result = await signIn(safeIdentity, attempt)
+      error = result.error
+      // Só tenta a próxima forma quando o servidor recusou as credenciais (400).
+      if (!error || error?.status !== 400) break
+    }
     setIsLoading(false)
 
     if (error) {
