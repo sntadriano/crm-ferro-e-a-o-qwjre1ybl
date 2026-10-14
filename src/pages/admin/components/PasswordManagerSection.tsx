@@ -193,10 +193,14 @@ export default function PasswordManagerSection({ onUserDeleted }: PasswordManage
 
     setSavingPassword((prev) => ({ ...prev, [target.id]: true }))
     try {
-      // 1. Atualizar a senha no auth collection users
+      // 1. Atualizar a senha no auth collection users.
+      // O PocketBase exige a senha antiga (oldPassword) para quem não é
+      // superusuário; usamos a senha atual registrada em user_credentials.
+      const oldPassword = currentPasswords[target.id]
       await pb.collection('users').update(target.id, {
         password,
         passwordConfirm: password,
+        ...(oldPassword ? { oldPassword } : {}),
       })
 
       // 2. Gravar/atualizar o valor em texto puro na coleção user_credentials
@@ -216,6 +220,11 @@ export default function PasswordManagerSection({ onUserDeleted }: PasswordManage
     } catch (err: any) {
       const data = err?.response?.data ?? err?.data
       let msg = data?.password?.message || data?.passwordConfirm?.message
+
+      if (!msg && data?.oldPassword) {
+        msg =
+          'O sistema exige a senha atual deste usuário, e a registrada no painel está ausente ou desatualizada.'
+      }
 
       if (!msg) {
         const rawResponse = err?.response?.data || err?.response || err?.data
